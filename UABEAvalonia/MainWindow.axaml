@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="125"
+        Width="400" Height="125"
+        x:Class="UABEAvalonia.MainWindow"
+        Title="Unity Assets Bundle Extractor Avalonia">
+  <Grid>
+    <Menu Height="22" VerticalAlignment="Top">
+      <MenuItem Header="File">
+        <MenuItem Header="Open" Name="menuOpen" />
+        <MenuItem Header="Load Package File" Name="menuLoadPackageFile" />
+        <MenuItem Header="Close" Name="menuClose" />
+        <MenuItem Header="Save" Name="menuSave" />
+        <Separator />
+        <MenuItem Header="Compress" Name="menuCompress" />
+        <MenuItem Header="Mod Maker">
+          <MenuItem Header="Create standalone installer" Name="menuCreateStandaloneInstaller" />
+          <MenuItem Header="Create package file" Name="menuCreatePackageFile" />
+        </MenuItem>
+        <MenuItem Header="Exit" Name="menuExit" />
+      </MenuItem>
+      <MenuItem Header="Options">
+        <MenuItem Header="Edit Type Database" Name="menuEditTypeDatabase" />
+        <MenuItem Header="Edit Type Package" Name="menuEditTypePackage" />
+      </MenuItem>
+      <MenuItem Header="Help">
+        <MenuItem Header="About..." Name="menuAbout" />
+      </MenuItem>
+    </Menu>
+
+    <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="No file opened." TextAlignment="Center" FontWeight="Bold" FontSize="14" Name="lblFileName" />
+    <ComboBox Margin="10,56,10,0" VerticalAlignment="Top" Height="26" Name="comboBox" />
+
+    <Grid Margin="10,87,10,0" VerticalAlignment="Top" Grid.IsSharedSizeScope="True">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnExport">Export</Button>
+      <Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnImport">Import</Button>
+      <Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnInfo">Info</Button>
+    </Grid>
+
+  </Grid>
+</Window>

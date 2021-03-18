@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UABEAvalonia"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+        Width="800" Height="500"
+        x:Class="UABEAvalonia.InfoWindow"
+        Title="Assets Info">  
+  <Grid>
+    <Menu Height="22" VerticalAlignment="Top">
+      <MenuItem Header="File">
+        <MenuItem Header="Add" Name="menuAdd" />
+        <MenuItem Header="Save" Name="menuSave" />
+        <MenuItem Header="Mod Maker">
+          <MenuItem Header="Create standalone installer" Name="menuCreateStandaloneInstaller" />
+          <MenuItem Header="Create package file" Name="menuCreatePackageFile" />
+        </MenuItem>
+        <MenuItem Header="Close" Name="menuClose" />
+      </MenuItem>
+      <MenuItem Header="View">
+        <MenuItem Header="Search by name" Name="menuSearchByName" />
+        <MenuItem Header="Continue search (F3)" Name="menuContinueSearch" />
+        <MenuItem Header="Go to asset" Name="menuGoToAsset" />
+        <MenuItem Header="Dependencies" Name="menuDependencies" />
+        <MenuItem Header="Containters" Name="menuContainers" />
+      </MenuItem>
+      <MenuItem Header="Tools">
+        <MenuItem Header="Get script information" Name="menuGetScriptInformation" />
+      </MenuItem>
+    </Menu>
+    <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="Assets" />
+    <Border Margin="10,53,200,10" BorderBrush="Black" BorderThickness="1">
+      <DataGrid AutoGenerateColumns="True" CanUserResizeColumns="True" IsReadOnly="True" Name="dataGrid" />
+    </Border>
+    <StackPanel Margin="0,53,10,10" HorizontalAlignment="Right" Width="185">
+      <Label Content="Name"/>
+      <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxName" />
+      <Label Content="Path ID"/>
+      <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxPathId" />
+      <Label Content="File ID"/>
+      <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxFileId" />
+      <Label Content="Type"/>
+      <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxType" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Data" Name="btnViewData" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Raw" Name="btnExportRaw" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Dump" Name="btnExportDump" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Plugins" Name="btnPlugin" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Raw" Name="btnImportRaw" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Dump" Name="btnImportDump" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Remove" Name="btnRemove" />
+    </StackPanel>
+  </Grid>
+</Window>
