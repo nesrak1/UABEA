@@ -159,7 +159,7 @@ namespace UABEAvalonia
         {
             AssetBundleFile bundle = bundleInst.file;
 
-            FileStream bundleStream = File.OpenWrite(savePath);
+            FileStream bundleStream = File.Open(savePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
             bundle.Unpack(bundle.reader, new AssetsFileWriter(bundleStream));
 
             bundleStream.Position = 0;
@@ -169,6 +169,7 @@ namespace UABEAvalonia
 
             bundle.reader.Close();
             bundleInst.file = newBundle;
+            bundleInst.path = savePath;
         }
 
         private void DecompressToMemory(BundleFileInstance bundleInst)
@@ -277,7 +278,6 @@ namespace UABEAvalonia
 
                 AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, bundleInst.path, true);
                 am.LoadClassDatabaseFromPackage(fileInst.file.typeTree.unityVersion);
-
                 InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
                 info.Closing += InfoWindowClosing;
                 info.Show();
@@ -292,7 +292,8 @@ namespace UABEAvalonia
             InfoWindow window = (InfoWindow)sender;
             string assetName = window.AssetsFileName;
             byte[] assetData = window.FinalAssetData;
-
+            if (assetData == null) return;
+            
             BundleReplacer replacer = AssetImportExport.CreateBundleReplacer(assetName, true, assetData);
             newFiles[assetName] = replacer;
         }
