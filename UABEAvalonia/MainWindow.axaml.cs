@@ -278,7 +278,7 @@ namespace UABEAvalonia
                 byte[] assetData = BundleHelper.LoadAssetDataFromBundle(bundleInst.file, index);
                 MemoryStream assetStream = new MemoryStream(assetData);
                 
-                AssetsFileInstance fileInst = am.LoadAssetsFile(bundleInst, assetStream, bundleInst.path, true);
+                AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, bundleInst.path, true, bundle: bundleInst);
                 am.LoadClassDatabaseFromPackage(fileInst.file.typeTree.unityVersion);
                 InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
                 info.Closing += InfoWindowClosing;
