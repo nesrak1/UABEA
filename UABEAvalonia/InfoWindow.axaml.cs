@@ -156,6 +156,7 @@ namespace UABEAvalonia
             sfd.Title = "Save As";
             sfd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = "UABE xml dump", Extensions = new List<string>() { "xml" } },
                 new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
             };
 
@@ -163,18 +164,30 @@ namespace UABEAvalonia
 
             if (file != null && file != string.Empty)
             {
+                AssetImportExport dumper = new AssetImportExport();
                 if (file.EndsWith(".json"))
                 {
                     await MessageBoxUtil.ShowDialog(this, "Not implemented", "There's no json dump support yet, sorry. Exporting as .txt anyway.");
                     file = file.Substring(0, file.Length - 5) + ".txt";
+                    using (FileStream fs = File.OpenWrite(file))
+                    using (StreamWriter sw = new StreamWriter(fs))
+                    {
+                        dumper.DumpTextAsset(sw, GetSelectedField());
+                    }
+                }
+                else if (file.EndsWith(".xml"))
+                {
+                   dumper.DumpXmlAsset(file, GetSelectedField());
+                }
+                else {
+                    using (FileStream fs = File.OpenWrite(file))
+                    using (StreamWriter sw = new StreamWriter(fs))
+                    {
+                        dumper.DumpTextAsset(sw, GetSelectedField());
+                    }
                 }
 
-                using (FileStream fs = File.OpenWrite(file))
-                using (StreamWriter sw = new StreamWriter(fs))
-                {
-                    AssetImportExport dumper = new AssetImportExport();
-                    dumper.DumpTextAsset(sw, GetSelectedField());
-                }
+
             }
         }
 

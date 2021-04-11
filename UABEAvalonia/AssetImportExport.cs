@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace UABEAvalonia
 {
@@ -33,6 +34,78 @@ namespace UABEAvalonia
         {
             this.sw = sw;
             RecurseTextDump(baseField, 0);
+        }
+
+        public void DumpXmlAsset(string path, AssetTypeValueField baseField)
+        {
+            //this.sw = sw;
+            var doc = new XmlDocument();
+            var result = DumpXmlNode(doc, baseField);
+            doc.AppendChild(result);
+            //var setting = new XmlWriterSettings();
+            //setting.Indent = true;
+            //setting.NewLineChars = Environment.NewLine;
+            //doc.WriteTo(XmlWriter.Create(sw, setting));
+            doc.Save(path);
+        }
+
+        private XmlNode DumpXmlNode(XmlDocument doc, AssetTypeValueField field) {
+            AssetTypeTemplateField template = field.GetTemplateField();
+            string align = template.align ? "1" : "0";
+            string typeName = template.type;
+            string fieldName = template.name;
+            bool isArray = template.isArray;
+
+            if (template.valueType == EnumValueTypes.String)
+                align = "1";
+            string nodeName = field.GetValue() != null ? field.GetValue().GetValueType().ToString() : "object";
+            var e = doc.CreateElement(isArray ? "array" : nodeName);
+            e.SetAttribute("align", align);
+            if (field.GetValue() == null) { 
+                e.SetAttribute("typeName", typeName);
+            }
+            e.SetAttribute("fieldName", fieldName);
+            if (isArray)
+            {
+                AssetTypeTemplateField sizeTemplate = template.children[0];
+                string sizeAlign = sizeTemplate.align ? "1" : "0";
+                string sizeTypeName = sizeTemplate.type;
+                string sizeFieldName = sizeTemplate.name;
+                int size = field.GetValue().AsArray().size;
+                e.SetAttribute("size", size.ToString());
+                e.SetAttribute("sizeAlign", sizeAlign);
+                e.SetAttribute("sizeTypeName", sizeTypeName);
+                e.SetAttribute("sizeFieldName", sizeFieldName);
+                for (int i = 0; i < field.childrenCount; i++)
+                {
+                    var result = DumpXmlNode(doc, field.children[i]);
+                    e.AppendChild(result);
+                }
+            }
+            else
+            {
+                string value = "";
+                if (field.GetValue() != null)
+                {
+                    EnumValueTypes evt = field.GetValue().GetValueType();
+                    if (evt == EnumValueTypes.String)
+                    {
+                        value = field.GetValue().AsString().Replace("\\", "\\\\");
+                    }
+                    else if (1 <= (int)evt && (int)evt <= 12)
+                    {
+                        value = field.GetValue().AsString();
+                    }
+                    var text = doc.CreateTextNode(value);
+                    e.AppendChild(text);
+                }
+                for (int i = 0; i < field.childrenCount; i++)
+                {
+                    var result = DumpXmlNode(doc, field.children[i]);
+                    e.AppendChild(result);
+                }
+            }
+            return e;
         }
 
         private void RecurseTextDump(AssetTypeValueField field, int depth)
