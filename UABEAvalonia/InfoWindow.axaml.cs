@@ -9,7 +9,6 @@ using MessageBox.Avalonia.Enums;
 using MessageBox.Avalonia.Models;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,6 +35,8 @@ namespace UABEAvalonia
         private TextBox boxType;
         public MenuItem menuSave;
         public MenuItem menuClose;
+        public MenuItem menuGetScriptPath;
+        public static string? lastScriptPath;// Save user last selected script directory
 
         public string AssetsFileName { get; private set; }
         public byte[] FinalAssetData { get; private set; }
@@ -68,6 +69,7 @@ namespace UABEAvalonia
             boxType = this.FindControl<TextBox>("boxType");
             menuSave = this.FindControl<MenuItem>("menuSave");
             menuClose = this.FindControl<MenuItem>("menuClose");
+            menuGetScriptPath = this.FindControl<MenuItem>("menuGetScriptInformation");
             //generated events
             btnViewData.Click += BtnViewData_Click;
             btnExportRaw.Click += BtnExportRaw_Click;
@@ -77,6 +79,7 @@ namespace UABEAvalonia
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
             menuSave.Click += MenuSave_Click;
             menuClose.Click += MenuClose_Click;
+            menuGetScriptPath.Click += MenuGetScriptPath_Click;
         }
 
         public InfoWindow(AssetsManager assetsManager, AssetsFileInstance assetsFile, string name, bool fromBundle) : this()
@@ -283,6 +286,10 @@ namespace UABEAvalonia
             await SaveFile();
             modified = false;
         }
+        private async void MenuGetScriptPath_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) {
+            var result = await new OpenFolderDialog().ShowAsync(this);
+            lastScriptPath = result;//allow change variable to null;
+        }
 
         private async void MenuClose_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
@@ -457,7 +464,15 @@ namespace UABEAvalonia
         private AssetTypeValueField GetSelectedField()
         {
             AssetInfoDataGridItem gridItem = GetGridItem();
-            return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID).instance.GetBaseField();
+            var asset = am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID);
+            if(lastScriptPath != null){
+                var monoResult = am.GetMonoBaseFieldCached(assetsFile, asset.info, lastScriptPath);
+                if (monoResult != null)
+                {
+                    return monoResult;
+                }
+            }
+            return asset.instance.GetBaseField();
         }
 
         private AssetTypeValueField GetSelectedFieldReplaced()

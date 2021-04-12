@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 
 namespace UABEAvalonia
 {
@@ -65,6 +66,7 @@ namespace UABEAvalonia
             //generated events
             menuOpen.Click += MenuOpen_Click;
             menuAbout.Click += MenuAbout_Click;
+            menuSave.Click += MenuSave_Click;
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
             btnInfo.Click += BtnInfo_Click;
@@ -159,7 +161,7 @@ namespace UABEAvalonia
         {
             AssetBundleFile bundle = bundleInst.file;
 
-            FileStream bundleStream = File.OpenWrite(savePath);
+            FileStream bundleStream = File.Open(savePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
             bundle.Unpack(bundle.reader, new AssetsFileWriter(bundleStream));
 
             bundleStream.Position = 0;
@@ -169,6 +171,7 @@ namespace UABEAvalonia
 
             bundle.reader.Close();
             bundleInst.file = newBundle;
+            bundleInst.path = savePath;
         }
 
         private void DecompressToMemory(BundleFileInstance bundleInst)
@@ -274,13 +277,31 @@ namespace UABEAvalonia
                 string bunAssetName = bundleInst.file.bundleInf6.dirInf[index].name;
                 byte[] assetData = BundleHelper.LoadAssetDataFromBundle(bundleInst.file, index);
                 MemoryStream assetStream = new MemoryStream(assetData);
-
-                AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, bundleInst.path, true);
+                
+                AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, bundleInst.path, true, bundle: bundleInst);
                 am.LoadClassDatabaseFromPackage(fileInst.file.typeTree.unityVersion);
-
                 InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
                 info.Closing += InfoWindowClosing;
                 info.Show();
+            }
+        }
+
+        private async void MenuSave_Click(object? sender, RoutedEventArgs e) 
+        {
+            if (bundleInst != null) {
+                /**
+                 * Only support bundle resource for now.
+                 */
+                SaveFileDialog sfd = new SaveFileDialog();
+                sfd.Title = "Save as...";
+                sfd.Filters = new List<FileDialogFilter>() { new FileDialogFilter() { Name = "All files", Extensions = new List<string>() { "*" } } };
+                string savePath = await sfd.ShowAsync(this);
+
+                if (savePath == null)
+                    return;
+                AssetsFileWriter writer = new AssetsFileWriter(File.OpenWrite(savePath));
+                bundleInst.file.Write(writer, newFiles.Values.ToList());
+                writer.Close();
             }
         }
 
@@ -292,7 +313,8 @@ namespace UABEAvalonia
             InfoWindow window = (InfoWindow)sender;
             string assetName = window.AssetsFileName;
             byte[] assetData = window.FinalAssetData;
-
+            if (assetData == null) return;
+            
             BundleReplacer replacer = AssetImportExport.CreateBundleReplacer(assetName, true, assetData);
             newFiles[assetName] = replacer;
         }
