@@ -189,8 +189,6 @@ namespace UABEAvalonia
                         dumper.DumpTextAsset(sw, GetSelectedField());
                     }
                 }
-
-
             }
         }
 
@@ -239,6 +237,7 @@ namespace UABEAvalonia
             ofd.Title = "Open";
             ofd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = "UABE test xml dump", Extensions = new List<string>() { "xml" } },
                 new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
             };
 
@@ -254,8 +253,31 @@ namespace UABEAvalonia
                 {
                     await MessageBoxUtil.ShowDialog(this, "Not implemented", "There's no json dump support yet, sorry.");
                     return;
-                }
+                } else if (file.EndsWith(".xml")) {
+                    using (FileStream fs = File.OpenRead(file))
+                    using (StreamReader sr = new StreamReader(fs))
+                    {
+                        AssetFileInfoEx selectedInfo = GetSelectedInfo();
+                        long selectedId = selectedInfo.index;
 
+                        AssetImportExport importer = new AssetImportExport();
+                        byte[]? bytes = AssetImportExport.ImportXml(file);
+
+                        if (bytes == null)
+                        {
+                            await MessageBoxUtil.ShowDialog(this, "Parse error", "Something went wrong when reading the dump file.");
+                            return;
+                        }
+
+                        AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(assetsFile.file, selectedInfo, bytes);
+                        newAssets[selectedId] = replacer;
+                        newAssetDatas[selectedId] = new MemoryStream(bytes);
+
+                        SetSelectedFieldModified();
+                        modified = true;
+                    }
+                    return;
+                }
                 using (FileStream fs = File.OpenRead(file))
                 using (StreamReader sr = new StreamReader(fs))
                 {

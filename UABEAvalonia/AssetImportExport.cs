@@ -38,26 +38,21 @@ namespace UABEAvalonia
 
         public void DumpXmlAsset(string path, AssetTypeValueField baseField)
         {
-            //this.sw = sw;
             var doc = new XmlDocument();
             var result = DumpXmlNode(doc, baseField);
             doc.AppendChild(result);
-            //var setting = new XmlWriterSettings();
-            //setting.Indent = true;
-            //setting.NewLineChars = Environment.NewLine;
-            //doc.WriteTo(XmlWriter.Create(sw, setting));
             doc.Save(path);
         }
 
         private XmlNode DumpXmlNode(XmlDocument doc, AssetTypeValueField field) {
             AssetTypeTemplateField template = field.GetTemplateField();
-            string align = template.align ? "1" : "0";
+            string align = template.align ? true.ToString() : false.ToString();
             string typeName = template.type;
             string fieldName = template.name;
             bool isArray = template.isArray;
 
             if (template.valueType == EnumValueTypes.String)
-                align = "1";
+                align = true.ToString();
             string nodeName = field.GetValue() != null ? field.GetValue().GetValueType().ToString() : "object";
             var e = doc.CreateElement(isArray ? "array" : nodeName);
             e.SetAttribute("align", align);
@@ -68,7 +63,7 @@ namespace UABEAvalonia
             if (isArray)
             {
                 AssetTypeTemplateField sizeTemplate = template.children[0];
-                string sizeAlign = sizeTemplate.align ? "1" : "0";
+                string sizeAlign = sizeTemplate.align ? true.ToString() : false.ToString();
                 string sizeTypeName = sizeTemplate.type;
                 string sizeFieldName = sizeTemplate.name;
                 int size = field.GetValue().AsArray().size;
@@ -195,6 +190,8 @@ namespace UABEAvalonia
             while (true)
             {
                 string? line = sr.ReadLine();
+
+
                 if (line == null)
                     return;
 
@@ -300,6 +297,157 @@ namespace UABEAvalonia
         public static BundleReplacer CreateBundleReplacer(string name, bool isSerialized, byte[] data)
         {
             return new BundleReplacerFromMemory(name, name, isSerialized, data, -1);
+        }
+
+        public static bool writeData(AssetsFileWriter asset, string name, string value)
+        {
+            bool writed = true;
+            switch (name.ToLower())
+            {
+                case "bool":
+                    asset.Write(bool.Parse(value));
+                    break;
+                case "uint8":
+                    asset.Write(byte.Parse(value));
+                    break;
+                case "sint8":
+                    asset.Write(sbyte.Parse(value));
+                    break;
+                case "uint16":
+                    asset.Write(ushort.Parse(value));
+                    break;
+                case "sint16":
+                    asset.Write(short.Parse(value));
+                    break;
+                case "unsigned int":
+                    asset.Write(uint.Parse(value));
+                    break;
+                case "int32":
+                case "int":
+                    asset.Write(int.Parse(value));
+                    break;
+                case "uint64":
+                    asset.Write(ulong.Parse(value));
+                    break;
+                case "int64":
+                case "sint64":
+                    asset.Write(long.Parse(value));
+                    break;
+                case "float":
+                    asset.Write(float.Parse(value));
+                    break;
+                case "double":
+                    asset.Write(double.Parse(value));
+                    break;
+                case "string":
+                    asset.WriteCountStringInt32(value);
+                    break;
+                default:
+                    writed = false;
+                    break;
+            }
+            return writed;
+        }
+
+        public static byte[]? ImportXml(string path)
+        {
+            try
+            {
+                MemoryStream mainStream = new MemoryStream();
+                AssetsFileWriter aw = new AssetsFileWriter(mainStream);
+                aw.bigEndian = false;
+                using (XmlReader reader = XmlReader.Create(File.OpenRead(path)))
+                {
+                    string? lastValue = null;
+                    Stack<bool> alignStack = new Stack<bool>();
+                    Stack<Stream> streams = new Stack<Stream>();
+                    Stack<int> objectCount = new Stack<int>();
+                    while (reader.Read())
+                    {
+                        switch (reader.NodeType)
+                        {
+                            case XmlNodeType.Element:
+                                lastValue = null;
+                                bool result;
+                                bool.TryParse(reader.GetAttribute("align") ?? "false", out result);
+                                alignStack.Push(result);
+                                if (reader.Name.ToLower().Equals("array"))
+                                {
+                                    streams.Push(new MemoryStream());
+                                }
+                                if (reader.Name.ToLower().Equals("array") || reader.Name.ToLower().Equals("object"))
+                                {
+                                    if (objectCount.Count > 0)
+                                    {
+                                        objectCount.Push(objectCount.Pop() + 1);
+                                    }
+                                    objectCount.Push(0);
+                                }
+                                break;
+                            case XmlNodeType.EndElement:
+                                bool align = alignStack.Pop();
+                                int itemCount = 0;
+                                bool isArray = reader.Name.ToLower().Equals("array");
+                                bool isObject = reader.Name.ToLower().Equals("object");
+                                if (isArray || isObject)
+                                {
+                                    itemCount = objectCount.Pop();
+                                }
+                                if (isArray)
+                                {
+                                    Stream topStream = streams.Pop();
+                                    var writer = new AssetsFileWriter(topStream);
+                                    writer.bigEndian = false;
+                                    writer.Write(itemCount);
+                                    streams.TryPeek(out Stream? next);
+                                    topStream.Position = 0;
+                                    topStream.CopyTo(next ?? mainStream);
+                                }
+                                var writeResult = false;
+                                if (streams.Count > 0)
+                                {
+                                    var writer = new AssetsFileWriter(streams.Peek());
+                                    writer.bigEndian = false;
+                                    writeResult = writeData(writer, reader.Name, lastValue ?? "");
+                                }
+                                else
+                                {
+                                    writeResult = writeData(aw, reader.Name, lastValue ?? "");
+                                }
+                                if (!writeResult && !reader.Name.ToLower().Equals("array") && !reader.Name.ToLower().Equals("object"))
+                                {
+                                    throw new Exception($"error in writing {reader.Name} {reader.Value}");
+                                }
+                                /** 
+                                 * align data if need
+                                 */
+                                if (align)
+                                {
+                                    streams.TryPeek(out Stream? next);
+                                    var topStream = next ?? mainStream;
+                                    long currentSize = mainStream.Length;
+                                    foreach (var item in streams.ToArray())
+                                    {
+                                        currentSize += item.Length;
+                                    }
+                                    long alignByteCount = 4 - (currentSize % 4);
+                                    if (alignByteCount < 4 && alignByteCount > 0)
+                                    {
+                                        topStream.Write(new byte[4], 0, (int)alignByteCount);
+                                    }
+                                }
+                                break;
+                            case XmlNodeType.Text:
+                                lastValue = reader.Value;
+                                break;
+                        }
+                    }
+                }
+                return mainStream.ToArray();
+            }
+            catch (Exception e) {
+                return null;            
+            }
         }
     }
 }
