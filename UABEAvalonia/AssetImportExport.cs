@@ -44,6 +44,9 @@ namespace UABEAvalonia
             doc.Save(path);
         }
 
+        /**
+         * this method 's logic fully copy from dump text asset
+         */
         private XmlNode DumpXmlNode(XmlDocument doc, AssetTypeValueField field) {
             AssetTypeTemplateField template = field.GetTemplateField();
             string align = template.align ? true.ToString() : false.ToString();
@@ -299,6 +302,9 @@ namespace UABEAvalonia
             return new BundleReplacerFromMemory(name, name, isSerialized, data, -1);
         }
 
+        /**
+         * @return is anything wrote
+         */
         public static bool writeData(AssetsFileWriter asset, string name, string value)
         {
             bool writed = true;
@@ -349,6 +355,10 @@ namespace UABEAvalonia
             return writed;
         }
 
+        /**
+         * all logic is rewrite from ImportTextAssetLoop
+         * xml is more readable than text, and they can be easily modify by other program or function
+         */
         public static byte[]? ImportXml(string path)
         {
             try
@@ -359,8 +369,17 @@ namespace UABEAvalonia
                 using (XmlReader reader = XmlReader.Create(File.OpenRead(path)))
                 {
                     string? lastValue = null;
+                    /**
+                     * store every node 's align requirement info;
+                     */
                     Stack<bool> alignStack = new Stack<bool>();
+                    /**
+                     * every array data 's MemoryStream, when reach end of array they will append on mainStream;
+                     */
                     Stack<Stream> streams = new Stack<Stream>();
+                    /**
+                     * count every object/array node's direct sub child
+                     */
                     Stack<int> objectCount = new Stack<int>();
                     while (reader.Read())
                     {
@@ -426,6 +445,9 @@ namespace UABEAvalonia
                                     streams.TryPeek(out Stream? next);
                                     var topStream = next ?? mainStream;
                                     long currentSize = mainStream.Length;
+                                    /** 
+                                     * count length
+                                     */
                                     foreach (var item in streams.ToArray())
                                     {
                                         currentSize += item.Length;
