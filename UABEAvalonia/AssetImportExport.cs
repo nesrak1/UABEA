@@ -72,7 +72,11 @@ namespace UABEAvalonia
                     {
                         //only replace \ with \\ but not " with \" lol
                         //you just have to find the last "
-                        value = $" = \"{field.GetValue().AsString().Replace("\\", "\\\\")}\"";
+                        string fixedStr = field.GetValue().AsString()
+                            .Replace("\\", "\\\\")
+                            .Replace("\r", "\\r")
+                            .Replace("\n", "\\n");
+                        value = $" = \"{fixedStr}\"";
                     }
                     else if (1 <= (int)evt && (int)evt <= 12)
                     {
@@ -199,6 +203,9 @@ namespace UABEAvalonia
                         int firstQuote = valueStr.IndexOf('"');
                         int lastQuote = valueStr.LastIndexOf('"');
                         string valueStrFix = valueStr.Substring(firstQuote + 1, lastQuote - firstQuote - 1);
+                        valueStrFix = valueStrFix
+                            .Replace("\\r", "\r")
+                            .Replace("\\n", "\n");
                         aw.WriteCountStringInt32(valueStrFix);
                     }
 
