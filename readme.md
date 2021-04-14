@@ -1,3 +1,7 @@
+#### before you make a bug report
+
+this project is not finished yet. that includes plugin support, searching, whatever. I know many people want plugin support and texture importing/exporting. please do not make an issue on plugins, or anything that is on the todo list below. they are already coming soon. thanks.
+
 ## uabe avalonia
 
 a quick port of uabe to avalonia made in a few days, basic features supported so far but still tons missing. for now you can only import and export assets and modify bundles, everything else is not supported.
