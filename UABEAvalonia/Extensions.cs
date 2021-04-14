@@ -48,5 +48,11 @@ namespace UABEAvalonia
         {
             return new AssetTypeInstance(_this.GetTemplateBaseField(file, info, forceFromCldb), new AssetsFileReader(data), 0);
         }
+
+        public static string ReadCountStringInt16(this AssetsFileReader _this)
+        {
+            short length = _this.ReadInt16();
+            return _this.ReadStringLength(length);
+        }
     }
 }
