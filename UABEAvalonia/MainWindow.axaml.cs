@@ -108,6 +108,8 @@ namespace UABEAvalonia
 
                 DetectedFileType fileType = AssetBundleDetector.DetectFileType(selectedFile);
 
+                CloseAllFiles();
+
                 if (fileType == DetectedFileType.AssetsFile)
                 {
                     string assetName = Path.GetFileNameWithoutExtension(selectedFile);
@@ -230,8 +232,6 @@ namespace UABEAvalonia
 
         private void LoadBundle(BundleFileInstance bundleInst)
         {
-            CloseAllFiles();
-
             var infos = bundleInst.file.bundleInf6.dirInf;
             comboItems = new ObservableCollection<ComboBoxItem>();
             for (int i = 0; i < infos.Length; i++)
@@ -264,19 +264,13 @@ namespace UABEAvalonia
             newFiles.Clear();
             modified = false;
 
-            foreach (AssetsFileInstance inst in am.files)
-            {
-                inst.file.reader.Close();
-                am.files.Remove(inst);
-            }
-            bundleInst.file.Close();
+            am.UnloadAllAssetsFiles(true);
+            am.UnloadAllBundleFiles();
 
             comboItems = new ObservableCollection<ComboBoxItem>();
             comboBox.Items = comboItems;
 
             lblFileName.Text = "No file opened.";
-
-            GC.Collect();
         }
 
         private async void BtnExport_Click(object? sender, RoutedEventArgs e)
@@ -333,7 +327,7 @@ namespace UABEAvalonia
             }
         }
 
-        private void BtnInfo_Click(object? sender, RoutedEventArgs e)
+        private async void BtnInfo_Click(object? sender, RoutedEventArgs e)
         {
             //when dependency loading is supported:
             //make sure cab:// dependencies in the bundle are loaded as well
@@ -359,12 +353,26 @@ namespace UABEAvalonia
                     assetStream = null;
                 }
 
-                AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, bundleInst.path, true);
-                am.LoadClassDatabaseFromPackage(fileInst.file.typeTree.unityVersion);
+                //warning: does not update if you import an assets file onto
+                //a file that wasn't originally an assets file
+                var fileInf = BundleHelper.GetDirInfo(bundleInst.file, index);
+                bool isAssetsFile = bundleInst.file.IsAssetsFile(bundleInst.file.reader, fileInf);
 
-                InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
-                info.Closing += InfoWindowClosing;
-                info.Show();
+                if (isAssetsFile)
+                {
+                    AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, bundleInst.path, true);
+                    am.LoadClassDatabaseFromPackage(fileInst.file.typeTree.unityVersion);
+
+                    InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
+                    info.Closing += InfoWindowClosing;
+                    info.Show();
+                }
+                else
+                {
+                    await MessageBoxUtil.ShowDialog(this, "Error", "This doesn't seem to be a valid assets file.\n" + 
+                                                                   "If you want to export a non-assets file,\n" +
+                                                                   "use Export.");
+                }
             }
         }
 
