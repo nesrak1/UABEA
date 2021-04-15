@@ -299,7 +299,8 @@ namespace UABEAvalonia
                             //read in assets files from the bundle for replacers that need them
                             string assetName = bunRep.GetOriginalEntryName();
                             var bunRepInf = BundleHelper.GetDirInfo(bun, assetName);
-                            bunRep.Init(bun.reader, bunRepInf.offset, bunRepInf.decompressedSize);
+                            long pos = bun.bundleHeader6.GetFileDataOffset() + bunRepInf.offset;
+                            bunRep.Init(bun.reader, pos, bunRepInf.decompressedSize);
                         }
                         reps.Add(bunRep);
                     }
@@ -315,7 +316,7 @@ namespace UABEAvalonia
                     Console.WriteLine($"Swapping mod file...");
                     File.Move(affectedFilePath, bakFile);
                     File.Move(modFile, affectedFilePath);
-
+                    
                     if (!flags.Contains("-kd") && !flags.Contains("-md") && File.Exists(decompFile))
                         File.Delete(decompFile);
 

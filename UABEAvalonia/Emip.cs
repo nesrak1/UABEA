@@ -35,6 +35,8 @@ namespace UABEAvalonia
             {
                 addedTypes = new ClassDatabaseFile();
                 addedTypes.Read(reader);
+                //get past the string table since the reader goes back to the beginning
+                reader.Position = addedTypes.header.stringTablePos + addedTypes.header.stringTableLen;
             }
             else
             {
