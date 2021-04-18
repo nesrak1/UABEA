@@ -1,3 +1,4 @@
+using System;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia;
@@ -156,6 +157,7 @@ namespace UABEAvalonia
             sfd.Title = "Save As";
             sfd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = "UABE xml dump", Extensions = new List<string>() { "xml" } },
                 new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
             };
 
@@ -169,6 +171,11 @@ namespace UABEAvalonia
                     file = file.Substring(0, file.Length - 5) + ".txt";
                 }
 
+                if (file.EndsWith(".xml"))
+                {
+                    AssetImportExport.DumpXmlAsset(file, GetSelectedField());
+                    return;
+                }
                 using (FileStream fs = File.OpenWrite(file))
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
@@ -223,6 +230,7 @@ namespace UABEAvalonia
             ofd.Title = "Open";
             ofd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = "UABE xml dump", Extensions = new List<string>() { "xml" } },
                 new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
             };
 
@@ -240,28 +248,44 @@ namespace UABEAvalonia
                     return;
                 }
 
-                using (FileStream fs = File.OpenRead(file))
-                using (StreamReader sr = new StreamReader(fs))
+                byte[]? bytes;
+                string errorMessage = "Something went wrong when reading the dump file.";
+                AssetFileInfoEx selectedInfo = GetSelectedInfo();
+                long selectedId = selectedInfo.index;
+                if (file.EndsWith(".txt"))
                 {
-                    AssetFileInfoEx selectedInfo = GetSelectedInfo();
-                    long selectedId = selectedInfo.index;
-
-                    AssetImportExport importer = new AssetImportExport();
-                    byte[]? bytes = importer.ImportTextAsset(sr);
-
-                    if (bytes == null)
+                    using (FileStream fs = File.OpenRead(file))
+                    using (StreamReader sr = new StreamReader(fs))
                     {
-                        await MessageBoxUtil.ShowDialog(this, "Parse error", "Something went wrong when reading the dump file.");
-                        return;
+                        AssetImportExport importer = new AssetImportExport();
+                        bytes = importer.ImportTextAsset(sr);
                     }
-
-                    AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(assetsFile.file, selectedInfo, bytes);
-                    newAssets[selectedId] = replacer;
-                    newAssetDatas[selectedId] = new MemoryStream(bytes);
-
-                    SetSelectedFieldModified();
-                    modified = true;
                 }
+                else
+                {
+                    try
+                    {
+                        bytes = AssetImportExport.ImportXml(file);
+                    }
+                    catch (Exception exception)
+                    {
+                        errorMessage = $"error in parse xml, exception: {exception}";
+                        bytes = null;
+                    }
+                }
+
+                if (bytes == null)
+                {
+                    await MessageBoxUtil.ShowDialog(this, "Parse error", errorMessage);
+                    return;
+                }
+
+                AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(assetsFile.file, selectedInfo, bytes);
+                newAssets[selectedId] = replacer;
+                newAssetDatas[selectedId] = new MemoryStream(bytes);
+
+                SetSelectedFieldModified();
+                modified = true;
             }
         }
 
