@@ -369,24 +369,31 @@ namespace UABEAvalonia
                     switch (reader.NodeType)
                     {
                         case XmlNodeType.Element:
-                            lastValue = null;
-                            bool result;
-                            bool.TryParse(reader.GetAttribute("align") ?? "false", out result);
-                            alignStack.Push(result);
-                            if (reader.Name.ToLower().Equals("array"))
-                            {
-                                streams.Push(new MemoryStream());
-                            }
-                            if (reader.Name.ToLower().Equals("array") || reader.Name.ToLower().Equals("object"))
-                            {
-                                if (objectCount.Count > 0)
-                                {
-                                    objectCount.Push(objectCount.Pop() + 1);
-                                }
-                                objectCount.Push(0);
-                            }
-                            break;
                         case XmlNodeType.EndElement:
+                            if (reader.NodeType == XmlNodeType.Element)
+                            {
+                                lastValue = null;
+                                bool result;
+                                bool.TryParse(reader.GetAttribute("align") ?? "false", out result);
+                                alignStack.Push(result);
+                                if (reader.Name.ToLower().Equals("array"))
+                                {
+                                    streams.Push(new MemoryStream());
+                                }
+                                if (reader.Name.ToLower().Equals("array") || reader.Name.ToLower().Equals("object"))
+                                {
+                                    if (objectCount.Count > 0)
+                                    {
+                                        objectCount.Push(objectCount.Pop() + 1);
+                                    }
+                                    objectCount.Push(0);
+                                }
+
+                                if (!reader.IsEmptyElement)
+                                {
+                                    break;
+                                }
+                            }
                             bool align = alignStack.Pop();
                             int itemCount = 0;
                             bool isArray = reader.Name.ToLower().Equals("array");
@@ -444,6 +451,11 @@ namespace UABEAvalonia
                             lastValue = reader.Value;
                             break;
                     }
+                }
+
+                if (objectCount.Count != 0)
+                {
+                    throw new Exception("Object Count Is Not Zero");
                 }
             }
             return mainStream.ToArray();
