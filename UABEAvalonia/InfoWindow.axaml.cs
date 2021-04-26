@@ -13,14 +13,12 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using UABEAvalonia.Plugins;
 
 namespace UABEAvalonia
 {
     public class InfoWindow : Window
     {
-        private AssetsManager am;
-        private AssetsFileInstance assetsFile;
-        private bool fromBundle;
         //controls
         private Button btnViewData;
         private Button btnExportRaw;
@@ -37,14 +35,18 @@ namespace UABEAvalonia
         public MenuItem menuSave;
         public MenuItem menuClose;
 
-        public string AssetsFileName { get; private set; }
-        public byte[] FinalAssetData { get; private set; }
+        //todo, rework all this
+        public AssetWorkspace Workspace { get; }
+        public AssetsManager am { get => Workspace.am; }
+        public AssetsFileInstance assetsFile { get => Workspace.mainFile; }
+        public bool fromBundle { get => Workspace.fromBundle; }
+
+        public string AssetsFileName { get => Workspace.AssetsFileName; }
+        public byte[] FinalAssetData { get; set; }
 
         private ObservableCollection<AssetInfoDataGridItem> dataGridItems;
-        
-        private Dictionary<long, AssetsReplacer> newAssets;
-        private Dictionary<long, MemoryStream> newAssetDatas; //for preview in uabe
-        private bool modified;
+
+        private PluginManager pluginManager;
 
         //for preview
         public InfoWindow()
@@ -74,6 +76,7 @@ namespace UABEAvalonia
             btnExportDump.Click += BtnExportDump_Click;
             btnImportRaw.Click += BtnImportRaw_Click;
             btnImportDump.Click += BtnImportDump_Click;
+            btnPlugin.Click += BtnPlugin_Click;
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
             menuSave.Click += MenuSave_Click;
             menuClose.Click += MenuClose_Click;
@@ -81,17 +84,23 @@ namespace UABEAvalonia
 
         public InfoWindow(AssetsManager assetsManager, AssetsFileInstance assetsFile, string name, bool fromBundle) : this()
         {
-            this.am = assetsManager;
-            this.assetsFile = assetsFile;
-            this.fromBundle = fromBundle;
-            AssetsFileName = name;
+            //this.am = assetsManager;
+            //this.assetsFile = assetsFile;
+            //this.fromBundle = fromBundle;
+            //AssetsFileName = name;
+            //
+            //newAssets = new Dictionary<long, AssetsReplacer>();
+            //newAssetDatas = new Dictionary<long, MemoryStream>();
+            //modified = false;
+
+            Workspace = new AssetWorkspace(assetsManager, assetsFile, fromBundle, name);
+            Workspace.ItemUpdated += Workspace_ItemUpdated;
 
             MakeDataGridItems();
             dataGrid.Items = dataGridItems;
 
-            newAssets = new Dictionary<long, AssetsReplacer>();
-            newAssetDatas = new Dictionary<long, MemoryStream>();
-            modified = false;
+            pluginManager = new PluginManager();
+            pluginManager.LoadPluginsInDirectory("plugins");
 
             this.DataContext = this;
         }
@@ -204,12 +213,13 @@ namespace UABEAvalonia
 
                     AssetImportExport importer = new AssetImportExport();
                     byte[] bytes = importer.ImportRawAsset(fs);
+
                     AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(assetsFile.file, selectedInfo, bytes);
-                    newAssets[selectedId] = replacer;
-                    newAssetDatas[selectedId] = new MemoryStream(bytes);
+                    Workspace.AddReplacer(Workspace.mainFile, replacer, new MemoryStream(bytes));
+                    //newAssets[selectedId] = replacer;
+                    //newAssetDatas[selectedId] = new MemoryStream(bytes);
 
                     SetSelectedFieldModified();
-                    modified = true;
                 }
             }
         }
@@ -256,24 +266,31 @@ namespace UABEAvalonia
                     }
 
                     AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(assetsFile.file, selectedInfo, bytes);
-                    newAssets[selectedId] = replacer;
-                    newAssetDatas[selectedId] = new MemoryStream(bytes);
+                    Workspace.AddReplacer(Workspace.mainFile, replacer, new MemoryStream(bytes));
 
                     SetSelectedFieldModified();
-                    modified = true;
                 }
             }
+        }
+
+        private async void BtnPlugin_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            //only supports one item atm
+            List<AssetExternal> exts = new List<AssetExternal>();
+            exts.Add(GetSelectedExternalReplaced());
+            PluginWindow plug = new PluginWindow(this, Workspace, exts, pluginManager);
+            await plug.ShowDialog(this);
         }
 
         private async void MenuSave_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             await SaveFile();
-            modified = false;
+            Workspace.Modified = false;
         }
 
         private async void MenuClose_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (modified)
+            if (Workspace.Modified)
             {
                 ButtonResult choice = await MessageBoxUtil.ShowDialog(this, "Changes made", "You've modified this file. Would you like to save?",
                                                                       ButtonEnum.YesNo);
@@ -287,7 +304,7 @@ namespace UABEAvalonia
 
         private async Task SaveFile()
         {
-            List<AssetsReplacer> newAssetsList = newAssets.Values.ToList();
+            List<AssetsReplacer> newAssetsList = Workspace.NewAssets.Values.ToList();
 
             if (fromBundle)
             {
@@ -404,17 +421,6 @@ namespace UABEAvalonia
             return dataGridItems;
         }
 
-        public void UpdateGridItems()
-        {
-            //I'm guessing there's some bug in avalonia
-            //that's keeping existing items from drawing.
-            //no matter what I try, whether Items binding
-            //or invalidate methods or whatever, the item
-            //never updates. so for now, just resize the
-            //window a little bit, then scroll it off the
-            //screen and you should see the item updated
-        }
-
         private async Task<bool> FailIfNothingSelected()
         {
             if (dataGrid.SelectedItem == null)
@@ -447,27 +453,58 @@ namespace UABEAvalonia
             return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID).instance.GetBaseField();
         }
 
-        private AssetTypeValueField GetSelectedFieldReplaced()
+        //private AssetTypeValueField GetSelectedFieldReplaced()
+        //{
+        //    AssetInfoDataGridItem gridItem = GetGridItem();
+        //    long id = gridItem.PathID;
+        //    if (newAssetDatas.ContainsKey(id))
+        //    {
+        //        return am.GetExtAssetNewData(assetsFile, gridItem.FileID, gridItem.PathID, newAssetDatas[id]).instance.GetBaseField();
+        //    }
+        //    else
+        //    {
+        //        return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID).instance.GetBaseField();
+        //    }
+        //}
+
+        private AssetExternal GetSelectedExternalReplaced()
         {
             AssetInfoDataGridItem gridItem = GetGridItem();
-            long id = gridItem.PathID;
-            if (newAssetDatas.ContainsKey(id))
+
+            AssetID assetId = new AssetID(Workspace.mainFile.name, gridItem.PathID);
+            if (Workspace.NewAssetDatas.ContainsKey(assetId))
             {
-                return am.GetExtAssetNewData(assetsFile, gridItem.FileID, gridItem.PathID, newAssetDatas[id]).instance.GetBaseField();
+                return am.GetExtAssetNewData(assetsFile, gridItem.FileID, gridItem.PathID, Workspace.NewAssetDatas[assetId]);
             }
             else
             {
-                return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID).instance.GetBaseField();
+                return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID);
             }
+        }
+
+        private AssetTypeValueField GetSelectedFieldReplaced()
+        {
+            return GetSelectedExternalReplaced().instance.GetBaseField();
         }
 
         private void SetSelectedFieldModified()
         {
             AssetInfoDataGridItem gridItem = GetGridItem();
             gridItem.Modified = "*";
-            //because avalonia won't let us update manually .-.
-            dataGridItems.Add(new AssetInfoDataGridItem());
-            dataGridItems.RemoveAt(dataGridItems.Count - 1);
+            gridItem.Update();
+        }
+
+        private void SetFieldModified(AssetInfoDataGridItem gridItem)
+        {
+            gridItem.Modified = "*";
+            gridItem.Update();
+        }
+
+        private void Workspace_ItemUpdated(AssetID updatedAssetId)
+        {
+            var gridItem = dataGridItems.FirstOrDefault(i => i.PathID == updatedAssetId.pathID);
+            if (gridItem != null)
+                SetFieldModified(gridItem);
         }
 
         private void InitializeComponent()
@@ -476,7 +513,7 @@ namespace UABEAvalonia
         }
     }
 
-    public class AssetInfoDataGridItem
+    public class AssetInfoDataGridItem : INotifyPropertyChanged
     {
         public string Name { get; set; }
         public string Container { get; set; }
@@ -486,5 +523,13 @@ namespace UABEAvalonia
         public long PathID { get; set; }
         public int Size { get; set; }
         public string Modified { get; set; }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        //ultimate lazy
+        public void Update(string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

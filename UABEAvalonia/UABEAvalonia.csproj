@@ -8,7 +8,9 @@
     <PackageReference Include="Avalonia" Version="0.10.0" />
     <PackageReference Include="Avalonia.Desktop" Version="0.10.0" />
     <PackageReference Include="Avalonia.Diagnostics" Version="0.10.0" />
+    <PackageReference Include="BCnEncoder.Net" Version="2.0.3" />
     <PackageReference Include="MessageBox.Avalonia" Version="1.0.5" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
    </ItemGroup>
   <ItemGroup>
     <Reference Include="AssetsTools.NET">

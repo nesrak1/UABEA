@@ -12,7 +12,7 @@ namespace UABEAvalonia
     public static class Extensions
     {
         public static AssetExternal GetExtAssetNewData(this AssetsManager _this, AssetsFileInstance relativeTo, int fileId, long pathId,
-                                                       MemoryStream data, bool onlyGetInfo = false, bool forceFromCldb = false)
+                                                       Stream data, bool onlyGetInfo = false, bool forceFromCldb = false)
         {
             AssetExternal ext = new AssetExternal();
             if (fileId == 0 && pathId == 0)
@@ -44,15 +44,9 @@ namespace UABEAvalonia
         }
 
         public static AssetTypeInstance GetTypeInstanceNewData(this AssetsManager _this, AssetsFile file, AssetFileInfoEx info,
-                                                               MemoryStream data, bool forceFromCldb = false)
+                                                               Stream data, bool forceFromCldb = false)
         {
             return new AssetTypeInstance(_this.GetTemplateBaseField(file, info, forceFromCldb), new AssetsFileReader(data), 0);
-        }
-
-        public static string ReadCountStringInt16(this AssetsFileReader _this)
-        {
-            short length = _this.ReadInt16();
-            return _this.ReadStringLength(length);
         }
     }
 }

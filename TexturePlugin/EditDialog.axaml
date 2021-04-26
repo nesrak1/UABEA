@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="380"
+        Width="300" Height="380"
+        x:Class="TexturePlugin.EditDialog"
+        Title="Texture Edit">
+  <Grid>
+    <StackPanel Margin="10,10,10,10">
+      <Grid Grid.IsSharedSizeScope="True">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="30" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Label Grid.Column="0"  Grid.Row="0" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Name</Label>
+        <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" Name="boxName"></TextBox>
+        <Label Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Texture format</Label>
+        <ComboBox Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" Name="ddTextureFmt"></ComboBox>
+        <Label Grid.Column="0" Grid.Row="2" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Has mip maps</Label>
+        <CheckBox Grid.Column="1" Grid.Row="2" HorizontalAlignment="Stretch" Name="chkHasMipMaps"></CheckBox>
+        <Label Grid.Column="0" Grid.Row="3" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Is readable</Label>
+        <CheckBox Grid.Column="1" Grid.Row="3" HorizontalAlignment="Stretch" Name="chkIsReadable"></CheckBox>
+        <Label Grid.Column="0" Grid.Row="4" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Filter mode</Label>
+        <ComboBox Grid.Column="1" Grid.Row="4" HorizontalAlignment="Stretch" Name="ddFilterMode"></ComboBox>
+        <Label Grid.Column="0" Grid.Row="5" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Anisotropic filtering</Label>
+        <TextBox Grid.Column="1" Grid.Row="5" HorizontalAlignment="Stretch" Name="boxAnisotFilter"></TextBox>
+        <Label Grid.Column="0" Grid.Row="6" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Mip map bias</Label>
+        <TextBox Grid.Column="1" Grid.Row="6" HorizontalAlignment="Stretch" Name="boxMipMapBias"></TextBox>
+        <Label Grid.Column="0" Grid.Row="7" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Wrap mode (U)</Label>
+        <ComboBox Grid.Column="1" Grid.Row="7" HorizontalAlignment="Stretch" Name="ddWrapModeU"></ComboBox>
+        <Label Grid.Column="0" Grid.Row="8" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Wrap mode (V)</Label>
+        <ComboBox Grid.Column="1" Grid.Row="8" HorizontalAlignment="Stretch" Name="ddWrapModeV"></ComboBox>
+        <Label Grid.Column="0" Grid.Row="9" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Lightmap format</Label>
+        <TextBox Grid.Column="1" Grid.Row="9" HorizontalAlignment="Stretch" Name="boxLightMapFormat"></TextBox>
+        <Label Grid.Column="0" Grid.Row="10" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Color space</Label>
+        <ComboBox Grid.Column="1" Grid.Row="10" HorizontalAlignment="Stretch" Name="ddColorSpace"></ComboBox>
+        <Label Grid.Column="0" Grid.Row="11" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">Texture</Label>
+        <Button Grid.Column="1" Grid.Row="11" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnLoad">Load</Button>
+        <!-- spacing -->
+        <Button Grid.Column="0" Grid.Row="13" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" Name="btnSave">Save</Button>
+        <Button Grid.Column="1" Grid.Row="13" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnCancel">Cancel</Button>
+      </Grid>
+    </StackPanel>
+  </Grid>
+</Window>
