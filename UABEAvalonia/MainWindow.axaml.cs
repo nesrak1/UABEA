@@ -202,7 +202,7 @@ namespace UABEAvalonia
         {
             AssetBundleFile bundle = bundleInst.file;
 
-            FileStream bundleStream = File.OpenWrite(savePath);
+            FileStream bundleStream = File.Open(savePath, FileMode.CreateNew);
             bundle.Unpack(bundle.reader, new AssetsFileWriter(bundleStream));
 
             bundleStream.Position = 0;
