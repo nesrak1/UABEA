@@ -360,7 +360,8 @@ namespace UABEAvalonia
 
                 if (isAssetsFile)
                 {
-                    AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, bundleInst.path, true);
+                    string assetMemPath = Path.Combine(bundleInst.path, bunAssetName);
+                    AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, assetMemPath, true);
                     am.LoadClassDatabaseFromPackage(fileInst.file.typeTree.unityVersion);
 
                     InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
