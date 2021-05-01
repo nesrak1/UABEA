@@ -78,6 +78,31 @@ namespace TexturePlugin
             return textureBase;
         }
 
+        public byte[] GetRawTextureBytes(TextureFile texFile, AssetsFileInstance inst)
+        {
+            string rootPath = Path.GetDirectoryName(inst.path);
+            if (texFile.m_StreamData.size != 0 && texFile.m_StreamData.path != string.Empty)
+            {
+                string fixedStreamPath = texFile.m_StreamData.path;
+                if (!Path.IsPathRooted(fixedStreamPath) && rootPath != null)
+                {
+                    fixedStreamPath = Path.Combine(rootPath, fixedStreamPath);
+                }
+                if (File.Exists(fixedStreamPath))
+                {
+                    Stream stream = File.OpenRead(fixedStreamPath);
+                    stream.Position = texFile.m_StreamData.offset;
+                    texFile.pictureData = new byte[texFile.m_StreamData.size];
+                    stream.Read(texFile.pictureData, 0, (int)texFile.m_StreamData.size);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            return texFile.pictureData;
+        }
+
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
         {
             AssetExternal tex = selection[0];
@@ -128,9 +153,9 @@ namespace TexturePlugin
                     }
                 }
 
-                byte[] data = texFile.GetTextureData(tex.file);
+                byte[] data = GetRawTextureBytes(texFile, tex.file);
 
-                bool success = await  TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
+                bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                 return success;
             }
             return false;

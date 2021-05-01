@@ -13,6 +13,93 @@ namespace TexturePlugin
 {
     public class TextureEncoderDecoder
     {
+        public static int RGBAToFormatByteSize(TextureFormat format, int width, int height)
+        {
+            int block4RoundX = (width + 3) >> 2 << 2;
+            int block4RoundY = (height + 3) >> 2 << 2;
+            switch (format)
+            {
+                case TextureFormat.RGB9e5Float:
+                    return width * height * 4;
+                case TextureFormat.ARGB32:
+                    return width * height * 4;
+                case TextureFormat.BGRA32New:
+                    return width * height * 4;
+                case TextureFormat.RGBA32:
+                    return width * height * 4;
+                case TextureFormat.RGB24:
+                    return width * height * 3;
+                case TextureFormat.ARGB4444:
+                    return width * height * 2;
+                case TextureFormat.RGBA4444:
+                    return width * height * 2;
+                case TextureFormat.RGB565:
+                    return width * height * 2;
+                case TextureFormat.Alpha8:
+                    return width * height;
+                case TextureFormat.R8:
+                    return width * height;
+                case TextureFormat.R16:
+                    return width * height * 2;
+                case TextureFormat.RG16:
+                    return width * height * 2;
+                case TextureFormat.RHalf:
+                    return width * height * 2;
+                case TextureFormat.RGHalf:
+                    return width * height * 4;
+                case TextureFormat.RGBAHalf:
+                    return width * height * 8;
+                case TextureFormat.RFloat:
+                    return width * height * 4;
+                case TextureFormat.RGFloat:
+                    return width * height * 8;
+                case TextureFormat.RGBAFloat:
+                    return width * height * 16;
+                case TextureFormat.YUV2:
+                    return width * height * 2;
+                case TextureFormat.EAC_R:
+                case TextureFormat.EAC_R_SIGNED:
+                case TextureFormat.EAC_RG:
+                case TextureFormat.EAC_RG_SIGNED:
+                    return width * height * 4; //don't know don't care
+                case TextureFormat.ETC_RGB4_3DS:
+                case TextureFormat.ETC_RGBA8_3DS:
+                case TextureFormat.ETC2_RGB4:
+                case TextureFormat.ETC2_RGBA1:
+                case TextureFormat.ETC2_RGBA8:
+                case TextureFormat.PVRTC_RGB2:
+                case TextureFormat.PVRTC_RGBA2:
+                case TextureFormat.PVRTC_RGB4:
+                case TextureFormat.PVRTC_RGBA4:
+                case TextureFormat.ASTC_RGB_4x4:
+                case TextureFormat.ASTC_RGB_5x5:
+                case TextureFormat.ASTC_RGB_6x6:
+                case TextureFormat.ASTC_RGB_8x8:
+                case TextureFormat.ASTC_RGB_10x10:
+                case TextureFormat.ASTC_RGB_12x12:
+                case TextureFormat.ASTC_RGBA_4x4:
+                case TextureFormat.ASTC_RGBA_5x5:
+                case TextureFormat.ASTC_RGBA_8x8:
+                case TextureFormat.ASTC_RGBA_10x10:
+                case TextureFormat.ASTC_RGBA_12x12:
+                    return -1; //todo
+                case TextureFormat.DXT1:
+                    return block4RoundX * block4RoundY * 2;
+                case TextureFormat.DXT5:
+                    return block4RoundX * block4RoundY;
+                case TextureFormat.BC4:
+                    return block4RoundX * block4RoundY;
+                case TextureFormat.BC5:
+                    return block4RoundX * block4RoundY;
+                case TextureFormat.BC6H:
+                    return block4RoundX * block4RoundY;
+                case TextureFormat.BC7:
+                    return block4RoundX * block4RoundY;
+                default:
+                    return width * height * 16; //don't know don't care
+            }
+        }
+
         public static byte[] Decode(byte[] data, int width, int height, TextureFormat format)
         {
             switch (format)
@@ -123,9 +210,23 @@ namespace TexturePlugin
                 //bcnencoder does not decode imagine that
                 //detex
                 case TextureFormat.DXT1:
-                    return DXTDecoders.ReadDXT1(data, width, height, false);
+                    byte[] dxt1 = DXTDecoders.ReadDXT1(data, width, height);
+                    for (int i = 0; i < dxt1.Length; i += 4)
+                    {
+                        byte temp = dxt1[i];
+                        dxt1[i] = dxt1[i + 2];
+                        dxt1[i + 2] = temp;
+                    }
+                    return dxt1;
                 case TextureFormat.DXT5:
-                    return DXTDecoders.ReadDXT5(data, width, height);
+                    byte[] dxt5 = DXTDecoders.ReadDXT5(data, width, height);
+                    for (int i = 0; i < dxt5.Length; i += 4)
+                    {
+                        byte temp = dxt5[i];
+                        dxt5[i] = dxt5[i + 2];
+                        dxt5[i + 2] = temp;
+                    }
+                    return dxt5;
                 case TextureFormat.BC7:
                     return BC7Decoder.ReadBC7(data, width, height);
                 case TextureFormat.BC6H: //pls don't use
@@ -219,7 +320,7 @@ namespace TexturePlugin
                 case TextureFormat.ASTC_RGBA_10x10:
                 case TextureFormat.ASTC_RGBA_12x12:
                 {
-                    byte[] dest = new byte[data.Length]; //just to be safe, buf is same size as original
+                    byte[] dest = new byte[width * height * 4];
                     uint size = 0;
                     unsafe
                     {
