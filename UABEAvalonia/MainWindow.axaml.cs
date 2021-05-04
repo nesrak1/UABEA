@@ -364,6 +364,9 @@ namespace UABEAvalonia
                     AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, assetMemPath, true);
                     am.LoadClassDatabaseFromPackage(fileInst.file.typeTree.unityVersion);
 
+                    if (bundleInst != null && fileInst.parentBundle == null)
+                        fileInst.parentBundle = bundleInst;
+
                     InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
                     info.Closing += InfoWindowClosing;
                     info.Show();

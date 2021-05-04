@@ -47,6 +47,7 @@ namespace UABEAvalonia.Plugins
 
         public void LoadPluginsInDirectory(string directory)
         {
+            Directory.CreateDirectory(directory);
             foreach (string file in Directory.EnumerateFiles(directory, "*.dll"))
             {
                 LoadPlugin(file);

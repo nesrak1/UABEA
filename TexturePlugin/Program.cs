@@ -122,9 +122,13 @@ namespace TexturePlugin
             {
                 //bundle resS
                 TextureFile.StreamingInfo streamInfo = texFile.m_StreamData;
-                if (streamInfo.path != null && streamInfo.path.StartsWith("archive:/") && tex.file.parentBundle != null)
+                if (streamInfo.path != null && tex.file.parentBundle != null)
                 {
-                    string searchPath = streamInfo.path.Substring(9);
+                    //some versions apparently don't use archive:/
+                    string searchPath = streamInfo.path;
+                    if (searchPath.StartsWith("archive:/"))
+                        searchPath = searchPath.Substring(9);
+
                     searchPath = Path.GetFileName(searchPath);
 
                     AssetBundleFile bundle = tex.file.parentBundle.file;
