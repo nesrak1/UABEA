@@ -26,8 +26,4 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="RGBAEncoders\" />
-  </ItemGroup>
-
 </Project>

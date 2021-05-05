@@ -285,6 +285,7 @@ namespace UABEAvalonia
         private async void MenuSave_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             await SaveFile();
+            ClearModified();
             Workspace.Modified = false;
         }
 
@@ -453,20 +454,6 @@ namespace UABEAvalonia
             return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID).instance.GetBaseField();
         }
 
-        //private AssetTypeValueField GetSelectedFieldReplaced()
-        //{
-        //    AssetInfoDataGridItem gridItem = GetGridItem();
-        //    long id = gridItem.PathID;
-        //    if (newAssetDatas.ContainsKey(id))
-        //    {
-        //        return am.GetExtAssetNewData(assetsFile, gridItem.FileID, gridItem.PathID, newAssetDatas[id]).instance.GetBaseField();
-        //    }
-        //    else
-        //    {
-        //        return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID).instance.GetBaseField();
-        //    }
-        //}
-
         private AssetExternal GetSelectedExternalReplaced()
         {
             AssetInfoDataGridItem gridItem = GetGridItem();
@@ -498,6 +485,18 @@ namespace UABEAvalonia
         {
             gridItem.Modified = "*";
             gridItem.Update();
+        }
+
+        private void ClearModified()
+        {
+            foreach (AssetInfoDataGridItem gridItem in dataGrid.Items)
+            {
+                if (gridItem.Modified != "")
+                {
+                    gridItem.Modified = "";
+                    gridItem.Update();
+                }
+            }
         }
 
         private void Workspace_ItemUpdated(AssetID updatedAssetId)

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace UABEAvalonia
 {
@@ -38,6 +39,7 @@ namespace UABEAvalonia
 
         private Dictionary<string, BundleReplacer> newFiles;
         private bool modified;
+        private bool ignoreCloseEvent;
 
         public ObservableCollection<ComboBoxItem> comboItems;
 
@@ -75,9 +77,11 @@ namespace UABEAvalonia
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
             btnInfo.Click += BtnInfo_Click;
+            Closing += MainWindow_Closing;
 
             newFiles = new Dictionary<string, BundleReplacer>();
             modified = false;
+            ignoreCloseEvent = false;
         }
 
         private async void MainWindow_Initialized(object? sender, EventArgs e)
@@ -146,6 +150,17 @@ namespace UABEAvalonia
 
         private async void MenuSave_Click(object? sender, RoutedEventArgs e)
         {
+            await AskForSaveLocation();
+        }
+
+        private async void MenuClose_Click(object? sender, RoutedEventArgs e)
+        {
+            await AskForSave();
+            CloseAllFiles();
+        }
+
+        private async Task AskForSaveLocation()
+        {
             if (modified && bundleInst != null)
             {
                 SaveFileDialog sfd = new SaveFileDialog();
@@ -160,9 +175,17 @@ namespace UABEAvalonia
             }
         }
 
-        private void MenuClose_Click(object? sender, RoutedEventArgs e)
+        private async Task AskForSave()
         {
-            CloseAllFiles();
+            if (modified && bundleInst != null)
+            {
+                ButtonResult choice = await MessageBoxUtil.ShowDialog(this, "Changes made", "You've modified this file. Would you like to save?",
+                                                                      ButtonEnum.YesNo);
+                if (choice == ButtonResult.Yes)
+                {
+                    await AskForSaveLocation();
+                }
+            }
         }
 
         private async void AskLoadCompressedBundle(BundleFileInstance bundleInst)
@@ -324,6 +347,8 @@ namespace UABEAvalonia
                     Tag = comboItems.Count
                 });
                 comboBox.SelectedIndex = comboItems.Count - 1;
+
+                modified = true;
             }
         }
 
@@ -368,7 +393,7 @@ namespace UABEAvalonia
                         fileInst.parentBundle = bundleInst;
 
                     InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
-                    info.Closing += InfoWindowClosing;
+                    info.Closing += InfoWindow_Closing;
                     info.Show();
                 }
                 else
@@ -380,7 +405,24 @@ namespace UABEAvalonia
             }
         }
 
-        private void InfoWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+        private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!modified || ignoreCloseEvent)
+            {
+                e.Cancel = false;
+                ignoreCloseEvent = false;
+            }
+            else
+            {
+                e.Cancel = true;
+                ignoreCloseEvent = true;
+
+                await AskForSave();
+                Close(); //calling Close() triggers Closing() again
+            }
+        }
+
+        private void InfoWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             if (sender == null)
                 return;
