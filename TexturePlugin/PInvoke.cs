@@ -9,16 +9,16 @@ namespace TexturePlugin
 {
     public class PInvoke
     {
-        [DllImport("textoolwrap.dll")]
+        [DllImport("textoolwrap")]
         public static extern uint DecodeByCrunch(IntPtr data, IntPtr buf, int mode, uint width, uint height);
 
-        [DllImport("textoolwrap.dll")]
+        [DllImport("textoolwrap")]
         public static extern uint DecodeByPVRTexLib(IntPtr data, IntPtr buf, int mode, uint width, uint height);
 
-        [DllImport("textoolwrap.dll")]
+        [DllImport("textoolwrap")]
         public static extern uint EncodeByCrunch(IntPtr data, IntPtr buf, int mode, int level, uint width, uint height);
 
-        [DllImport("textoolwrap.dll")]
+        [DllImport("textoolwrap")]
         public static extern uint EncodeByPVRTexLib(IntPtr data, IntPtr buf, int mode, int level, uint width, uint height);
     }
 }
