@@ -1,0 +1,2 @@
+UABEA is a small clone of UABE in c#. It supports all versions Unity 5.5 and up.
+UABEA uses the class database from UABE under the CC BY-NC-SA 3.0 license.

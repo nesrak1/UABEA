@@ -3,18 +3,31 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="AssetsTools.NET" Version="2.0.9" />
     <PackageReference Include="Avalonia" Version="0.10.0" />
     <PackageReference Include="Avalonia.Desktop" Version="0.10.0" />
     <PackageReference Include="Avalonia.Diagnostics" Version="0.10.0" />
     <PackageReference Include="BCnEncoder.Net" Version="2.0.3" />
     <PackageReference Include="MessageBox.Avalonia" Version="1.0.5" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
-   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="AssetsTools.NET">
-      <HintPath>..\..\..\GitReposLocal\AssetsTools.NET\AssetTools.NET\bin\Debug\netstandard2.0\AssetsTools.NET.dll</HintPath>
-    </Reference>
   </ItemGroup>
+  
+  <Target Name="UABEAAfterBuild" AfterTargets="AfterBuild" Condition="'$(SolutionDir)' != '*Undefined*'">
+    <ItemGroup>
+	  <ReleaseFiles Include="$(SolutionDir)ReleaseFiles\**\*" />
+	</ItemGroup>
+	<Copy SourceFiles="@(ReleaseFiles)" DestinationFolder="$(OutputPath)" ContinueOnError="true" />
+    <MakeDir Directories="$(OutputPath)plugins" ContinueOnError="true" />
+  </Target>
+  
+  <Target Name="UABEAAfterPublish" AfterTargets="Publish" Condition="'$(SolutionDir)' != '*Undefined*'">
+    <ItemGroup>
+	  <ReleaseFiles Include="$(SolutionDir)ReleaseFiles\**\*" />
+	</ItemGroup>
+    <Copy SourceFiles="@(ReleaseFiles)" DestinationFolder="$(PublishDir)" ContinueOnError="true" />
+    <MakeDir Directories="$(PublishDir)plugins" ContinueOnError="true" />
+  </Target>
 </Project>
