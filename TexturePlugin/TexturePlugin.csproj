@@ -30,20 +30,14 @@
   <!-- the actual copying has to be copy and pasted to work    -->
   <!-- with msbuild since targets can only execute once        -->
   <Target Name="BuildNativeAndSetConfig">
-    <!-- build textoolwrap for windows with vcxproj -->
-    <MSBuild Condition="$([MSBuild]::IsOsPlatform(Windows))" Projects="$(SolutionDir)TexToolWrap\TexToolWrap.vcxproj" Targets="Build" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
-
-    <!-- build textoolwrap for linux with make -->
-    <Exec Condition="$([MSBuild]::IsOsPlatform(Linux))" Command="make" WorkingDirectory="$(SolutionDir)TexToolWrap" />
-
     <!-- g++ doesn't build the same as $(Platform) so check the os's platform instead -->
     <!-- yes I know this is bad hack -->
     <Exec Condition="$([MSBuild]::IsOsPlatform(Linux))" Command="uname -m" ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="LinuxUnameM" />
     </Exec>
     
-	<!-- anycpu will build x64, I have to choose one or another -->
-	<!-- and I figure most people have 64bit computers          -->
+    <!-- anycpu will build x64, I have to choose one or another -->
+    <!-- and I figure most people have 64bit computers          -->
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Windows)) AND ('$(Platform)' == 'x64' OR '$(Platform)' == 'AnyCPU')">
       <UABEANativeConfig>win-x64</UABEANativeConfig>
       <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\bin\x64\$(Configuration)\TexToolWrap.dll</TexToolWrapBinDir>
@@ -58,17 +52,24 @@
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Linux)) AND '$(LinuxUnameM)' == 'x86_64'">
       <UABEANativeConfig>linux-x64</UABEANativeConfig>
-	  <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\libtextoolwrap.so</TexToolWrapBinDir>
-	  <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Linux_x86_64\libPVRTexLib.so</PVRTexToolBinDir>
+      <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\libtextoolwrap.so</TexToolWrapBinDir>
+      <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Linux_x86_64\libPVRTexLib.so</PVRTexToolBinDir>
       <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\linux64\libispc_texcomp.so</ISPCBinDir>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Linux)) AND ('$(LinuxUnameM)' == 'i386' OR '$(Platform)' == 'i686')">
       <UABEANativeConfig>linux-x86</UABEANativeConfig>
-	  <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\libtextoolwrap.so</TexToolWrapBinDir>
-	  <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Linux_x86_32\libPVRTexLib.so</PVRTexToolBinDir>
+      <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\libtextoolwrap.so</TexToolWrapBinDir>
+      <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Linux_x86_32\libPVRTexLib.so</PVRTexToolBinDir>
       <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\linux32\libispc_texcomp.so</ISPCBinDir>
     </PropertyGroup>
-	
+    
+    <!-- build textoolwrap for windows with vcxproj -->
+    <MSBuild Condition="'$(UABEANativeConfig)' == 'win-x64'" Projects="$(SolutionDir)TexToolWrap\TexToolWrap.vcxproj" Targets="Build" Properties="Configuration=$(Configuration);Platform=x64" />
+    <MSBuild Condition="'$(UABEANativeConfig)' == 'win-x86'" Projects="$(SolutionDir)TexToolWrap\TexToolWrap.vcxproj" Targets="Build" Properties="Configuration=$(Configuration);Platform=Win32" />
+
+    <!-- build textoolwrap for linux with make -->
+    <Exec Condition="'$(UABEANativeConfig)' == 'linux-x64' OR '$(UABEANativeConfig)' == 'linux-x86'" Command="make" WorkingDirectory="$(SolutionDir)TexToolWrap" />
+    
     <Message Importance="High" Text="TEXTUREPLUGIN BUILD INFO" />
     <Message Importance="High" Text="  ONWINDOWS: $([MSBuild]::IsOsPlatform(Windows))" />
     <Message Importance="High" Text="  PLATFORM: $(Platform)" />
@@ -88,7 +89,7 @@
     <Copy SourceFiles="$(TexToolWrapBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(PVRTexToolBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(ISPCBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
-	
+    
     <!-- copy textureplugin -->
     <Copy SourceFiles="$(OutputPath)TexturePlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
   </Target>
@@ -103,7 +104,7 @@
     <Copy SourceFiles="$(TexToolWrapBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(PVRTexToolBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(ISPCBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
-	
+    
     <!-- copy textureplugin -->
     <Copy SourceFiles="$(OutputPath)TexturePlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
   </Target>
