@@ -20,5 +20,8 @@ namespace TexturePlugin
 
         [DllImport("textoolwrap")]
         public static extern uint EncodeByPVRTexLib(IntPtr data, IntPtr buf, int mode, int level, uint width, uint height);
+
+        [DllImport("textoolwrap")]
+        public static extern uint EncodeByISPC(IntPtr data, IntPtr buf, int mode, int level, uint width, uint height);
     }
 }

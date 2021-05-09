@@ -14,7 +14,6 @@
     <PackageReference Include="Avalonia" Version="0.10.0" />
     <PackageReference Include="Avalonia.Desktop" Version="0.10.0" />
     <PackageReference Include="Avalonia.Diagnostics" Version="0.10.0" />
-    <PackageReference Include="BCnEncoder.Net" Version="2.0.3" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
   </ItemGroup>
 
@@ -49,21 +48,25 @@
       <UABEANativeConfig>win-x64</UABEANativeConfig>
       <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\bin\x64\$(Configuration)\TexToolWrap.dll</TexToolWrapBinDir>
       <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Windows_x86_64\PVRTexLib.dll</PVRTexToolBinDir>
+      <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\win64\ispc_texcomp.dll</ISPCBinDir>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Windows)) AND '$(Platform)' == 'x86'">
       <UABEANativeConfig>win-x86</UABEANativeConfig>
       <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\bin\Win32\$(Configuration)\TexToolWrap.dll</TexToolWrapBinDir>
       <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Windows_x86_32\PVRTexLib.dll</PVRTexToolBinDir>
+      <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\win32\ispc_texcomp.dll</ISPCBinDir>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Linux)) AND '$(LinuxUnameM)' == 'x86_64'">
       <UABEANativeConfig>linux-x64</UABEANativeConfig>
 	  <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\libtextoolwrap.so</TexToolWrapBinDir>
 	  <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Linux_x86_64\libPVRTexLib.so</PVRTexToolBinDir>
+      <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\linux64\libispc_texcomp.so</ISPCBinDir>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Linux)) AND ('$(LinuxUnameM)' == 'i386' OR '$(Platform)' == 'i686')">
       <UABEANativeConfig>linux-x86</UABEANativeConfig>
 	  <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\libtextoolwrap.so</TexToolWrapBinDir>
 	  <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Linux_x86_32\libPVRTexLib.so</PVRTexToolBinDir>
+      <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\linux32\libispc_texcomp.so</ISPCBinDir>
     </PropertyGroup>
 	
     <Message Importance="High" Text="TEXTUREPLUGIN BUILD INFO" />
@@ -81,9 +84,10 @@
       <UABEABinDir>$(SolutionDir)UABEAvalonia\$(OutputPath)</UABEABinDir>
     </PropertyGroup>
     
-    <!-- copy textoolwrap and pvrtexlib -->
+    <!-- copy textoolwrap and deps -->
     <Copy SourceFiles="$(TexToolWrapBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(PVRTexToolBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
+    <Copy SourceFiles="$(ISPCBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
 	
     <!-- copy textureplugin -->
     <Copy SourceFiles="$(OutputPath)TexturePlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
@@ -95,9 +99,10 @@
       <UABEABinDir>$(SolutionDir)UABEAvalonia\$(PublishDir)</UABEABinDir>
     </PropertyGroup>
     
-    <!-- copy textoolwrap and pvrtexlib -->
+    <!-- copy textoolwrap and deps -->
     <Copy SourceFiles="$(TexToolWrapBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(PVRTexToolBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
+    <Copy SourceFiles="$(ISPCBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
 	
     <!-- copy textureplugin -->
     <Copy SourceFiles="$(OutputPath)TexturePlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />

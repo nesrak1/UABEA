@@ -188,10 +188,25 @@ namespace TexturePlugin
             return true;
         }
 
+        public AssetTypeValueField GetByteArrayTexture(AssetWorkspace workspace, AssetExternal tex)
+        {
+            ClassDatabaseType textureType = AssetHelper.FindAssetClassByID(workspace.am.classFile, tex.info.curFileType);
+            AssetTypeTemplateField textureTemp = new AssetTypeTemplateField();
+            textureTemp.FromClassDatabase(workspace.am.classFile, textureType, 0);
+            AssetTypeTemplateField image_data = textureTemp.children.FirstOrDefault(f => f.name == "image data");
+            if (image_data == null)
+                return null;
+            image_data.valueType = EnumValueTypes.ByteArray;
+            AssetTypeInstance textureTypeInstance = new AssetTypeInstance(new[] { textureTemp }, tex.file.file.reader, tex.info.absoluteFilePos);
+            AssetTypeValueField textureBase = textureTypeInstance.GetBaseField();
+            return textureBase;
+        }
+
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
         {
             AssetExternal tex = selection[0];
-            AssetTypeValueField texBaseField = tex.instance.GetBaseField();
+
+            AssetTypeValueField texBaseField = GetByteArrayTexture(workspace, tex);
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
             EditDialog dialog = new EditDialog(texFile.m_Name, texFile, texBaseField);
             bool saved = await dialog.ShowDialog<bool>(win);

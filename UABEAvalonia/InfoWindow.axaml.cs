@@ -277,7 +277,7 @@ namespace UABEAvalonia
         {
             //only supports one item atm
             List<AssetExternal> exts = new List<AssetExternal>();
-            exts.Add(GetSelectedExternalReplaced());
+            exts.Add(GetSelectedExternalReplaced(true));
             PluginWindow plug = new PluginWindow(this, Workspace, exts, pluginManager);
             await plug.ShowDialog(this);
         }
@@ -454,18 +454,18 @@ namespace UABEAvalonia
             return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID).instance.GetBaseField();
         }
 
-        private AssetExternal GetSelectedExternalReplaced()
+        private AssetExternal GetSelectedExternalReplaced(bool onlyInfo = false)
         {
             AssetInfoDataGridItem gridItem = GetGridItem();
 
             AssetID assetId = new AssetID(Workspace.mainFile.name, gridItem.PathID);
             if (Workspace.NewAssetDatas.ContainsKey(assetId))
             {
-                return am.GetExtAssetNewData(assetsFile, gridItem.FileID, gridItem.PathID, Workspace.NewAssetDatas[assetId]);
+                return am.GetExtAssetNewData(assetsFile, gridItem.FileID, gridItem.PathID, Workspace.NewAssetDatas[assetId], onlyInfo);
             }
             else
             {
-                return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID);
+                return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID, onlyInfo);
             }
         }
 

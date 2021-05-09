@@ -182,7 +182,7 @@ namespace TexturePlugin
                 case TextureFormat.ASTC_RGBA_10x10:
                 case TextureFormat.ASTC_RGBA_12x12:
                 {
-                    byte[] dest = new byte[data.Length*16]; //just to be safe, buf is 16 times size of original (obv this is prob too big)
+                    byte[] dest = new byte[width * height * 4];
                     uint size = 0;
                     unsafe
                     {
@@ -327,7 +327,7 @@ namespace TexturePlugin
                 case TextureFormat.ASTC_RGBA_10x10:
                 case TextureFormat.ASTC_RGBA_12x12:
                 {
-                    byte[] dest = new byte[width * height * 4];
+                    byte[] dest = new byte[width * height * 16]; //just to be safe, buf is 16 times size of original (obv this is prob too big)
                     uint size = 0;
                     unsafe
                     {
@@ -354,21 +354,33 @@ namespace TexturePlugin
                 }
                 case TextureFormat.DXT1:
                 case TextureFormat.DXT5:
-                case TextureFormat.BC4:
-                case TextureFormat.BC5:
                 case TextureFormat.BC7:
-                    CompressionFormat bcFmt = CompressionFormat.Bc1;
-                    switch (format)
+                {
+                    byte[] dest = new byte[width * height * 4];
+                    uint size = 0;
+                    unsafe
                     {
-                        case TextureFormat.DXT1: bcFmt = CompressionFormat.Bc1; break;
-                        case TextureFormat.DXT5: bcFmt = CompressionFormat.Bc3; break;
-                        case TextureFormat.BC4:  bcFmt = CompressionFormat.Bc4; break;
-                        case TextureFormat.BC5:  bcFmt = CompressionFormat.Bc5; break;
-                        case TextureFormat.BC7:  bcFmt = CompressionFormat.Bc7; break;
+                        fixed (byte* dataPtr = data)
+                        fixed (byte* destPtr = dest)
+                        {
+                            IntPtr dataIntPtr = (IntPtr)dataPtr;
+                            IntPtr destIntPtr = (IntPtr)destPtr;
+                            size = PInvoke.EncodeByISPC(dataIntPtr, destIntPtr, (int)format, quality, (uint)width, (uint)height);
+                        }
                     }
-                    BcEncoder enc = new BcEncoder(bcFmt);
-                    enc.OutputOptions.GenerateMipMaps = false;
-                    return enc.EncodeToRawBytes(data, width, height, PixelFormat.Rgba32, 0, out int _, out int _);
+                    if (size > 0)
+                    {
+                        byte[] resizedDest = new byte[size];
+                        Buffer.BlockCopy(dest, 0, resizedDest, 0, (int)size);
+                        dest = null;
+                        return resizedDest;
+                    }
+                    else
+                    {
+                        dest = null;
+                        return null;
+                    }
+                }
                 case TextureFormat.BC6H: //pls don't use
                     return null;
                 default:

@@ -1,4 +1,5 @@
 #include "PVRTexLib/Include/PVRTexLib.hpp"
+#include "ispc/include/ispc_texcomp.h"
 #include <cstring>
 #include <stdio.h>
 
@@ -110,6 +111,35 @@ EXPORT unsigned int EncodeByPVRTexLib(void* data, void* outBuf, int mode, int le
 	unsigned int size = pvrt.GetTextureDataSize();
 	memcpy(outBuf, newData, size);
 	return size;
+}
+
+EXPORT unsigned int EncodeByISPC(void* data, void* outBuf, int mode, int level, unsigned int width, unsigned int height) {
+	rgba_surface surface;
+	surface.ptr = (uint8_t*)data;
+	surface.width = width;
+	surface.height = height;
+	surface.stride = width * 4;
+
+	int blockCountX = (width + 3) >> 2;
+	int blockCountY = (height + 3) >> 2;
+	int blockByteSize = 0;
+
+	if (mode == 10) { //DXT1
+		CompressBlocksBC1(&surface, (uint8_t*)outBuf);
+		blockByteSize = 8;
+	} else if (mode == 12) { //DXT5
+		CompressBlocksBC3(&surface, (uint8_t*)outBuf);
+		blockByteSize = 16;
+	} else if (mode == 25) { //BC7
+		bc7_enc_settings bc7settings;
+		GetProfile_alpha_basic(&bc7settings); //GetProfile_alpha_slow
+		CompressBlocksBC7(&surface, (uint8_t*)outBuf, &bc7settings);
+		blockByteSize = 16;
+	} else {
+		return 0;
+	}
+
+	return blockCountX * blockCountY * blockByteSize;
 }
 
 EXPORT unsigned int DecodeByCrunchUnity(void* data, void* outBuf, int mode, unsigned int width, unsigned int height) {
