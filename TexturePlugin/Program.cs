@@ -122,7 +122,7 @@ namespace TexturePlugin
             {
                 //bundle resS
                 TextureFile.StreamingInfo streamInfo = texFile.m_StreamData;
-                if (streamInfo.path != null && tex.file.parentBundle != null)
+                if (streamInfo.path != null && streamInfo.path != "" && tex.file.parentBundle != null)
                 {
                     //some versions apparently don't use archive:/
                     string searchPath = streamInfo.path;
