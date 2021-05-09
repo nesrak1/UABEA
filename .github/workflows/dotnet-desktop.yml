@@ -1,0 +1,33 @@
+name: Build UABEA Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Build
+      run: msbuild UABEAvalonia.sln /restore /p:Configuration=Release
+      
+    - uses: actions/upload-artifact@v2
+      with:
+        name: uabea-windows
+        path: UABEAvalonia/bin/Release/net5.0
