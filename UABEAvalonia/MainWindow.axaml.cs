@@ -119,7 +119,9 @@ namespace UABEAvalonia
                     string assetName = Path.GetFileNameWithoutExtension(selectedFile);
 
                     AssetsFileInstance fileInst = am.LoadAssetsFile(selectedFile, true);
-                    am.LoadClassDatabaseFromPackage(fileInst.file.typeTree.unityVersion);
+
+                    if (!await LoadOrAskTypeData(fileInst))
+                        return;
 
                     InfoWindow info = new InfoWindow(am, fileInst, assetName, false);
                     info.Show();
@@ -157,6 +159,21 @@ namespace UABEAvalonia
         {
             await AskForSave();
             CloseAllFiles();
+        }
+
+        private async Task<bool> LoadOrAskTypeData(AssetsFileInstance fileInst)
+        {
+            string uVer = fileInst.file.typeTree.unityVersion;
+            if (am.LoadClassDatabaseFromPackage(uVer) == null)
+            {
+                VersionWindow version = new VersionWindow(uVer, am.classPackage);
+                var newFile = await version.ShowDialog<ClassDatabaseFile>(this);
+                if (newFile == null)
+                    return false;
+
+                am.classFile = newFile;
+            }
+            return true;
         }
 
         private async Task AskForSaveLocation()
@@ -387,7 +404,9 @@ namespace UABEAvalonia
                 {
                     string assetMemPath = Path.Combine(bundleInst.path, bunAssetName);
                     AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, assetMemPath, true);
-                    am.LoadClassDatabaseFromPackage(fileInst.file.typeTree.unityVersion);
+
+                    if (!await LoadOrAskTypeData(fileInst))
+                        return;
 
                     if (bundleInst != null && fileInst.parentBundle == null)
                         fileInst.parentBundle = bundleInst;
