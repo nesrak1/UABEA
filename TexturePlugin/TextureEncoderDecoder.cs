@@ -228,7 +228,14 @@ namespace TexturePlugin
                     }
                     return dxt5;
                 case TextureFormat.BC7:
-                    return BC7Decoder.ReadBC7(data, width, height);
+                    byte[] bc7 = BC7Decoder.ReadBC7(data, width, height);
+                    for (int i = 0; i < bc7.Length; i += 4)
+                    {
+                        byte temp = bc7[i];
+                        bc7[i] = bc7[i + 2];
+                        bc7[i + 2] = temp;
+                    }
+                    return bc7;
                 case TextureFormat.BC6H: //pls don't use
                 case TextureFormat.BC4:
                 case TextureFormat.BC5:
