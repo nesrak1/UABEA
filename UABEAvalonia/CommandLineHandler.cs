@@ -35,7 +35,7 @@ namespace UABEAvalonia
 
         private static string GetMainFileName(string[] args)
         {
-            for (int i = 2; i < args.Length; i++)
+            for (int i = 1; i < args.Length; i++)
             {
                 if (!args[i].StartsWith("-"))
                     return args[i];
@@ -46,7 +46,7 @@ namespace UABEAvalonia
         private static HashSet<string> GetFlags(string[] args)
         {
             HashSet<string> flags = new HashSet<string>();
-            for (int i = 2; i < args.Length; i++)
+            for (int i = 1; i < args.Length; i++)
             {
                 if (args[i].StartsWith("-"))
                     flags.Add(args[i]);

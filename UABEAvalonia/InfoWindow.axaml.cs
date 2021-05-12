@@ -275,6 +275,9 @@ namespace UABEAvalonia
 
         private async void BtnPlugin_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
+            if (await FailIfNothingSelected())
+                return;
+
             //only supports one item atm
             List<AssetExternal> exts = new List<AssetExternal>();
             exts.Add(GetSelectedExternalReplaced(true));
