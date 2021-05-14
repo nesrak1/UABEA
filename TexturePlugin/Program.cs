@@ -56,7 +56,7 @@ namespace TexturePlugin
     {
         public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetExternal> selection, out string name)
         {
-            name = "Batch import";
+            name = "Batch import .png";
 
             if (action != UABEAPluginAction.Import)
                 return false;
@@ -91,11 +91,11 @@ namespace TexturePlugin
             OpenFolderDialog ofd = new OpenFolderDialog();
             ofd.Title = "Select import directory";
 
-            string file = await ofd.ShowAsync(win);
+            string dir = await ofd.ShowAsync(win);
 
-            if (file != null && file != string.Empty)
+            if (dir != null && dir != string.Empty)
             {
-                ImportBatch dialog = new ImportBatch(workspace, selection, file);
+                ImportBatch dialog = new ImportBatch(workspace, selection, dir);
                 bool saved = await dialog.ShowDialog<bool>(win);
                 if (saved)
                 {
@@ -149,15 +149,96 @@ namespace TexturePlugin
                 return await SingleExport(win, workspace, selection);
         }
 
+        private bool GetResSTexture(TextureFile texFile, AssetExternal ext)
+        {
+            TextureFile.StreamingInfo streamInfo = texFile.m_StreamData;
+            if (streamInfo.path != null && streamInfo.path != "" && ext.file.parentBundle != null)
+            {
+                //some versions apparently don't use archive:/
+                string searchPath = streamInfo.path;
+                if (searchPath.StartsWith("archive:/"))
+                    searchPath = searchPath.Substring(9);
+
+                searchPath = Path.GetFileName(searchPath);
+
+                AssetBundleFile bundle = ext.file.parentBundle.file;
+
+                AssetsFileReader reader = bundle.reader;
+                AssetBundleDirectoryInfo06[] dirInf = bundle.bundleInf6.dirInf;
+                for (int i = 0; i < dirInf.Length; i++)
+                {
+                    AssetBundleDirectoryInfo06 info = dirInf[i];
+                    if (info.name == searchPath)
+                    {
+                        reader.Position = bundle.bundleHeader6.GetFileDataOffset() + info.offset + streamInfo.offset;
+                        texFile.pictureData = reader.ReadBytes((int)streamInfo.size);
+                        texFile.m_StreamData.offset = 0;
+                        texFile.m_StreamData.size = 0;
+                        texFile.m_StreamData.path = "";
+                        return true;
+                    }
+                }
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
         public async Task<bool> BatchExport(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
         {
-            return await Task.FromResult(false);
+            for (int i = 0; i < selection.Count; i++)
+            {
+                AssetExternal ext = selection[i];
+                AssetExternal newExt = new AssetExternal()
+                {
+                    file = ext.file,
+                    info = ext.info,
+                    instance = TextureHelper.GetByteArrayTexture(workspace, ext)
+                };
+                selection[i] = newExt;
+            }
+
+            OpenFolderDialog ofd = new OpenFolderDialog();
+            ofd.Title = "Select export directory";
+
+            string dir = await ofd.ShowAsync(win);
+
+            if (dir != null && dir != string.Empty)
+            {
+                foreach (AssetExternal ext in selection)
+                {
+                    AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, ext).GetBaseField();
+                    TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
+
+                    string file = Path.Combine(dir, $"{texFile.m_Name}-{Path.GetFileName(ext.file.path)}-{ext.info.index}.png");
+
+                    //bundle resS
+                    if (!GetResSTexture(texFile, ext))
+                    {
+                        await MessageBoxUtil.ShowDialog(win, "Error", "resS was detected but no file was found in bundle");
+                        return false;
+                    }
+
+                    byte[] data = TextureHelper.GetRawTextureBytes(texFile, ext.file);
+
+                    bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
+                    if (!success)
+                    {
+                        await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to decode texture\n({(TextureFormat)texFile.m_TextureFormat})");
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
         }
         public async Task<bool> SingleExport(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
         {
-            AssetExternal tex = selection[0];
+            AssetExternal ext = selection[0];
 
-            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, tex).GetBaseField();
+            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, ext).GetBaseField();
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
             SaveFileDialog sfd = new SaveFileDialog();
 
@@ -165,51 +246,26 @@ namespace TexturePlugin
             sfd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "PNG file", Extensions = new List<string>() { "png" } }
             };
+            sfd.InitialFileName = $"{texFile.m_Name}-{Path.GetFileName(ext.file.path)}-{ext.info.index}.png";
 
             string file = await sfd.ShowAsync(win);
 
             if (file != null && file != string.Empty)
             {
                 //bundle resS
-                TextureFile.StreamingInfo streamInfo = texFile.m_StreamData;
-                if (streamInfo.path != null && streamInfo.path != "" && tex.file.parentBundle != null)
+                if (!GetResSTexture(texFile, ext))
                 {
-                    //some versions apparently don't use archive:/
-                    string searchPath = streamInfo.path;
-                    if (searchPath.StartsWith("archive:/"))
-                        searchPath = searchPath.Substring(9);
-
-                    searchPath = Path.GetFileName(searchPath);
-
-                    AssetBundleFile bundle = tex.file.parentBundle.file;
-
-                    AssetsFileReader reader = bundle.reader;
-                    AssetBundleDirectoryInfo06[] dirInf = bundle.bundleInf6.dirInf;
-                    bool foundFile = false;
-                    for (int i = 0; i < dirInf.Length; i++)
-                    {
-                        AssetBundleDirectoryInfo06 info = dirInf[i];
-                        if (info.name == searchPath)
-                        {
-                            reader.Position = bundle.bundleHeader6.GetFileDataOffset() + info.offset + streamInfo.offset;
-                            texFile.pictureData = reader.ReadBytes((int)streamInfo.size);
-                            texFile.m_StreamData.offset = 0;
-                            texFile.m_StreamData.size = 0;
-                            texFile.m_StreamData.path = "";
-                            foundFile = true;
-                            break;
-                        }
-                    }
-                    if (!foundFile)
-                    {
-                        await MessageBoxUtil.ShowDialog(win, "Error", "resS was detected but no file was found in bundle");
-                        return false;
-                    }
+                    await MessageBoxUtil.ShowDialog(win, "Error", "resS was detected but no file was found in bundle");
+                    return false;
                 }
 
-                byte[] data = TextureHelper.GetRawTextureBytes(texFile, tex.file);
+                byte[] data = TextureHelper.GetRawTextureBytes(texFile, ext.file);
 
                 bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
+                if (!success)
+                {
+                    await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to decode texture\n({(TextureFormat)texFile.m_TextureFormat})");
+                }
                 return success;
             }
             return false;
