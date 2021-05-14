@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AssetsTools.NET" Version="2.0.9" />
     <PackageReference Include="Avalonia" Version="0.10.0" />

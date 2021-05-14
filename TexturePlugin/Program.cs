@@ -11,60 +11,9 @@ using UABEAvalonia.Plugins;
 
 namespace TexturePlugin
 {
-    public class ImportTextureOption : UABEAPluginOption
+    public static class TextureHelper
     {
-        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetExternal> selection, out string name)
-        {
-            name = "Import .png";
-
-            if (action != UABEAPluginAction.Import)
-                return false;
-
-            //temporary
-            if (selection.Count != 1)
-                return false;
-
-            int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
-
-            foreach (AssetExternal ext in selection)
-            {
-                if (ext.info.curFileType != classId)
-                    return false;
-            }
-            return true;
-        }
-
-        public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
-        {
-            await MessageBoxUtil.ShowDialog(win, "Not Implemented", "Import png option not supported,\nbut you can still import an image\nwith Edit. Use that instead.");
-            return false;
-        }
-    }
-
-    public class ExportTextureOption : UABEAPluginOption
-    {
-        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetExternal> selection, out string name)
-        {
-            name = "Export .png";
-
-            if (action != UABEAPluginAction.Export)
-                return false;
-
-            //temporary
-            if (selection.Count != 1)
-                return false;
-
-            int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
-
-            foreach (AssetExternal ext in selection)
-            {
-                if (ext.info.curFileType != classId)
-                    return false;
-            }
-            return true;
-        }
-
-        public AssetTypeValueField GetByteArrayTexture(AssetWorkspace workspace, AssetExternal tex)
+        public static AssetTypeInstance GetByteArrayTexture(AssetWorkspace workspace, AssetExternal tex)
         {
             ClassDatabaseType textureType = AssetHelper.FindAssetClassByID(workspace.am.classFile, tex.info.curFileType);
             AssetTypeTemplateField textureTemp = new AssetTypeTemplateField();
@@ -74,11 +23,10 @@ namespace TexturePlugin
                 return null;
             image_data.valueType = EnumValueTypes.ByteArray;
             AssetTypeInstance textureTypeInstance = new AssetTypeInstance(new[] { textureTemp }, tex.file.file.reader, tex.info.absoluteFilePos);
-            AssetTypeValueField textureBase = textureTypeInstance.GetBaseField();
-            return textureBase;
+            return textureTypeInstance;
         }
 
-        public byte[] GetRawTextureBytes(TextureFile texFile, AssetsFileInstance inst)
+        public static byte[] GetRawTextureBytes(TextureFile texFile, AssetsFileInstance inst)
         {
             string rootPath = Path.GetDirectoryName(inst.path);
             if (texFile.m_StreamData.size != 0 && texFile.m_StreamData.path != string.Empty)
@@ -102,12 +50,114 @@ namespace TexturePlugin
             }
             return texFile.pictureData;
         }
+    }
+
+    public class ImportTextureOption : UABEAPluginOption
+    {
+        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetExternal> selection, out string name)
+        {
+            name = "Batch import";
+
+            if (action != UABEAPluginAction.Import)
+                return false;
+
+            if (selection.Count <= 1)
+                return false;
+
+            int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
+
+            foreach (AssetExternal ext in selection)
+            {
+                if (ext.info.curFileType != classId)
+                    return false;
+            }
+            return true;
+        }
 
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
         {
+            for (int i = 0; i < selection.Count; i++)
+            {
+                AssetExternal ext = selection[i];
+                AssetExternal newExt = new AssetExternal()
+                {
+                    file = ext.file,
+                    info = ext.info,
+                    instance = TextureHelper.GetByteArrayTexture(workspace, ext)
+                };
+                selection[i] = newExt;
+            }
+
+            OpenFolderDialog ofd = new OpenFolderDialog();
+            ofd.Title = "Select import directory";
+
+            string file = await ofd.ShowAsync(win);
+
+            if (file != null && file != string.Empty)
+            {
+                ImportBatch dialog = new ImportBatch(workspace, selection, file);
+                bool saved = await dialog.ShowDialog<bool>(win);
+                if (saved)
+                {
+                    //some of the assets may not get modified, but
+                    //uabe still makes replacers for those anyway
+                    foreach (AssetExternal ext in selection)
+                    {
+                        byte[] savedAsset = ext.instance.WriteToByteArray();
+
+                        var replacer = new AssetsReplacerFromMemory(
+                            0, ext.info.index, (int)ext.info.curFileType,
+                            AssetHelper.GetScriptIndex(ext.file.file, ext.info), savedAsset);
+
+                        workspace.AddReplacer(ext.file, replacer, new MemoryStream(savedAsset));
+                    }
+
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public class ExportTextureOption : UABEAPluginOption
+    {
+        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetExternal> selection, out string name)
+        {
+            if (selection.Count > 1)
+                name = "Batch export .png";
+            else
+                name = "Export .png";
+
+            if (action != UABEAPluginAction.Export)
+                return false;
+
+            int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
+
+            foreach (AssetExternal ext in selection)
+            {
+                if (ext.info.curFileType != classId)
+                    return false;
+            }
+            return true;
+        }
+
+        public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
+        {
+            if (selection.Count > 1)
+                return await BatchExport(win, workspace, selection);
+            else
+                return await SingleExport(win, workspace, selection);
+        }
+
+        public async Task<bool> BatchExport(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
+        {
+            return await Task.FromResult(false);
+        }
+        public async Task<bool> SingleExport(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
+        {
             AssetExternal tex = selection[0];
 
-            AssetTypeValueField texBaseField = GetByteArrayTexture(workspace, tex);
+            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, tex).GetBaseField();
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
             SaveFileDialog sfd = new SaveFileDialog();
 
@@ -157,7 +207,7 @@ namespace TexturePlugin
                     }
                 }
 
-                byte[] data = GetRawTextureBytes(texFile, tex.file);
+                byte[] data = TextureHelper.GetRawTextureBytes(texFile, tex.file);
 
                 bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                 return success;
@@ -188,25 +238,11 @@ namespace TexturePlugin
             return true;
         }
 
-        public AssetTypeValueField GetByteArrayTexture(AssetWorkspace workspace, AssetExternal tex)
-        {
-            ClassDatabaseType textureType = AssetHelper.FindAssetClassByID(workspace.am.classFile, tex.info.curFileType);
-            AssetTypeTemplateField textureTemp = new AssetTypeTemplateField();
-            textureTemp.FromClassDatabase(workspace.am.classFile, textureType, 0);
-            AssetTypeTemplateField image_data = textureTemp.children.FirstOrDefault(f => f.name == "image data");
-            if (image_data == null)
-                return null;
-            image_data.valueType = EnumValueTypes.ByteArray;
-            AssetTypeInstance textureTypeInstance = new AssetTypeInstance(new[] { textureTemp }, tex.file.file.reader, tex.info.absoluteFilePos);
-            AssetTypeValueField textureBase = textureTypeInstance.GetBaseField();
-            return textureBase;
-        }
-
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
         {
             AssetExternal tex = selection[0];
 
-            AssetTypeValueField texBaseField = GetByteArrayTexture(workspace, tex);
+            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, tex).GetBaseField();
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
             EditDialog dialog = new EditDialog(texFile.m_Name, texFile, texBaseField);
             bool saved = await dialog.ShowDialog<bool>(win);

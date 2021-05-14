@@ -310,6 +310,8 @@ namespace UABEAvalonia
             comboItems = new ObservableCollection<ComboBoxItem>();
             comboBox.Items = comboItems;
 
+            bundleInst = null;
+
             lblFileName.Text = "No file opened.";
         }
 

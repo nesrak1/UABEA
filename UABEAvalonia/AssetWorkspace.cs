@@ -15,6 +15,9 @@ namespace UABEAvalonia
         public AssetsFileInstance mainFile { get; }
         public bool fromBundle { get; }
 
+        public List<AssetsFileInstance> LoadedFiles { get; }
+        public List<AssetExternal> LoadedAssets { get; }
+        
         public Dictionary<AssetID, AssetsReplacer> NewAssets { get; }
         public Dictionary<AssetID, Stream> NewAssetDatas { get; } //for preview in info window
 
@@ -29,6 +32,9 @@ namespace UABEAvalonia
             this.am = am;
             this.mainFile = assetsFile;
             this.fromBundle = fromBundle;
+
+            LoadedFiles = new List<AssetsFileInstance>();
+            LoadedAssets = new List<AssetExternal>();
 
             NewAssets = new Dictionary<AssetID, AssetsReplacer>();
             NewAssetDatas = new Dictionary<AssetID, Stream>();

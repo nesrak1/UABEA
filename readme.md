@@ -1,14 +1,8 @@
-#### before you make a bug report
-
-this project is not finished yet. that includes plugin support, searching, whatever. I know many people want plugin support and texture importing/exporting. please do not make an issue on plugins, or anything that is on the todo list below. they are already coming soon. thanks.
-
 ## uabe avalonia
 
-a quick port of uabe to avalonia made in a few days, basic features supported so far but still tons missing. for now you can only import and export assets and modify bundles, everything else is not supported.
+uabe remade in c# with avalonia.
 
-I made this so I can easily edit assets in newer unity games (import/export raw and dump). it's not really finished yet and probably not useful to most people.
-
-this project is made with avalonia so you can run it pretty much anywhere instead of being windows dependent, but avalonia turned out to be kind of hard to develop with so I apologize in advance for the bad code and hacks.
+uabea is still missing a lot of features and has lots of bugs, so unless your game is unity 2019.3+, please use the original uabe for now.
 
 supported unity versions: **5 - 2020.2**
 
@@ -17,15 +11,12 @@ todo (basically everything)
 * any error checking
 * add / remove assets
 * asset list searching
-* dependency loading (including data view)
+* ~~dependency loading (including data view)~~
 * monobehaviour deserialization in data view
-* everything bundles (packing, importing, etc)
-* plugin support and plugins themselves
+* ~~everything bundles (packing, importing, etc)~~
+* ~~plugin support~~ and plugins themselves
+  * ~~texture plugin~~
+  * text asset plugin
+  * audio plugin?
+  * mesh plugin?
 * implement the features that are going to be in [new uabe](https://community.7daystodie.com/topic/1871-unity-assets-bundle-extractor/?do=findComment&comment=357397)
-
-
-
-a random beat saber saber's bundle I found:
-
-![screenshot](screenshot.png)
-

@@ -32,8 +32,8 @@ namespace UABEAvalonia
         private TextBox boxPathId;
         private TextBox boxFileId;
         private TextBox boxType;
-        public MenuItem menuSave;
-        public MenuItem menuClose;
+        private MenuItem menuSave;
+        private MenuItem menuClose;
 
         //todo, rework all this
         public AssetWorkspace Workspace { get; }
@@ -84,15 +84,6 @@ namespace UABEAvalonia
 
         public InfoWindow(AssetsManager assetsManager, AssetsFileInstance assetsFile, string name, bool fromBundle) : this()
         {
-            //this.am = assetsManager;
-            //this.assetsFile = assetsFile;
-            //this.fromBundle = fromBundle;
-            //AssetsFileName = name;
-            //
-            //newAssets = new Dictionary<long, AssetsReplacer>();
-            //newAssetDatas = new Dictionary<long, MemoryStream>();
-            //modified = false;
-
             Workspace = new AssetWorkspace(assetsManager, assetsFile, fromBundle, name);
             Workspace.ItemUpdated += Workspace_ItemUpdated;
 
@@ -102,7 +93,7 @@ namespace UABEAvalonia
             pluginManager = new PluginManager();
             pluginManager.LoadPluginsInDirectory("plugins");
 
-            this.DataContext = this;
+            //this.DataContext = this;
         }
 
         private async void BtnViewData_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -110,7 +101,7 @@ namespace UABEAvalonia
             if (await FailIfNothingSelected())
                 return;
 
-            AssetInfoDataGridItem gridItem = GetGridItem();
+            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
             if (gridItem.Size > 500000)
             {
                 var bigFileBox = MessageBoxManager
@@ -182,7 +173,7 @@ namespace UABEAvalonia
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
                     AssetImportExport dumper = new AssetImportExport();
-                    dumper.DumpTextAsset(sw, GetSelectedField());
+                    dumper.DumpTextAsset(sw, GetSelectedBaseField());
                 }
             }
         }
@@ -278,9 +269,7 @@ namespace UABEAvalonia
             if (await FailIfNothingSelected())
                 return;
 
-            //only supports one item atm
-            List<AssetExternal> exts = new List<AssetExternal>();
-            exts.Add(GetSelectedExternalReplaced(true));
+            List<AssetExternal> exts = GetSelectedExternalsReplaced(true);
             PluginWindow plug = new PluginWindow(this, Workspace, exts, pluginManager);
             await plug.ShowDialog(this);
         }
@@ -357,9 +346,14 @@ namespace UABEAvalonia
         {
             dataGridItems = new ObservableCollection<AssetInfoDataGridItem>();
 
-            bool usingTypeTree = assetsFile.file.typeTree.hasTypeTree;
-            foreach (AssetFileInfoEx info in assetsFile.table.assetFileInfo)
+            LoadAllAssetsWithDeps();
+
+            foreach (AssetExternal ext in Workspace.LoadedAssets)
             {
+                AssetsFile thisFile = ext.file.file;
+                AssetFileInfoEx thisInfo = ext.info;
+                bool usingTypeTree = ext.file.file.typeTree.hasTypeTree;
+
                 string name;
                 string container;
                 string type;
@@ -368,17 +362,17 @@ namespace UABEAvalonia
                 int size;
                 string modified;
 
-                ClassDatabaseType cldbType = AssetHelper.FindAssetClassByID(am.classFile, info.curFileType);
-                name = AssetHelper.GetAssetNameFast(assetsFile.file, am.classFile, info); //handles both cldb and typetree
+                ClassDatabaseType cldbType = AssetHelper.FindAssetClassByID(am.classFile, thisInfo.curFileType);
+                name = AssetHelper.GetAssetNameFast(thisFile, am.classFile, thisInfo); //handles both cldb and typetree
                 container = string.Empty;
-                fileId = 0;
-                pathId = info.index;
-                size = (int)info.curFileSize;
+                fileId = Workspace.LoadedFiles.IndexOf(ext.file); //todo faster lookup THIS IS JUST FOR TESTING
+                pathId = thisInfo.index;
+                size = (int)thisInfo.curFileSize;
                 modified = "";
 
                 if (usingTypeTree)
                 {
-                    Type_0D ttType = assetsFile.file.typeTree.unity5Types[info.curFileTypeOrIndex];
+                    Type_0D ttType = thisFile.typeTree.unity5Types[thisInfo.curFileTypeOrIndex];
                     if (ttType.typeFieldsEx.Length != 0)
                     {
                         type = ttType.typeFieldsEx[0].GetTypeString(ttType.stringTable);
@@ -388,7 +382,7 @@ namespace UABEAvalonia
                         if (cldbType != null)
                             type = cldbType.name.GetString(am.classFile);
                         else
-                            type = $"0x{info.curFileType:X8}";
+                            type = $"0x{thisInfo.curFileType:X8}";
                     }
                 }
                 else
@@ -396,10 +390,10 @@ namespace UABEAvalonia
                     if (cldbType != null)
                         type = cldbType.name.GetString(am.classFile);
                     else
-                        type = $"0x{info.curFileType:X8}";
+                        type = $"0x{thisInfo.curFileType:X8}";
                 }
 
-                if (info.curFileType == 0x01)
+                if (thisInfo.curFileType == 0x01)
                 {
                     name = $"GameObject {name}";
                 }
@@ -413,7 +407,7 @@ namespace UABEAvalonia
                     Name = name,
                     Container = container,
                     Type = type,
-                    TypeID = info.curFileType,
+                    TypeID = thisInfo.curFileType,
                     FileID = fileId,
                     PathID = pathId,
                     Size = size,
@@ -423,6 +417,39 @@ namespace UABEAvalonia
                 dataGridItems.Add(item);
             }
             return dataGridItems;
+        }
+
+        private void LoadAllAssetsWithDeps()
+        {
+            HashSet<string> fileNames = new HashSet<string>();
+            RecurseGetAllAssets(assetsFile, Workspace.LoadedAssets, Workspace.LoadedFiles, fileNames);
+        }
+
+        private void RecurseGetAllAssets(AssetsFileInstance fromFile, List<AssetExternal> exts, List<AssetsFileInstance> files, HashSet<string> fileNames)
+        {
+            files.Add(fromFile);
+            fileNames.Add(fromFile.path);
+
+            foreach (AssetFileInfoEx info in fromFile.table.assetFileInfo)
+            {
+                exts.Add(am.GetExtAsset(fromFile, 0, info.index, true));
+            }
+
+            for (int i = 0; i < fromFile.dependencies.Count; i++)
+            {
+                AssetsFileInstance dep = fromFile.GetDependency(am, i);
+                if (dep == null)
+                    continue;
+                string depPath = dep.path.ToLower();
+                if (!fileNames.Contains(depPath))
+                {
+                    RecurseGetAllAssets(dep, exts, files, fileNames);
+                }
+                else
+                {
+                    continue;
+                }
+            }
         }
 
         private async Task<bool> FailIfNothingSelected()
@@ -440,36 +467,82 @@ namespace UABEAvalonia
             return false;
         }
 
-        private AssetInfoDataGridItem GetGridItem()
+        private AssetInfoDataGridItem GetSelectedGridItem()
         {
             return (AssetInfoDataGridItem)dataGrid.SelectedItem;
         }
 
-        private AssetFileInfoEx GetSelectedInfo()
+        private List<AssetInfoDataGridItem> GetSelectedGridItems()
         {
-            AssetInfoDataGridItem gridItem = GetGridItem();
-            return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID).info;
+            return dataGrid.SelectedItems.Cast<AssetInfoDataGridItem>().ToList();
         }
 
-        private AssetTypeValueField GetSelectedField()
+        private AssetFileInfoEx GetSelectedInfo()
         {
-            AssetInfoDataGridItem gridItem = GetGridItem();
-            return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID).instance.GetBaseField();
+            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
+            return am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID).info;
+        }
+
+        private List<AssetFileInfoEx> GetSelectedInfos()
+        {
+            List<AssetInfoDataGridItem> gridItems = GetSelectedGridItems();
+            List<AssetFileInfoEx> infos = new List<AssetFileInfoEx>();
+            foreach (var gridItem in gridItems)
+            {
+                infos.Add(am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID).info);
+            }
+            return infos;
+        }
+
+        private AssetTypeValueField GetSelectedBaseField()
+        {
+            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
+            return am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID).instance.GetBaseField();
+        }
+
+        private List<AssetTypeValueField> GetSelectedBaseFields()
+        {
+            List<AssetInfoDataGridItem> gridItems = GetSelectedGridItems();
+            List<AssetTypeValueField> fields = new List<AssetTypeValueField>();
+            foreach (var gridItem in gridItems)
+            {
+                fields.Add(am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID).instance.GetBaseField());
+            }
+            return fields;
         }
 
         private AssetExternal GetSelectedExternalReplaced(bool onlyInfo = false)
         {
-            AssetInfoDataGridItem gridItem = GetGridItem();
+            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
 
             AssetID assetId = new AssetID(Workspace.mainFile.name, gridItem.PathID);
             if (Workspace.NewAssetDatas.ContainsKey(assetId))
             {
-                return am.GetExtAssetNewData(assetsFile, gridItem.FileID, gridItem.PathID, Workspace.NewAssetDatas[assetId], onlyInfo);
+                return am.GetExtAssetNewData(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID, Workspace.NewAssetDatas[assetId], onlyInfo);
             }
             else
             {
-                return am.GetExtAsset(assetsFile, gridItem.FileID, gridItem.PathID, onlyInfo);
+                return am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID, onlyInfo);
             }
+        }
+
+        private List<AssetExternal> GetSelectedExternalsReplaced(bool onlyInfo = false)
+        {
+            List<AssetInfoDataGridItem> gridItems = GetSelectedGridItems();
+            List<AssetExternal> exts = new List<AssetExternal>();
+            foreach (var gridItem in gridItems)
+            {
+                AssetID assetId = new AssetID(Workspace.mainFile.name, gridItem.PathID);
+                if (Workspace.NewAssetDatas.ContainsKey(assetId))
+                {
+                    exts.Add(am.GetExtAssetNewData(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID, Workspace.NewAssetDatas[assetId], onlyInfo));
+                }
+                else
+                {
+                    exts.Add(am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID, onlyInfo));
+                }
+            }
+            return exts;
         }
 
         private AssetTypeValueField GetSelectedFieldReplaced()
@@ -477,9 +550,20 @@ namespace UABEAvalonia
             return GetSelectedExternalReplaced().instance.GetBaseField();
         }
 
+        private List<AssetTypeValueField> GetSelectedFieldsReplaced()
+        {
+            List<AssetExternal> exts = GetSelectedExternalsReplaced();
+            List<AssetTypeValueField> fields = new List<AssetTypeValueField>();
+            foreach (var ext in exts)
+            {
+                fields.Add(ext.instance.GetBaseField());
+            }
+            return fields;
+        }
+
         private void SetSelectedFieldModified()
         {
-            AssetInfoDataGridItem gridItem = GetGridItem();
+            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
             gridItem.Modified = "*";
             gridItem.Update();
         }

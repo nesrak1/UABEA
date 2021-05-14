@@ -287,7 +287,7 @@ namespace UABEAvalonia
                     if (flags.Contains("-md"))
                         decompFile = null;
 
-                    Console.WriteLine($"Decompressing {affectedFileName} to {decompFile}...");
+                    Console.WriteLine($"Decompressing {affectedFileName} to {decompFile??"memory"}...");
                     AssetBundleFile bun = DecompressBundle(affectedFilePath, decompFile);
                     List<BundleReplacer> reps = new List<BundleReplacer>();
 
