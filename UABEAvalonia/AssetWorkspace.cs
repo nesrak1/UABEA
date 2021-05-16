@@ -46,7 +46,7 @@ namespace UABEAvalonia
 
         public void AddReplacer(AssetsFileInstance forFile, AssetsReplacer replacer, Stream? previewStream = null)
         {
-            AssetID assetId = new AssetID(forFile.name, replacer.GetPathID());
+            AssetID assetId = new AssetID(forFile.path, replacer.GetPathID());
 
             NewAssets[assetId] = replacer;
             if (previewStream == null)
@@ -70,7 +70,7 @@ namespace UABEAvalonia
 
         public void RemoveReplacer(AssetsFileInstance forFile, AssetsReplacer replacer, bool closePreviewStream = true)
         {
-            AssetID assetId = new AssetID(forFile.name, replacer.GetPathID());
+            AssetID assetId = new AssetID(forFile.path, replacer.GetPathID());
 
             if (NewAssets.ContainsKey(assetId))
             {

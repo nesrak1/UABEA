@@ -10,7 +10,7 @@ namespace UABEAvalonia
     public class InstallerPackageFile
     {
         public string magic;
-        private bool includesCldb;
+        public bool includesCldb;
         public string modName;
         public string modCreators;
         public string modDescription;
@@ -74,7 +74,43 @@ namespace UABEAvalonia
         }
         public void Write(AssetsFileWriter writer)
         {
-            throw new NotImplementedException("no");
+            writer.bigEndian = false;
+
+            writer.Write(Encoding.ASCII.GetBytes(magic));
+            
+            writer.Write(includesCldb);
+
+            writer.WriteCountStringInt16(modName);
+            writer.WriteCountStringInt16(modCreators);
+            writer.WriteCountStringInt16(modDescription);
+
+            if (includesCldb)
+            {
+                addedTypes.Write(writer);
+                writer.Position = addedTypes.header.stringTablePos + addedTypes.header.stringTableLen;
+            }
+
+            writer.Write(affectedFiles.Count);
+            for (int i = 0; i < affectedFiles.Count; i++)
+            {
+                InstallerPackageAssetsDesc desc = affectedFiles[i];
+                writer.Write(desc.isBundle);
+                writer.WriteCountStringInt16(desc.path);
+                
+                writer.Write(desc.replacers.Count);
+                for (int j = 0; j < desc.replacers.Count; j++)
+                {
+                    object repObj = desc.replacers[j];
+                    if (repObj is AssetsReplacer repAsset)
+                    {
+                        repAsset.WriteReplacer(writer);
+                    }
+                    else if (repObj is BundleReplacer repBundle)
+                    {
+                        repBundle.WriteReplacer(writer);
+                    }
+                }
+            }
         }
 
         private static object ParseReplacer(AssetsFileReader reader, bool prefReplacersInMemory)

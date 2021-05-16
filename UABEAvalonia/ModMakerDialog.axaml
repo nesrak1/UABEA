@@ -1,0 +1,77 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ua="using:UABEAvalonia"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="250"
+        Width="500" Height="250"
+        x:Class="UABEAvalonia.ModMakerDialog"
+        Title="Mod Maker Package Creator">
+  <Grid Margin="10,10,10,10">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="0.5*"></ColumnDefinition>
+      <ColumnDefinition Width="5"></ColumnDefinition>
+      <ColumnDefinition Width="0.5*"></ColumnDefinition>
+    </Grid.ColumnDefinitions>
+    <Grid Grid.Column="0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="80"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="26"></RowDefinition>
+        <RowDefinition Height="26"></RowDefinition>
+        <RowDefinition Height="*"></RowDefinition>
+      </Grid.RowDefinitions>
+      <Label Grid.Column="0" Grid.Row="0">Mod Name</Label>
+      <TextBox Grid.Column="1" Grid.Row="0" Name="boxModName"></TextBox>
+      <Label Grid.Column="0" Grid.Row="1">Credits</Label>
+      <TextBox Grid.Column="1" Grid.Row="1" Name="boxCredits"></TextBox>
+      <Label Grid.Column="0" Grid.Row="2">Description</Label>
+      <TextBox Grid.Column="1" Grid.Row="2" AcceptsReturn="True" Name="boxDesc"></TextBox>
+    </Grid>
+    <GridSplitter Grid.Column="1" />
+    <Grid Grid.Column="2">
+      <Grid Margin="0,0,0,51">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="70"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="26"></RowDefinition>
+          <RowDefinition Height="26"></RowDefinition>
+          <RowDefinition Height="26"></RowDefinition>
+          <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Label Grid.Row="0">Base folder</Label>
+        <TextBox Grid.Row="1" Name="boxBaseFolder"></TextBox>
+        <Button Grid.Column="1" Grid.Row="1" Name="btnBaseFolder">Select</Button>
+        <Label Grid.Row="2">Changes</Label>
+        <TreeView Grid.Row="3" Grid.ColumnSpan="2" Name="treeView">
+          <TreeView.DataTemplates>
+            <TreeDataTemplate DataType="ua:ModMakerTreeFileInfo" ItemsSource="{Binding Replacers}">
+              <TextBlock Text="{Binding DisplayText}" />
+            </TreeDataTemplate>
+            <TreeDataTemplate DataType="ua:ModMakerTreeReplacerInfo">
+              <TextBlock Text="{Binding DisplayText}" />
+            </TreeDataTemplate>
+          </TreeView.DataTemplates>
+        </TreeView>
+      </Grid>
+      <Grid Margin="0,0,0,0" VerticalAlignment="Bottom">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"></RowDefinition>
+          <RowDefinition Height="Auto"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Button Grid.Column="0" Grid.Row="0" Name="btnImport">Import Package</Button>
+        <Button Grid.Column="1" Grid.Row="0" Name="btnRemove">Remove Change</Button>
+        <Button Grid.Column="0" Grid.Row="1" Name="btnOk">Ok</Button>
+        <Button Grid.Column="1" Grid.Row="1" Name="btnCancel">Cancel</Button>
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>

@@ -77,6 +77,7 @@ namespace UABEAvalonia
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
             btnInfo.Click += BtnInfo_Click;
+            menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
             Closing += MainWindow_Closing;
 
             newFiles = new Dictionary<string, BundleReplacer>();
@@ -373,8 +374,6 @@ namespace UABEAvalonia
 
         private async void BtnInfo_Click(object? sender, RoutedEventArgs e)
         {
-            //when dependency loading is supported:
-            //make sure cab:// dependencies in the bundle are loaded as well
             if (bundleInst != null && comboBox.SelectedItem != null)
             {
                 int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
@@ -424,6 +423,14 @@ namespace UABEAvalonia
                                                                    "use Export.");
                 }
             }
+        }
+
+        private async void MenuCreatePackageFile_Click(object? sender, RoutedEventArgs e)
+        {
+            await MessageBoxUtil.ShowDialog(this, "Not implemented",
+                "Bundle pkgs are not supported at the moment.\n" +
+                "Trying to install an emip file? Try running\n" +
+                "UABEAvalonia applyemip from the command line.");
         }
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)

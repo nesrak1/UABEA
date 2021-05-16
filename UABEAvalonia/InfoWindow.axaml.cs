@@ -20,6 +20,16 @@ namespace UABEAvalonia
     public class InfoWindow : Window
     {
         //controls
+        private MenuItem menuAdd;
+        private MenuItem menuSave;
+        private MenuItem menuCreateStandaloneInstaller;
+        private MenuItem menuCreatePackageFile;
+        private MenuItem menuClose;
+        private MenuItem menuSearchByName;
+        private MenuItem menuContinueSearch;
+        private MenuItem menuGoToAsset;
+        private MenuItem menuDependencies;
+        private MenuItem menuContainers;
         private Button btnViewData;
         private Button btnExportRaw;
         private Button btnExportDump;
@@ -32,8 +42,6 @@ namespace UABEAvalonia
         private TextBox boxPathId;
         private TextBox boxFileId;
         private TextBox boxType;
-        private MenuItem menuSave;
-        private MenuItem menuClose;
 
         //todo, rework all this
         public AssetWorkspace Workspace { get; }
@@ -56,6 +64,16 @@ namespace UABEAvalonia
             this.AttachDevTools();
 #endif
             //generated items
+            menuAdd = this.FindControl<MenuItem>("menuAdd");
+            menuSave = this.FindControl<MenuItem>("menuSave");
+            menuCreateStandaloneInstaller = this.FindControl<MenuItem>("menuCreateStandaloneInstaller");
+            menuCreatePackageFile = this.FindControl<MenuItem>("menuCreatePackageFile");
+            menuClose = this.FindControl<MenuItem>("menuClose");
+            menuSearchByName = this.FindControl<MenuItem>("menuSearchByName");
+            menuContinueSearch = this.FindControl<MenuItem>("menuContinueSearch");
+            menuGoToAsset = this.FindControl<MenuItem>("menuGoToAsset");
+            menuDependencies = this.FindControl<MenuItem>("menuDependencies");
+            menuContainers = this.FindControl<MenuItem>("menuContainers");
             btnViewData = this.FindControl<Button>("btnViewData");
             btnExportRaw = this.FindControl<Button>("btnExportRaw");
             btnExportDump = this.FindControl<Button>("btnExportDump");
@@ -68,9 +86,10 @@ namespace UABEAvalonia
             boxPathId = this.FindControl<TextBox>("boxPathId");
             boxFileId = this.FindControl<TextBox>("boxFileId");
             boxType = this.FindControl<TextBox>("boxType");
-            menuSave = this.FindControl<MenuItem>("menuSave");
-            menuClose = this.FindControl<MenuItem>("menuClose");
             //generated events
+            menuSave.Click += MenuSave_Click;
+            menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
+            menuClose.Click += MenuClose_Click;
             btnViewData.Click += BtnViewData_Click;
             btnExportRaw.Click += BtnExportRaw_Click;
             btnExportDump.Click += BtnExportDump_Click;
@@ -78,8 +97,6 @@ namespace UABEAvalonia
             btnImportDump.Click += BtnImportDump_Click;
             btnPlugin.Click += BtnPlugin_Click;
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
-            menuSave.Click += MenuSave_Click;
-            menuClose.Click += MenuClose_Click;
         }
 
         public InfoWindow(AssetsManager assetsManager, AssetsFileInstance assetsFile, string name, bool fromBundle) : this()
@@ -279,6 +296,12 @@ namespace UABEAvalonia
             await SaveFile();
             ClearModified();
             Workspace.Modified = false;
+        }
+
+        private async void MenuCreatePackageFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            ModMakerDialog dialog = new ModMakerDialog(Workspace);
+            await dialog.ShowDialog(this);
         }
 
         private async void MenuClose_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
