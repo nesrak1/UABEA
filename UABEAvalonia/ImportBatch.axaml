@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="350"
         Width="700" Height="350"
-        x:Class="TexturePlugin.ImportBatch"
+        x:Class="UABEAvalonia.ImportBatch"
         Title="Batch import textures">
   <Grid Margin="10,10,10,10">
     <Grid.ColumnDefinitions>

@@ -538,7 +538,7 @@ namespace UABEAvalonia
         {
             AssetInfoDataGridItem gridItem = GetSelectedGridItem();
 
-            AssetID assetId = new AssetID(Workspace.mainFile.name, gridItem.PathID);
+            AssetID assetId = new AssetID(Workspace.mainFile.path, gridItem.PathID);
             if (Workspace.NewAssetDatas.ContainsKey(assetId))
             {
                 return am.GetExtAssetNewData(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID, Workspace.NewAssetDatas[assetId], onlyInfo);
@@ -555,7 +555,7 @@ namespace UABEAvalonia
             List<AssetExternal> exts = new List<AssetExternal>();
             foreach (var gridItem in gridItems)
             {
-                AssetID assetId = new AssetID(Workspace.mainFile.name, gridItem.PathID);
+                AssetID assetId = new AssetID(Workspace.mainFile.path, gridItem.PathID);
                 if (Workspace.NewAssetDatas.ContainsKey(assetId))
                 {
                     exts.Add(am.GetExtAssetNewData(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID, Workspace.NewAssetDatas[assetId], onlyInfo));

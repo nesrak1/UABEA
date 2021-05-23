@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AssetsTools.NET" Version="2.0.9" />
+    <PackageReference Include="Avalonia" Version="0.10.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.10.0" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="0.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UABEAvalonia\UABEAvalonia.csproj" />
+  </ItemGroup>
+  
+  <!-- there seems to be no flag for checking if building  -->
+  <!-- or publishing, so we just have two separate targets -->
+
+  <!-- build event -->
+  <Target Name="CopyLibrariesBuild" AfterTargets="AfterBuild" Condition="'$(SolutionDir)' != '*Undefined*'">
+    <PropertyGroup>
+      <UABEABinDir>$(SolutionDir)UABEAvalonia\$(OutputPath)</UABEABinDir>
+    </PropertyGroup>
+    
+    <!-- copy textassetplugin -->
+    <Copy SourceFiles="$(OutputPath)TextAssetPlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
+  </Target>
+  
+  <!-- publish event -->
+  <Target Name="CopyLibrariesPublish" AfterTargets="Publish" Condition="'$(SolutionDir)' != '*Undefined*'">    
+    <PropertyGroup>
+      <UABEABinDir>$(SolutionDir)UABEAvalonia\$(PublishDir)</UABEABinDir>
+    </PropertyGroup>
+    
+    <!-- copy textassetplugin -->
+    <Copy SourceFiles="$(OutputPath)TextAssetPlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
+  </Target>
+</Project>

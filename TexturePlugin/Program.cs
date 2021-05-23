@@ -74,6 +74,47 @@ namespace TexturePlugin
             return true;
         }
 
+        private async Task<bool> ImportTextures(Window win, List<ImportBatchInfo> batchInfos)
+        {
+            foreach (ImportBatchInfo batchInfo in batchInfos)
+            {
+                string selectedFilePath = batchInfo.importFile;
+
+                AssetTypeValueField baseField = batchInfo.ext.instance.GetBaseField();
+                TextureFormat fmt = (TextureFormat)baseField.Get("m_TextureFormat").GetValue().AsInt();
+
+                byte[] encImageBytes = TextureImportExport.ImportPng(selectedFilePath, fmt, out int width, out int height);
+
+                if (encImageBytes == null)
+                {
+                    await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to decode texture\n({fmt})");
+                    return false;
+                }
+
+                AssetTypeValueField m_StreamData = baseField.Get("m_StreamData");
+                m_StreamData.Get("offset").GetValue().Set(0);
+                m_StreamData.Get("size").GetValue().Set(0);
+                m_StreamData.Get("path").GetValue().Set("");
+
+                baseField.Get("m_TextureFormat").GetValue().Set((int)fmt);
+
+                baseField.Get("m_Width").GetValue().Set(width);
+                baseField.Get("m_Height").GetValue().Set(height);
+
+                AssetTypeValueField image_data = baseField.Get("image data");
+                image_data.GetValue().type = EnumValueTypes.ByteArray;
+                image_data.templateField.valueType = EnumValueTypes.ByteArray;
+                AssetTypeByteArray byteArray = new AssetTypeByteArray()
+                {
+                    size = (uint)encImageBytes.Length,
+                    data = encImageBytes
+                };
+                image_data.GetValue().Set(byteArray);
+            }
+
+            return true;
+        }
+
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
         {
             for (int i = 0; i < selection.Count; i++)
@@ -95,9 +136,10 @@ namespace TexturePlugin
 
             if (dir != null && dir != string.Empty)
             {
-                ImportBatch dialog = new ImportBatch(workspace, selection, dir);
-                bool saved = await dialog.ShowDialog<bool>(win);
-                if (saved)
+                ImportBatch dialog = new ImportBatch(workspace, selection, dir, ".png");
+                List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
+                bool success = await ImportTextures(win, batchInfos);
+                if (success)
                 {
                     //some of the assets may not get modified, but
                     //uabe still makes replacers for those anyway
@@ -111,8 +153,11 @@ namespace TexturePlugin
 
                         workspace.AddReplacer(ext.file, replacer, new MemoryStream(savedAsset));
                     }
-
                     return true;
+                }
+                else
+                {
+                    return false;
                 }
             }
             return false;

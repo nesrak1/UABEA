@@ -8,9 +8,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using UABEAvalonia;
 
-namespace TexturePlugin
+namespace UABEAvalonia
 {
     public partial class ImportBatch : Window
     {
@@ -44,24 +43,45 @@ namespace TexturePlugin
             ignoreListEvents = false;
         }
 
-        public ImportBatch(AssetWorkspace workspace, List<AssetExternal> selection, string directory) : this()
+        public ImportBatch(AssetWorkspace workspace, List<AssetExternal> selection, string directory, string extension) : this()
         {
             this.workspace = workspace;
             this.directory = directory;
 
-            List<string> filesInDir = Directory.GetFiles(directory, "*.png").ToList();
-            List<BatchImportDataGridItem> gridItems = new List<BatchImportDataGridItem>();
+            List<string> filesInDir = Directory.GetFiles(directory, "*" + extension).ToList();
+            List<ImportBatchDataGridItem> gridItems = new List<ImportBatchDataGridItem>();
             foreach (AssetExternal ext in selection)
             {
-                AssetTypeValueField texBaseField = ext.instance.GetBaseField();
-                BatchImportDataGridItem gridItem = new BatchImportDataGridItem()
+                AssetFileInfoEx info = ext.info;
+
+                string assetName = AssetHelper.GetAssetNameFast(ext.file.file, workspace.am.classFile, ext.info);
+                if (info.curFileType == 0x01)
                 {
-                    Description = texBaseField.Get("m_Name").GetValue().AsString(),
-                    File = Path.GetFileName(ext.file.path),
-                    PathID = ext.info.index,
-                    ext = ext
+                    assetName = $"GameObject {assetName}";
+                }
+                else if (info.curFileType == 0x72)
+                {
+                    if (assetName == string.Empty)
+                        assetName = $"MonoBehaviour";
+                    else
+                        assetName = $"MonoBehaviour {assetName}";
+                }
+                if (assetName == string.Empty)
+                {
+                    assetName = "Unnamed asset";
+                }
+
+                ImportBatchDataGridItem gridItem = new ImportBatchDataGridItem()
+                {
+                    importInfo = new ImportBatchInfo()
+                    {
+                        assetName = assetName,
+                        assetFile = Path.GetFileName(ext.file.path),
+                        pathId = ext.info.index,
+                        ext = ext
+                    }
                 };
-                string endWith = gridItem.GetMatchName(".png");
+                string endWith = gridItem.GetMatchName(extension);
                 List<string> matchingFiles = filesInDir.Where(f => f.EndsWith(endWith)).Select(f => Path.GetFileName(f)).ToList();
                 gridItem.matchingFiles = matchingFiles;
                 gridItem.selectedIndex = matchingFiles.Count > 0 ? 0 : -1;
@@ -70,9 +90,9 @@ namespace TexturePlugin
             dataGrid.Items = gridItems;
         }
 
-        private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void DataGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (dataGrid.SelectedItem != null && dataGrid.SelectedItem is BatchImportDataGridItem gridItem)
+            if (dataGrid.SelectedItem != null && dataGrid.SelectedItem is ImportBatchDataGridItem gridItem)
             {
                 boxMatchingFiles.Items = gridItem.matchingFiles;
                 if (gridItem.selectedIndex != -1)
@@ -85,57 +105,34 @@ namespace TexturePlugin
             }
         }
 
-        private void BoxMatchingFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void BoxMatchingFiles_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (dataGrid.SelectedItem != null && dataGrid.SelectedItem is BatchImportDataGridItem gridItem)
+            if (dataGrid.SelectedItem != null && dataGrid.SelectedItem is ImportBatchDataGridItem gridItem)
             {
                 if (boxMatchingFiles.SelectedIndex != -1 && !ignoreListEvents)
                     gridItem.selectedIndex = boxMatchingFiles.SelectedIndex;
             }
         }
 
-        private void BtnOk_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private void BtnOk_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            foreach (BatchImportDataGridItem gridItem in dataGrid.Items)
+            List<ImportBatchInfo> importInfos = new List<ImportBatchInfo>();
+            foreach (ImportBatchDataGridItem gridItem in dataGrid.Items)
             {
-                if (gridItem.matchingFiles.Count <= 0)
-                    continue;
-
-                string selectedFile = gridItem.matchingFiles[gridItem.selectedIndex];
-                string selectedFilePath = Path.Combine(directory, selectedFile);
-
-                AssetTypeValueField baseField = gridItem.ext.instance.GetBaseField();
-                TextureFormat fmt = (TextureFormat)baseField.Get("m_TextureFormat").GetValue().AsInt();
-
-                byte[] encImageBytes = TextureImportExport.ImportPng(selectedFilePath, fmt, out int width, out int height);
-
-                AssetTypeValueField m_StreamData = baseField.Get("m_StreamData");
-                m_StreamData.Get("offset").GetValue().Set(0);
-                m_StreamData.Get("size").GetValue().Set(0);
-                m_StreamData.Get("path").GetValue().Set("");
-
-                baseField.Get("m_TextureFormat").GetValue().Set((int)fmt);
-
-                baseField.Get("m_Width").GetValue().Set(width);
-                baseField.Get("m_Height").GetValue().Set(height);
-
-                AssetTypeValueField image_data = baseField.Get("image data");
-                image_data.GetValue().type = EnumValueTypes.ByteArray;
-                image_data.templateField.valueType = EnumValueTypes.ByteArray;
-                AssetTypeByteArray byteArray = new AssetTypeByteArray()
+                if (gridItem.selectedIndex != -1)
                 {
-                    size = (uint)encImageBytes.Length,
-                    data = encImageBytes
-                };
-                image_data.GetValue().Set(byteArray);
+                    ImportBatchInfo importInfo = gridItem.importInfo;
+                    importInfo.importFile = Path.Combine(directory, gridItem.matchingFiles[gridItem.selectedIndex]);
+                    importInfos.Add(importInfo);
+                }
             }
 
-            Close(true);
+            Close(importInfos);
         }
 
-        private void BtnCancel_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            Close(false);
+            Close(null);
         }
 
         private void InitializeComponent()
@@ -144,13 +141,23 @@ namespace TexturePlugin
         }
     }
 
-    public class BatchImportDataGridItem : INotifyPropertyChanged
+    public class ImportBatchInfo
     {
-        public string Description { get; set; }
-        public string File { get; set; }
-        public long PathID { get; set; }
-
         public AssetExternal ext;
+        public string importFile;
+        public string assetName;
+        public string assetFile;
+        public long pathId;
+    }
+
+    public class ImportBatchDataGridItem : INotifyPropertyChanged
+    {
+        public ImportBatchInfo importInfo;
+
+        public string Description { get => importInfo.assetName; }
+        public string File { get => importInfo.assetFile; }
+        public long PathID { get => importInfo.pathId; }
+
         public List<string> matchingFiles;
         public int selectedIndex;
 
