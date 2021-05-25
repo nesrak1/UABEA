@@ -38,7 +38,8 @@ namespace UABEAvalonia
         private BundleFileInstance bundleInst;
 
         private Dictionary<string, BundleReplacer> newFiles;
-        private bool modified;
+        private bool changesUnsaved; //sets false after saving
+        private bool changesMade; //stays true even after saving
         private bool ignoreCloseEvent;
 
         public ObservableCollection<ComboBoxItem> comboItems;
@@ -73,6 +74,7 @@ namespace UABEAvalonia
             menuOpen.Click += MenuOpen_Click;
             menuAbout.Click += MenuAbout_Click;
             menuSave.Click += MenuSave_Click;
+            menuCompress.Click += MenuCompress_Click;
             menuClose.Click += MenuClose_Click;
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
@@ -81,7 +83,8 @@ namespace UABEAvalonia
             Closing += MainWindow_Closing;
 
             newFiles = new Dictionary<string, BundleReplacer>();
-            modified = false;
+            changesUnsaved = false;
+            changesMade = false;
             ignoreCloseEvent = false;
         }
 
@@ -153,7 +156,12 @@ namespace UABEAvalonia
 
         private async void MenuSave_Click(object? sender, RoutedEventArgs e)
         {
-            await AskForSaveLocation();
+            await AskForLocationAndSave();
+        }
+
+        private async void MenuCompress_Click(object? sender, RoutedEventArgs e)
+        {
+            await AskForLocationAndCompress();
         }
 
         private async void MenuClose_Click(object? sender, RoutedEventArgs e)
@@ -177,9 +185,9 @@ namespace UABEAvalonia
             return true;
         }
 
-        private async Task AskForSaveLocation()
+        private async Task AskForLocationAndSave()
         {
-            if (modified && bundleInst != null)
+            if (changesUnsaved && bundleInst != null)
             {
                 SaveFileDialog sfd = new SaveFileDialog();
                 sfd.Title = "Save as...";
@@ -195,14 +203,67 @@ namespace UABEAvalonia
 
         private async Task AskForSave()
         {
-            if (modified && bundleInst != null)
+            if (changesUnsaved && bundleInst != null)
             {
                 ButtonResult choice = await MessageBoxUtil.ShowDialog(this, "Changes made", "You've modified this file. Would you like to save?",
                                                                       ButtonEnum.YesNo);
                 if (choice == ButtonResult.Yes)
                 {
-                    await AskForSaveLocation();
+                    await AskForLocationAndSave();
                 }
+            }
+        }
+
+        private async Task AskForLocationAndCompress()
+        {
+            if (bundleInst != null)
+            {
+                //temporary, maybe I should just write to a memory stream or smth
+                //edit: looks like uabe just asks you to open a file instead of
+                //using your currently opened one, so that may be the workaround
+                if (changesMade)
+                {
+                    ButtonResult continueWithChanges = await MessageBoxUtil.ShowDialog(
+                        this, "Note", "You've modified this file, but only file before changes is loaded. If you want to compress the file with" +
+                                      "changes, please close this bundle and open the new file. Click Ok to compress the file without changes.",
+                        ButtonEnum.OkCancel);
+
+                    if (continueWithChanges == ButtonResult.Cancel)
+                    {
+                        return;
+                    }
+                }
+
+                SaveFileDialog sfd = new SaveFileDialog();
+                sfd.Title = "Save as...";
+
+                string file = await sfd.ShowAsync(this);
+
+                if (file == null)
+                    return;
+
+                const string lz4Option = "LZ4";
+                const string lzmaOption = "LZMA";
+                const string cancelOption = "Cancel";
+                string result = await MessageBoxUtil.ShowDialogCustom(
+                    this, "Note", "What compression method do you want to use?\nLZ4: Faster but larger size\nLZMA: Slower but smaller size",
+                    lz4Option, lzmaOption, cancelOption);
+
+                AssetBundleCompressionType compType = result switch
+                {
+                    lz4Option => AssetBundleCompressionType.LZ4,
+                    lzmaOption => AssetBundleCompressionType.LZMA,
+                    _ => AssetBundleCompressionType.NONE
+                };
+
+                if (compType != AssetBundleCompressionType.NONE)
+                {
+                    CompressBundle(bundleInst, file, compType);
+                }
+            }
+            else
+            {
+                await MessageBoxUtil.ShowDialog(this, "Note", "Please open a bundle file before using compress.");
             }
         }
 
@@ -297,13 +358,23 @@ namespace UABEAvalonia
             {
                 bundleInst.file.Write(w, newFiles.Values.ToList());
             }
-            modified = false;
+            changesUnsaved = false;
+        }
+
+        private void CompressBundle(BundleFileInstance bundleInst, string path, AssetBundleCompressionType compType)
+        {
+            using (FileStream fs = File.OpenWrite(path))
+            using (AssetsFileWriter w = new AssetsFileWriter(fs))
+            {
+                bundleInst.file.Pack(bundleInst.file.reader, w, compType);
+            }
         }
 
         private void CloseAllFiles()
         {
             newFiles.Clear();
-            modified = false;
+            changesUnsaved = false;
+            changesMade = false;
 
             am.UnloadAllAssetsFiles(true);
             am.UnloadAllBundleFiles();
@@ -368,7 +439,8 @@ namespace UABEAvalonia
                 });
                 comboBox.SelectedIndex = comboItems.Count - 1;
 
-                modified = true;
+                changesUnsaved = true;
+                changesMade = true;
             }
         }
 
@@ -435,7 +507,7 @@ namespace UABEAvalonia
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (!modified || ignoreCloseEvent)
+            if (!changesUnsaved || ignoreCloseEvent)
             {
                 e.Cancel = false;
                 ignoreCloseEvent = false;
@@ -484,7 +556,8 @@ namespace UABEAvalonia
                 MemoryStream assetsStream = new MemoryStream(assetData);
                 am.LoadAssetsFile(assetsStream, assetsManagerName, true);
 
-                modified = true;
+                changesUnsaved = true;
+                changesMade = true;
             }
         }
 
