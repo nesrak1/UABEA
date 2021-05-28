@@ -89,5 +89,66 @@ namespace UABEAvalonia
             if (NewAssets.Count == 0)
                 Modified = false;
         }
+
+        public AssetExternal GetExtAssetReplaced(AssetsFileInstance fromFile, int fileId, long pathId, bool onlyInfo = false)
+        {
+            AssetExternal infoExt = am.GetExtAsset(fromFile, fileId, pathId, true);
+            AssetFileInfoEx info = infoExt.info;
+            AssetsFileInstance fileInst = infoExt.file;
+            AssetsFile file = fileInst.file;
+
+            if (!onlyInfo)
+            {
+                AssetID assetId = new AssetID(infoExt.file.path, pathId);
+
+                if (NewAssetDatas.ContainsKey(assetId))
+                {
+                    return am.GetExtAssetNewData(fileInst, fileId, pathId, NewAssetDatas[assetId]);
+                }
+                else if (info.curFileType == 0x72)
+                {
+                    if (file.typeTree.hasTypeTree && AssetHelper.FindTypeTreeTypeByScriptIndex(file.typeTree, info.scriptIndex) != null)
+                    {
+                        //typetree data exists already, use that instead (automatically used by getextasset already)
+                        return am.GetExtAsset(fileInst, fileId, pathId);
+                    }
+                    else
+                    {
+                        //deserialize from dll (todo: ask user if dll isn't in normal location)
+                        string managedPath = Path.Combine(Path.GetDirectoryName(fileInst.path), "Managed");
+                        if (Directory.Exists(managedPath))
+                        {
+                            //assetexternal uses ati but assetsmanager's monobehaviour
+                            //deserializer only returns a basefield lol what dumb design
+                            //I will be coming back to this soon
+                            AssetTypeInstance fakeAti = new AssetTypeInstance(new AssetTypeTemplateField[0], file.reader, 0);
+                            fakeAti.baseFields = new AssetTypeValueField[] { am.GetMonoBaseFieldCached(fileInst, info, managedPath) };
+                            fakeAti.baseFieldCount = 1;
+
+                            AssetExternal monoExt = new AssetExternal()
+                            {
+                                file = infoExt.file,
+                                info = infoExt.info,
+                                instance = fakeAti
+                            };
+                            return monoExt;
+                        }
+                        else
+                        {
+                            //fallback to no deserialization for now
+                            return am.GetExtAsset(fileInst, fileId, pathId);
+                        }
+                    }
+                }
+                else
+                {
+                    return am.GetExtAsset(fileInst, fileId, pathId);
+                }
+            }
+            else
+            {
+                return infoExt;
+            }
+        }
     }
 }

@@ -164,9 +164,12 @@ namespace UABEAvalonia
                     return;
             }
 
-            AssetTypeValueField field = GetSelectedFieldReplaced();
-            DataWindow data = new DataWindow(field);
-            data.Show();
+            List<AssetExternal> selectedExts = GetSelectedExternalsReplaced();
+            if (selectedExts.Count > 0)
+            {
+                DataWindow data = new DataWindow(Workspace, selectedExts[0]);
+                data.Show();
+            }
         }
 
         private async void BtnExportRaw_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -213,11 +216,15 @@ namespace UABEAvalonia
                     file = file.Substring(0, file.Length - 5) + ".txt";
                 }
 
-                using (FileStream fs = File.OpenWrite(file))
-                using (StreamWriter sw = new StreamWriter(fs))
+                List<AssetExternal> selectedExts = GetSelectedExternalsReplaced();
+                if (selectedExts.Count > 0)
                 {
-                    AssetImportExport dumper = new AssetImportExport();
-                    dumper.DumpTextAsset(sw, GetSelectedBaseField());
+                    using (FileStream fs = File.OpenWrite(file))
+                    using (StreamWriter sw = new StreamWriter(fs))
+                    {
+                        AssetImportExport dumper = new AssetImportExport();
+                        dumper.DumpTextAsset(sw, selectedExts[0].instance.GetBaseField());
+                    }
                 }
             }
         }
@@ -506,119 +513,15 @@ namespace UABEAvalonia
             return am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID).info;
         }
 
-        private List<AssetFileInfoEx> GetSelectedInfos()
-        {
-            List<AssetInfoDataGridItem> gridItems = GetSelectedGridItems();
-            List<AssetFileInfoEx> infos = new List<AssetFileInfoEx>();
-            foreach (var gridItem in gridItems)
-            {
-                infos.Add(am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID).info);
-            }
-            return infos;
-        }
-
-        private AssetTypeValueField GetSelectedBaseField()
-        {
-            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
-            return am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID).instance.GetBaseField();
-        }
-
-        private List<AssetTypeValueField> GetSelectedBaseFields()
-        {
-            List<AssetInfoDataGridItem> gridItems = GetSelectedGridItems();
-            List<AssetTypeValueField> fields = new List<AssetTypeValueField>();
-            foreach (var gridItem in gridItems)
-            {
-                fields.Add(am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID).instance.GetBaseField());
-            }
-            return fields;
-        }
-
         private List<AssetExternal> GetSelectedExternalsReplaced(bool onlyInfo = false)
         {
             List<AssetInfoDataGridItem> gridItems = GetSelectedGridItems();
             List<AssetExternal> exts = new List<AssetExternal>();
             foreach (var gridItem in gridItems)
             {
-                AssetID assetId = new AssetID(Workspace.mainFile.path, gridItem.PathID);
-
-                AssetExternal infoExt = am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID, true);
-                AssetFileInfoEx info = infoExt.info;
-                AssetsFileInstance fileInst = infoExt.file;
-                AssetsFile file = fileInst.file;
-
-                if (!onlyInfo)
-                {
-                    if (Workspace.NewAssetDatas.ContainsKey(assetId))
-                    {
-                        exts.Add(am.GetExtAssetNewData(fileInst, 0, gridItem.PathID, Workspace.NewAssetDatas[assetId]));
-                    }
-                    else if (info.curFileType == 0x72)
-                    {
-                        if (file.typeTree.hasTypeTree && AssetHelper.FindTypeTreeTypeByScriptIndex(file.typeTree, info.scriptIndex) != null)
-                        {
-                            //typetree data exists already, use that instead (automatically used by getextasset already)
-                            exts.Add(am.GetExtAsset(fileInst, 0, gridItem.PathID));
-                        }
-                        else
-                        {
-                            //deserialize from dll (todo: ask user if dll isn't in normal location)
-                            string managedPath = Path.Combine(Path.GetDirectoryName(fileInst.path), "Managed");
-                            if (Directory.Exists(managedPath))
-                            {
-                                //assetexternal uses ati but assetsmanager's monobehaviour
-                                //deserializer only returns a basefield lol what dumb design
-                                //I will be coming back to this soon
-                                AssetTypeInstance fakeAti = new AssetTypeInstance(new AssetTypeTemplateField[0], file.reader, 0);
-                                fakeAti.baseFields = new AssetTypeValueField[] { am.GetMonoBaseFieldCached(fileInst, info, managedPath) };
-                                fakeAti.baseFieldCount = 1;
-
-                                AssetExternal monoExt = new AssetExternal()
-                                {
-                                    file = infoExt.file,
-                                    info = infoExt.info,
-                                    instance = fakeAti
-                                };
-                                exts.Add(monoExt);
-                            }
-                            else
-                            {
-                                //fallback to no deserialization for now
-                                exts.Add(am.GetExtAsset(fileInst, 0, gridItem.PathID));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        exts.Add(am.GetExtAsset(fileInst, 0, gridItem.PathID));
-                    }
-                }
-                else
-                {
-                    exts.Add(infoExt);
-                }
+                exts.Add(Workspace.GetExtAssetReplaced(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID, onlyInfo));
             }
             return exts;
-        }
-
-        private AssetTypeValueField GetSelectedFieldReplaced()
-        {
-            List<AssetExternal> externals = GetSelectedExternalsReplaced();
-            if (externals.Count == 0)
-                return null;
-
-            return externals[0].instance.GetBaseField();
-        }
-
-        private List<AssetTypeValueField> GetSelectedFieldsReplaced()
-        {
-            List<AssetExternal> exts = GetSelectedExternalsReplaced();
-            List<AssetTypeValueField> fields = new List<AssetTypeValueField>();
-            foreach (var ext in exts)
-            {
-                fields.Add(ext.instance.GetBaseField());
-            }
-            return fields;
         }
 
         private void SetSelectedFieldModified()
