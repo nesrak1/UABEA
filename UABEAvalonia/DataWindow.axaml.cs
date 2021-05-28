@@ -77,13 +77,20 @@ namespace UABEAvalonia
                 {
                     item.Tag = true; //don't load this again
 
-                    AssetTypeValueField baseField = workspace.GetExtAssetReplaced(ext.file, 0, ext.info.index).instance.GetBaseField();
-                    TreeViewItem baseItem = CreateTreeItem($"{baseField.GetFieldType()} {baseField.GetName()}");
+                    if (ext.file != null && ext.info != null && ext.info.index != 0)
+                    {
+                        AssetTypeValueField baseField = workspace.GetExtAssetReplaced(ext.file, 0, ext.info.index).instance.GetBaseField();
+                        TreeViewItem baseItem = CreateTreeItem($"{baseField.GetFieldType()} {baseField.GetName()}");
 
-                    TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
-                    baseItem.Items = new List<TreeViewItem>() { arrayIndexTreeItem };
-                    item.Items = new List<TreeViewItem>() { baseItem };
-                    SetTreeItemEvents(baseItem, ext.file, baseField);
+                        TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
+                        baseItem.Items = new List<TreeViewItem>() { arrayIndexTreeItem };
+                        item.Items = new List<TreeViewItem>() { baseItem };
+                        SetTreeItemEvents(baseItem, ext.file, baseField);
+                    }
+                    else
+                    {
+                        item.Items = new List<TreeViewItem>() { CreateTreeItem("[Null Asset]") };
+                    }
                 }
             });
         }
