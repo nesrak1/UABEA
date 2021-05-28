@@ -593,6 +593,10 @@ namespace UABEAvalonia
                         exts.Add(am.GetExtAsset(fileInst, 0, gridItem.PathID));
                     }
                 }
+                else
+                {
+                    exts.Add(infoExt);
+                }
             }
             return exts;
         }
