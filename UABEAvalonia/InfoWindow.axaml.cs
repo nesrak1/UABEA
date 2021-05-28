@@ -113,6 +113,33 @@ namespace UABEAvalonia
             //this.DataContext = this;
         }
 
+        private async void MenuSave_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            await SaveFile();
+            ClearModified();
+            Workspace.Modified = false;
+        }
+
+        private async void MenuCreatePackageFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            ModMakerDialog dialog = new ModMakerDialog(Workspace);
+            await dialog.ShowDialog(this);
+        }
+
+        private async void MenuClose_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (Workspace.Modified)
+            {
+                ButtonResult choice = await MessageBoxUtil.ShowDialog(this, "Changes made", "You've modified this file. Would you like to save?",
+                                                                      ButtonEnum.YesNo);
+                if (choice == ButtonResult.Yes)
+                {
+                    await SaveFile();
+                }
+            }
+            CloseFile();
+        }
+
         private async void BtnViewData_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             if (await FailIfNothingSelected())
@@ -289,33 +316,6 @@ namespace UABEAvalonia
             List<AssetExternal> exts = GetSelectedExternalsReplaced(true);
             PluginWindow plug = new PluginWindow(this, Workspace, exts, pluginManager);
             await plug.ShowDialog(this);
-        }
-
-        private async void MenuSave_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            await SaveFile();
-            ClearModified();
-            Workspace.Modified = false;
-        }
-
-        private async void MenuCreatePackageFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            ModMakerDialog dialog = new ModMakerDialog(Workspace);
-            await dialog.ShowDialog(this);
-        }
-
-        private async void MenuClose_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            if (Workspace.Modified)
-            {
-                ButtonResult choice = await MessageBoxUtil.ShowDialog(this, "Changes made", "You've modified this file. Would you like to save?",
-                                                                      ButtonEnum.YesNo);
-                if (choice == ButtonResult.Yes)
-                {
-                    await SaveFile();
-                }
-            }
-            CloseFile();
         }
 
         private async Task SaveFile()

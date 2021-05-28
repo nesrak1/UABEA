@@ -169,6 +169,180 @@ namespace UABEAvalonia
             await AskForSave();
             CloseAllFiles();
         }
+        private async void BtnExport_Click(object? sender, RoutedEventArgs e)
+        {
+            if (bundleInst != null && comboBox.SelectedItem != null)
+            {
+                int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
+
+                string bunAssetName = bundleInst.file.bundleInf6.dirInf[index].name;
+                byte[] assetData = BundleHelper.LoadAssetDataFromBundle(bundleInst.file, index);
+
+                SaveFileDialog sfd = new SaveFileDialog();
+                sfd.Title = "Save as...";
+                sfd.InitialFileName = bunAssetName;
+
+                string file = await sfd.ShowAsync(this);
+
+                if (file == null)
+                    return;
+
+                File.WriteAllBytes(file, assetData);
+            }
+        }
+
+        private async void BtnImport_Click(object? sender, RoutedEventArgs e)
+        {
+            if (bundleInst != null)
+            {
+                OpenFileDialog ofd = new OpenFileDialog();
+                ofd.Title = "Open";
+
+                string[] files = await ofd.ShowAsync(this);
+
+                if (files.Length == 0)
+                    return;
+
+                string file = files[0];
+
+                if (file == null)
+                    return;
+
+                byte[] fileBytes = File.ReadAllBytes(file);
+                string fileName = Path.GetFileName(file);
+
+                newFiles[fileName] = AssetImportExport.CreateBundleReplacer(fileName, true, fileBytes);
+
+                //todo handle overwriting
+                comboItems.Add(new ComboBoxItem()
+                {
+                    Content = fileName,
+                    Tag = comboItems.Count
+                });
+                comboBox.SelectedIndex = comboItems.Count - 1;
+
+                changesUnsaved = true;
+                changesMade = true;
+            }
+        }
+
+        private async void BtnInfo_Click(object? sender, RoutedEventArgs e)
+        {
+            if (bundleInst != null && comboBox.SelectedItem != null)
+            {
+                int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
+
+                string bunAssetName = bundleInst.file.bundleInf6.dirInf[index].name;
+
+                //when we make a modification to an assets file in the bundle,
+                //we replace the assets file in the manager. this way, all we
+                //have to do is not reload from the bundle if our assets file
+                //has been modified
+                MemoryStream assetStream;
+                if (!newFiles.ContainsKey(bunAssetName))
+                {
+                    byte[] assetData = BundleHelper.LoadAssetDataFromBundle(bundleInst.file, index);
+                    assetStream = new MemoryStream(assetData);
+                }
+                else
+                {
+                    //unused if the file already exists
+                    assetStream = null;
+                }
+
+                //warning: does not update if you import an assets file onto
+                //a file that wasn't originally an assets file
+                var fileInf = BundleHelper.GetDirInfo(bundleInst.file, index);
+                bool isAssetsFile = bundleInst.file.IsAssetsFile(bundleInst.file.reader, fileInf);
+
+                if (isAssetsFile)
+                {
+                    string assetMemPath = Path.Combine(bundleInst.path, bunAssetName);
+                    AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, assetMemPath, true);
+
+                    if (!await LoadOrAskTypeData(fileInst))
+                        return;
+
+                    if (bundleInst != null && fileInst.parentBundle == null)
+                        fileInst.parentBundle = bundleInst;
+
+                    InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
+                    info.Closing += InfoWindow_Closing;
+                    info.Show();
+                }
+                else
+                {
+                    await MessageBoxUtil.ShowDialog(this, "Error", "This doesn't seem to be a valid assets file.\n" +
+                                                                   "If you want to export a non-assets file,\n" +
+                                                                   "use Export.");
+                }
+            }
+        }
+
+        private async void MenuCreatePackageFile_Click(object? sender, RoutedEventArgs e)
+        {
+            await MessageBoxUtil.ShowDialog(this, "Not implemented",
+                "Bundle pkgs are not supported at the moment.\n" +
+                "Trying to install an emip file? Try running\n" +
+                "UABEAvalonia applyemip from the command line.");
+        }
+
+        private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!changesUnsaved || ignoreCloseEvent)
+            {
+                e.Cancel = false;
+                ignoreCloseEvent = false;
+            }
+            else
+            {
+                e.Cancel = true;
+                ignoreCloseEvent = true;
+
+                await AskForSave();
+                Close(); //calling Close() triggers Closing() again
+            }
+        }
+
+        private void InfoWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (sender == null)
+                return;
+
+            InfoWindow window = (InfoWindow)sender;
+            string assetName = window.AssetsFileName;
+
+            if (window.FinalAssetData != null)
+            {
+                byte[] assetData = window.FinalAssetData;
+
+                BundleReplacer replacer = AssetImportExport.CreateBundleReplacer(assetName, true, assetData);
+                newFiles[assetName] = replacer;
+
+                //replace existing assets file in the manager
+                AssetsFileInstance? inst = am.files.FirstOrDefault(i => i.name.ToLower() == assetName.ToLower());
+                string assetsManagerName;
+
+                if (inst != null)
+                {
+                    assetsManagerName = inst.name;
+                    am.files.Remove(inst);
+                }
+                else //shouldn't happen
+                {
+                    //we always load bundles from file, so this
+                    //should always be somewhere on the disk
+                    assetsManagerName = Path.Combine(bundleInst.path, assetName);
+                }
+
+                MemoryStream assetsStream = new MemoryStream(assetData);
+                am.LoadAssetsFile(assetsStream, assetsManagerName, true);
+
+                changesUnsaved = true;
+                changesMade = true;
+            }
+        }
+
 
         private async Task<bool> LoadOrAskTypeData(AssetsFileInstance fileInst)
         {
@@ -385,180 +559,6 @@ namespace UABEAvalonia
             bundleInst = null;
 
             lblFileName.Text = "No file opened.";
-        }
-
-        private async void BtnExport_Click(object? sender, RoutedEventArgs e)
-        {
-            if (bundleInst != null && comboBox.SelectedItem != null)
-            {
-                int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
-
-                string bunAssetName = bundleInst.file.bundleInf6.dirInf[index].name;
-                byte[] assetData = BundleHelper.LoadAssetDataFromBundle(bundleInst.file, index);
-
-                SaveFileDialog sfd = new SaveFileDialog();
-                sfd.Title = "Save as...";
-                sfd.InitialFileName = bunAssetName;
-
-                string file = await sfd.ShowAsync(this);
-
-                if (file == null)
-                    return;
-
-                File.WriteAllBytes(file, assetData);
-            }
-        }
-
-        private async void BtnImport_Click(object? sender, RoutedEventArgs e)
-        {
-            if (bundleInst != null)
-            {
-                OpenFileDialog ofd = new OpenFileDialog();
-                ofd.Title = "Open";
-
-                string[] files = await ofd.ShowAsync(this);
-
-                if (files.Length == 0)
-                    return;
-
-                string file = files[0];
-
-                if (file == null)
-                    return;
-
-                byte[] fileBytes = File.ReadAllBytes(file);
-                string fileName = Path.GetFileName(file);
-
-                newFiles[fileName] = AssetImportExport.CreateBundleReplacer(fileName, true, fileBytes);
-
-                //todo handle overwriting
-                comboItems.Add(new ComboBoxItem()
-                {
-                    Content = fileName,
-                    Tag = comboItems.Count
-                });
-                comboBox.SelectedIndex = comboItems.Count - 1;
-
-                changesUnsaved = true;
-                changesMade = true;
-            }
-        }
-
-        private async void BtnInfo_Click(object? sender, RoutedEventArgs e)
-        {
-            if (bundleInst != null && comboBox.SelectedItem != null)
-            {
-                int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
-
-                string bunAssetName = bundleInst.file.bundleInf6.dirInf[index].name;
-
-                //when we make a modification to an assets file in the bundle,
-                //we replace the assets file in the manager. this way, all we
-                //have to do is not reload from the bundle if our assets file
-                //has been modified
-                MemoryStream assetStream;
-                if (!newFiles.ContainsKey(bunAssetName))
-                {
-                    byte[] assetData = BundleHelper.LoadAssetDataFromBundle(bundleInst.file, index);
-                    assetStream = new MemoryStream(assetData);
-                }
-                else
-                {
-                    //unused if the file already exists
-                    assetStream = null;
-                }
-
-                //warning: does not update if you import an assets file onto
-                //a file that wasn't originally an assets file
-                var fileInf = BundleHelper.GetDirInfo(bundleInst.file, index);
-                bool isAssetsFile = bundleInst.file.IsAssetsFile(bundleInst.file.reader, fileInf);
-
-                if (isAssetsFile)
-                {
-                    string assetMemPath = Path.Combine(bundleInst.path, bunAssetName);
-                    AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, assetMemPath, true);
-
-                    if (!await LoadOrAskTypeData(fileInst))
-                        return;
-
-                    if (bundleInst != null && fileInst.parentBundle == null)
-                        fileInst.parentBundle = bundleInst;
-
-                    InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
-                    info.Closing += InfoWindow_Closing;
-                    info.Show();
-                }
-                else
-                {
-                    await MessageBoxUtil.ShowDialog(this, "Error", "This doesn't seem to be a valid assets file.\n" + 
-                                                                   "If you want to export a non-assets file,\n" +
-                                                                   "use Export.");
-                }
-            }
-        }
-
-        private async void MenuCreatePackageFile_Click(object? sender, RoutedEventArgs e)
-        {
-            await MessageBoxUtil.ShowDialog(this, "Not implemented",
-                "Bundle pkgs are not supported at the moment.\n" +
-                "Trying to install an emip file? Try running\n" +
-                "UABEAvalonia applyemip from the command line.");
-        }
-
-        private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
-        {
-            if (!changesUnsaved || ignoreCloseEvent)
-            {
-                e.Cancel = false;
-                ignoreCloseEvent = false;
-            }
-            else
-            {
-                e.Cancel = true;
-                ignoreCloseEvent = true;
-
-                await AskForSave();
-                Close(); //calling Close() triggers Closing() again
-            }
-        }
-
-        private void InfoWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
-        {
-            if (sender == null)
-                return;
-
-            InfoWindow window = (InfoWindow)sender;
-            string assetName = window.AssetsFileName;
-
-            if (window.FinalAssetData != null)
-            {
-                byte[] assetData = window.FinalAssetData;
-
-                BundleReplacer replacer = AssetImportExport.CreateBundleReplacer(assetName, true, assetData);
-                newFiles[assetName] = replacer;
-
-                //replace existing assets file in the manager
-                AssetsFileInstance? inst = am.files.FirstOrDefault(i => i.name.ToLower() == assetName.ToLower());
-                string assetsManagerName;
-
-                if (inst != null)
-                {
-                    assetsManagerName = inst.name;
-                    am.files.Remove(inst);
-                }
-                else //shouldn't happen
-                {
-                    //we always load bundles from file, so this
-                    //should always be somewhere on the disk
-                    assetsManagerName = Path.Combine(bundleInst.path, assetName);
-                }
-
-                MemoryStream assetsStream = new MemoryStream(assetData);
-                am.LoadAssetsFile(assetsStream, assetsManagerName, true);
-
-                changesUnsaved = true;
-                changesMade = true;
-            }
         }
 
         private void InitializeComponent()

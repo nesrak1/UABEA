@@ -111,25 +111,6 @@ namespace TexturePlugin
             }
         }
 
-        private void ImportTexture(string file)
-        {
-            using (Image<Rgba32> image = Image.Load<Rgba32>(file))
-            {
-                tex.m_Width = image.Width;
-                tex.m_Height = image.Height;
-
-                image.Mutate(i => i.Flip(FlipMode.Vertical));
-                if (image.TryGetSinglePixelSpan(out var pixelSpan))
-                {
-                    modImageBytes = MemoryMarshal.AsBytes(pixelSpan).ToArray();
-                }
-                else
-                {
-                    modImageBytes = null; //rip
-                }
-            }
-        }
-
         private void BtnSave_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             if (modImageBytes != null)
@@ -163,6 +144,25 @@ namespace TexturePlugin
         private void BtnCancel_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(false);
+        }
+
+        private void ImportTexture(string file)
+        {
+            using (Image<Rgba32> image = Image.Load<Rgba32>(file))
+            {
+                tex.m_Width = image.Width;
+                tex.m_Height = image.Height;
+
+                image.Mutate(i => i.Flip(FlipMode.Vertical));
+                if (image.TryGetSinglePixelSpan(out var pixelSpan))
+                {
+                    modImageBytes = MemoryMarshal.AsBytes(pixelSpan).ToArray();
+                }
+                else
+                {
+                    modImageBytes = null; //rip
+                }
+            }
         }
 
         private void InitializeComponent()

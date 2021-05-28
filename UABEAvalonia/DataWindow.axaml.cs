@@ -24,6 +24,16 @@ namespace UABEAvalonia
             this.Closing += DataWindow_Closing;
         }
 
+        public DataWindow(AssetTypeValueField baseField) : this()
+        {
+            TreeViewItem baseItem = CreateTreeItem($"{baseField.GetFieldType()} {baseField.GetName()}");
+
+            TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
+            baseItem.Items = new List<TreeViewItem>() { arrayIndexTreeItem };
+            treeView.Items = new List<TreeViewItem>() { baseItem };
+            SetTreeItemEvents(baseItem, baseField);
+        }
+
         private void DataWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             treeView.Items = null;
@@ -33,16 +43,6 @@ namespace UABEAvalonia
             //edit: with the new lazy loading this may not be the case
             //anymore, removing it for now
             //GC.Collect();
-        }
-
-        public DataWindow(AssetTypeValueField baseField) : this()
-        {
-            TreeViewItem baseItem = CreateTreeItem($"{baseField.GetFieldType()} {baseField.GetName()}");
-
-            TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
-            baseItem.Items = new List<TreeViewItem>() { arrayIndexTreeItem };
-            treeView.Items = new List<TreeViewItem>() { baseItem };
-            SetTreeItemEvents(baseItem, baseField);
         }
 
         private TreeViewItem CreateTreeItem(string text)
