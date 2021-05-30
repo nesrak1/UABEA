@@ -457,6 +457,8 @@ namespace UABEAvalonia
 
         private void RecurseGetAllAssets(AssetsFileInstance fromFile, List<AssetExternal> exts, List<AssetsFileInstance> files, HashSet<string> fileNames)
         {
+            fromFile.table.GenerateQuickLookupTree();
+
             files.Add(fromFile);
             fileNames.Add(fromFile.path);
 

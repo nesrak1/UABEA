@@ -141,7 +141,7 @@ namespace UABEAvalonia
                     else
                     {
                         if ((bundleInst.file.bundleHeader6.flags & 0x3F) != 0) //header is compressed (most likely)
-                            DecompressToMemory(bundleInst);
+                            bundleInst.file.UnpackInfoOnly();
                         LoadBundle(bundleInst);
                     }
                 }
