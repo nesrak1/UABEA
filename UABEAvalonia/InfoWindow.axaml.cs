@@ -7,6 +7,7 @@ using MessageBox.Avalonia;
 using MessageBox.Avalonia.DTO;
 using MessageBox.Avalonia.Enums;
 using MessageBox.Avalonia.Models;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -50,7 +51,8 @@ namespace UABEAvalonia
         public bool fromBundle { get => Workspace.fromBundle; }
 
         public string AssetsFileName { get => Workspace.AssetsFileName; }
-        public byte[] FinalAssetData { get; set; }
+        //would prefer using a stream over byte[] but whatever, will for now
+        public List<Tuple<string, byte[]>> ChangedAssetsDatas { get; set; }
 
         private ObservableCollection<AssetInfoDataGridItem> dataGridItems;
 
@@ -87,6 +89,7 @@ namespace UABEAvalonia
             boxFileId = this.FindControl<TextBox>("boxFileId");
             boxType = this.FindControl<TextBox>("boxType");
             //generated events
+            menuAdd.Click += MenuAdd_Click;
             menuSave.Click += MenuSave_Click;
             menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
             menuClose.Click += MenuClose_Click;
@@ -95,6 +98,7 @@ namespace UABEAvalonia
             btnExportDump.Click += BtnExportDump_Click;
             btnImportRaw.Click += BtnImportRaw_Click;
             btnImportDump.Click += BtnImportDump_Click;
+            btnRemove.Click += BtnRemove_Click;
             btnPlugin.Click += BtnPlugin_Click;
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
         }
@@ -110,7 +114,14 @@ namespace UABEAvalonia
             pluginManager = new PluginManager();
             pluginManager.LoadPluginsInDirectory("plugins");
 
+            ChangedAssetsDatas = new List<Tuple<string, byte[]>>();
+
             //this.DataContext = this;
+        }
+
+        private void MenuAdd_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         private async void MenuSave_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -315,6 +326,11 @@ namespace UABEAvalonia
             }
         }
 
+        private void BtnRemove_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+
+        }
+
         private async void BtnPlugin_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             if (await FailIfNothingSelected())
@@ -329,29 +345,57 @@ namespace UABEAvalonia
         {
             List<AssetsReplacer> newAssetsList = Workspace.NewAssets.Values.ToList();
 
+            var fileToReplacer = new Dictionary<string, List<AssetsReplacer>>();
+
+            foreach (var newAsset in Workspace.NewAssets)
+            {
+                AssetID assetId = newAsset.Key;
+                AssetsReplacer replacer = newAsset.Value;
+                string fileName = assetId.fileName;
+
+                if (!fileToReplacer.ContainsKey(fileName))
+                    fileToReplacer[fileName] = new List<AssetsReplacer>();
+
+                fileToReplacer[fileName].Add(replacer);
+            }
+
             if (fromBundle)
             {
-                using (MemoryStream ms = new MemoryStream())
-                using (AssetsFileWriter w = new AssetsFileWriter(ms))
+                ChangedAssetsDatas.Clear();
+                foreach (var kvp in fileToReplacer)
                 {
-                    assetsFile.file.Write(w, 0, newAssetsList, 0);
-                    FinalAssetData = ms.ToArray();
+                    string fileName = kvp.Key;
+                    List<AssetsReplacer> replacers = kvp.Value;
+
+                    using (MemoryStream ms = new MemoryStream())
+                    using (AssetsFileWriter w = new AssetsFileWriter(ms))
+                    {
+                        assetsFile.file.Write(w, 0, replacers, 0);
+                        ChangedAssetsDatas.Add(new Tuple<string, byte[]>(fileName, ms.ToArray()));
+                    }
                 }
             }
             else
             {
-                SaveFileDialog sfd = new SaveFileDialog();
-                sfd.Title = "Save as...";
-
-                string file = await sfd.ShowAsync(this);
-
-                if (file == null)
-                    return;
-
-                using (FileStream fs = File.OpenWrite(file))
-                using (AssetsFileWriter w = new AssetsFileWriter(fs))
+                foreach (var kvp in fileToReplacer)
                 {
-                    assetsFile.file.Write(w, 0, newAssetsList, 0);
+                    string fileName = kvp.Key;
+                    List<AssetsReplacer> replacers = kvp.Value;
+
+                    SaveFileDialog sfd = new SaveFileDialog();
+                    sfd.Title = "Save as...";
+                    sfd.InitialFileName = fileName;
+
+                    string file = await sfd.ShowAsync(this);
+
+                    if (file == null)
+                        return;
+
+                    using (FileStream fs = File.OpenWrite(file))
+                    using (AssetsFileWriter w = new AssetsFileWriter(fs))
+                    {
+                        assetsFile.file.Write(w, 0, newAssetsList, 0);
+                    }
                 }
             }
         }

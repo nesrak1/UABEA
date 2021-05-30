@@ -310,33 +310,38 @@ namespace UABEAvalonia
                 return;
 
             InfoWindow window = (InfoWindow)sender;
-            string assetName = window.AssetsFileName;
 
-            if (window.FinalAssetData != null)
+            if (window.ChangedAssetsDatas != null)
             {
-                byte[] assetData = window.FinalAssetData;
+                List<Tuple<string, byte[]>> assetDatas = window.ChangedAssetsDatas;
 
-                BundleReplacer replacer = AssetImportExport.CreateBundleReplacer(assetName, true, assetData);
-                newFiles[assetName] = replacer;
-
-                //replace existing assets file in the manager
-                AssetsFileInstance? inst = am.files.FirstOrDefault(i => i.name.ToLower() == assetName.ToLower());
-                string assetsManagerName;
-
-                if (inst != null)
+                foreach (var tup in assetDatas)
                 {
-                    assetsManagerName = inst.name;
-                    am.files.Remove(inst);
-                }
-                else //shouldn't happen
-                {
-                    //we always load bundles from file, so this
-                    //should always be somewhere on the disk
-                    assetsManagerName = Path.Combine(bundleInst.path, assetName);
-                }
+                    string assetName = tup.Item1;
+                    byte[] assetData = tup.Item2;
 
-                MemoryStream assetsStream = new MemoryStream(assetData);
-                am.LoadAssetsFile(assetsStream, assetsManagerName, true);
+                    BundleReplacer replacer = AssetImportExport.CreateBundleReplacer(assetName, true, assetData);
+                    newFiles[assetName] = replacer;
+
+                    //replace existing assets file in the manager
+                    AssetsFileInstance? inst = am.files.FirstOrDefault(i => i.name.ToLower() == assetName.ToLower());
+                    string assetsManagerName;
+
+                    if (inst != null)
+                    {
+                        assetsManagerName = inst.name;
+                        am.files.Remove(inst);
+                    }
+                    else //shouldn't happen
+                    {
+                        //we always load bundles from file, so this
+                        //should always be somewhere on the disk
+                        assetsManagerName = Path.Combine(bundleInst.path, assetName);
+                    }
+
+                    MemoryStream assetsStream = new MemoryStream(assetData);
+                    am.LoadAssetsFile(assetsStream, assetsManagerName, true);
+                }
 
                 changesUnsaved = true;
                 changesMade = true;
