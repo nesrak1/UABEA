@@ -54,7 +54,7 @@ namespace UABEAvalonia.Plugins
             }
         }
 
-        public List<UABEAPluginMenuInfo> GetPluginsThatSupport(AssetsManager am, List<AssetExternal> selectedAssets)
+        public List<UABEAPluginMenuInfo> GetPluginsThatSupport(AssetsManager am, List<AssetContainer> selectedAssets)
         {
             List<UABEAPluginMenuInfo> menuInfos = new List<UABEAPluginMenuInfo>();
             foreach (var pluginInf in loadedPlugins)

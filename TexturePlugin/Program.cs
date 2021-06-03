@@ -13,16 +13,14 @@ namespace TexturePlugin
 {
     public static class TextureHelper
     {
-        public static AssetTypeInstance GetByteArrayTexture(AssetWorkspace workspace, AssetExternal tex)
+        public static AssetTypeInstance GetByteArrayTexture(AssetWorkspace workspace, AssetContainer tex)
         {
-            ClassDatabaseType textureType = AssetHelper.FindAssetClassByID(workspace.am.classFile, tex.info.curFileType);
-            AssetTypeTemplateField textureTemp = new AssetTypeTemplateField();
-            textureTemp.FromClassDatabase(workspace.am.classFile, textureType, 0);
+            AssetTypeTemplateField textureTemp = workspace.GetTemplateField(tex.FileInstance.file, tex.ClassId, tex.MonoId);
             AssetTypeTemplateField image_data = textureTemp.children.FirstOrDefault(f => f.name == "image data");
             if (image_data == null)
                 return null;
             image_data.valueType = EnumValueTypes.ByteArray;
-            AssetTypeInstance textureTypeInstance = new AssetTypeInstance(new[] { textureTemp }, tex.file.file.reader, tex.info.absoluteFilePos);
+            AssetTypeInstance textureTypeInstance = new AssetTypeInstance(new[] { textureTemp }, tex.FileReader, tex.FilePosition);
             return textureTypeInstance;
         }
 
@@ -54,7 +52,7 @@ namespace TexturePlugin
 
     public class ImportTextureOption : UABEAPluginOption
     {
-        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetExternal> selection, out string name)
+        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
         {
             name = "Batch import .png";
 
@@ -66,9 +64,9 @@ namespace TexturePlugin
 
             int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
 
-            foreach (AssetExternal ext in selection)
+            foreach (AssetContainer cont in selection)
             {
-                if (ext.info.curFileType != classId)
+                if (cont.ClassId != classId)
                     return false;
             }
             return true;
@@ -80,7 +78,10 @@ namespace TexturePlugin
             {
                 string selectedFilePath = batchInfo.importFile;
 
-                AssetTypeValueField baseField = batchInfo.ext.instance.GetBaseField();
+                if (!batchInfo.cont.HasInstance)
+                    continue;
+
+                AssetTypeValueField baseField = batchInfo.cont.TypeInstance.GetBaseField();
                 TextureFormat fmt = (TextureFormat)baseField.Get("m_TextureFormat").GetValue().AsInt();
 
                 byte[] encImageBytes = TextureImportExport.ImportPng(selectedFilePath, fmt, out int width, out int height);
@@ -115,18 +116,11 @@ namespace TexturePlugin
             return true;
         }
 
-        public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
+        public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             for (int i = 0; i < selection.Count; i++)
             {
-                AssetExternal ext = selection[i];
-                AssetExternal newExt = new AssetExternal()
-                {
-                    file = ext.file,
-                    info = ext.info,
-                    instance = TextureHelper.GetByteArrayTexture(workspace, ext)
-                };
-                selection[i] = newExt;
+                selection[i] = new AssetContainer(selection[i], TextureHelper.GetByteArrayTexture(workspace, selection[i]));
             }
 
             OpenFolderDialog ofd = new OpenFolderDialog();
@@ -143,15 +137,14 @@ namespace TexturePlugin
                 {
                     //some of the assets may not get modified, but
                     //uabe still makes replacers for those anyway
-                    foreach (AssetExternal ext in selection)
+                    foreach (AssetContainer cont in selection)
                     {
-                        byte[] savedAsset = ext.instance.WriteToByteArray();
+                        byte[] savedAsset = cont.TypeInstance.WriteToByteArray();
 
                         var replacer = new AssetsReplacerFromMemory(
-                            0, ext.info.index, (int)ext.info.curFileType,
-                            AssetHelper.GetScriptIndex(ext.file.file, ext.info), savedAsset);
+                            0, cont.PathId, (int)cont.ClassId, cont.MonoId, savedAsset);
 
-                        workspace.AddReplacer(ext.file, replacer, new MemoryStream(savedAsset));
+                        workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
                     }
                     return true;
                 }
@@ -166,7 +159,7 @@ namespace TexturePlugin
 
     public class ExportTextureOption : UABEAPluginOption
     {
-        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetExternal> selection, out string name)
+        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
         {
             if (selection.Count > 1)
                 name = "Batch export .png";
@@ -178,15 +171,15 @@ namespace TexturePlugin
 
             int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
 
-            foreach (AssetExternal ext in selection)
+            foreach (AssetContainer cont in selection)
             {
-                if (ext.info.curFileType != classId)
+                if (cont.ClassId != classId)
                     return false;
             }
             return true;
         }
 
-        public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
+        public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             if (selection.Count > 1)
                 return await BatchExport(win, workspace, selection);
@@ -194,10 +187,10 @@ namespace TexturePlugin
                 return await SingleExport(win, workspace, selection);
         }
 
-        private bool GetResSTexture(TextureFile texFile, AssetExternal ext)
+        private bool GetResSTexture(TextureFile texFile, AssetContainer cont)
         {
             TextureFile.StreamingInfo streamInfo = texFile.m_StreamData;
-            if (streamInfo.path != null && streamInfo.path != "" && ext.file.parentBundle != null)
+            if (streamInfo.path != null && streamInfo.path != "" && cont.FileInstance.parentBundle != null)
             {
                 //some versions apparently don't use archive:/
                 string searchPath = streamInfo.path;
@@ -206,7 +199,7 @@ namespace TexturePlugin
 
                 searchPath = Path.GetFileName(searchPath);
 
-                AssetBundleFile bundle = ext.file.parentBundle.file;
+                AssetBundleFile bundle = cont.FileInstance.parentBundle.file;
 
                 AssetsFileReader reader = bundle.reader;
                 AssetBundleDirectoryInfo06[] dirInf = bundle.bundleInf6.dirInf;
@@ -231,18 +224,11 @@ namespace TexturePlugin
             }
         }
 
-        public async Task<bool> BatchExport(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
+        public async Task<bool> BatchExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             for (int i = 0; i < selection.Count; i++)
             {
-                AssetExternal ext = selection[i];
-                AssetExternal newExt = new AssetExternal()
-                {
-                    file = ext.file,
-                    info = ext.info,
-                    instance = TextureHelper.GetByteArrayTexture(workspace, ext)
-                };
-                selection[i] = newExt;
+                selection[i] = new AssetContainer(selection[i], TextureHelper.GetByteArrayTexture(workspace, selection[i]));
             }
 
             OpenFolderDialog ofd = new OpenFolderDialog();
@@ -252,21 +238,21 @@ namespace TexturePlugin
 
             if (dir != null && dir != string.Empty)
             {
-                foreach (AssetExternal ext in selection)
+                foreach (AssetContainer cont in selection)
                 {
-                    AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, ext).GetBaseField();
+                    AssetTypeValueField texBaseField = cont.TypeInstance.GetBaseField();
                     TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
 
-                    string file = Path.Combine(dir, $"{texFile.m_Name}-{Path.GetFileName(ext.file.path)}-{ext.info.index}.png");
+                    string file = Path.Combine(dir, $"{texFile.m_Name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png");
 
                     //bundle resS
-                    if (!GetResSTexture(texFile, ext))
+                    if (!GetResSTexture(texFile, cont))
                     {
                         await MessageBoxUtil.ShowDialog(win, "Error", "resS was detected but no file was found in bundle");
                         return false;
                     }
 
-                    byte[] data = TextureHelper.GetRawTextureBytes(texFile, ext.file);
+                    byte[] data = TextureHelper.GetRawTextureBytes(texFile, cont.FileInstance);
 
                     bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                     if (!success)
@@ -279,11 +265,11 @@ namespace TexturePlugin
             }
             return false;
         }
-        public async Task<bool> SingleExport(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
+        public async Task<bool> SingleExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
-            AssetExternal ext = selection[0];
+            AssetContainer cont = selection[0];
 
-            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, ext).GetBaseField();
+            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, cont).GetBaseField();
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
             SaveFileDialog sfd = new SaveFileDialog();
 
@@ -291,20 +277,20 @@ namespace TexturePlugin
             sfd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "PNG file", Extensions = new List<string>() { "png" } }
             };
-            sfd.InitialFileName = $"{texFile.m_Name}-{Path.GetFileName(ext.file.path)}-{ext.info.index}.png";
+            sfd.InitialFileName = $"{texFile.m_Name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png";
 
             string file = await sfd.ShowAsync(win);
 
             if (file != null && file != string.Empty)
             {
                 //bundle resS
-                if (!GetResSTexture(texFile, ext))
+                if (!GetResSTexture(texFile, cont))
                 {
                     await MessageBoxUtil.ShowDialog(win, "Error", "resS was detected but no file was found in bundle");
                     return false;
                 }
 
-                byte[] data = TextureHelper.GetRawTextureBytes(texFile, ext.file);
+                byte[] data = TextureHelper.GetRawTextureBytes(texFile, cont.FileInstance);
 
                 bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                 if (!success)
@@ -319,7 +305,7 @@ namespace TexturePlugin
 
     public class EditTextureOption : UABEAPluginOption
     {
-        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetExternal> selection, out string name)
+        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
         {
             name = "Edit texture";
 
@@ -331,19 +317,19 @@ namespace TexturePlugin
 
             int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
 
-            foreach (AssetExternal ext in selection)
+            foreach (AssetContainer cont in selection)
             {
-                if (ext.info.curFileType != classId)
+                if (cont.ClassId != classId)
                     return false;
             }
             return true;
         }
 
-        public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection)
+        public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
-            AssetExternal tex = selection[0];
+            AssetContainer cont = selection[0];
 
-            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, tex).GetBaseField();
+            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, cont).GetBaseField();
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
             EditDialog dialog = new EditDialog(texFile.m_Name, texFile, texBaseField);
             bool saved = await dialog.ShowDialog<bool>(win);
@@ -352,10 +338,9 @@ namespace TexturePlugin
                 byte[] savedAsset = texBaseField.WriteToByteArray();
 
                 var replacer = new AssetsReplacerFromMemory(
-                    0, tex.info.index, (int)tex.info.curFileType,
-                    AssetHelper.GetScriptIndex(tex.file.file, tex.info), savedAsset);
+                    0, cont.PathId, (int)cont.ClassId, cont.MonoId, savedAsset);
 
-                workspace.AddReplacer(tex.file, replacer, new MemoryStream(savedAsset));
+                workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
                 return true;
             }
             return false;

@@ -16,7 +16,7 @@ namespace UABEAvalonia
 
         private Window win;
         private AssetWorkspace workspace;
-        private List<AssetExternal> selection;
+        private List<AssetContainer> selection;
 
         List<UABEAPluginMenuInfo> plugInfs;
 
@@ -35,7 +35,7 @@ namespace UABEAvalonia
             btnCancel.Click += BtnCancel_Click;
         }
 
-        public PluginWindow(Window win, AssetWorkspace workspace, List<AssetExternal> selection, PluginManager plugLoader) : this()
+        public PluginWindow(Window win, AssetWorkspace workspace, List<AssetContainer> selection, PluginManager plugLoader) : this()
         {
             this.win = win;
             this.workspace = workspace;

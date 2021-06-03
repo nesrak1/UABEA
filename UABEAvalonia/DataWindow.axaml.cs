@@ -27,17 +27,17 @@ namespace UABEAvalonia
             this.Closing += DataWindow_Closing;
         }
 
-        public DataWindow(AssetWorkspace workspace, AssetExternal ext) : this()
+        public DataWindow(AssetWorkspace workspace, AssetContainer cont) : this()
         {
             this.workspace = workspace;
 
-            AssetTypeValueField baseField = ext.instance.GetBaseField();
+            AssetTypeValueField baseField = workspace.GetBaseField(cont);
             TreeViewItem baseItem = CreateTreeItem($"{baseField.GetFieldType()} {baseField.GetName()}");
 
             TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
             baseItem.Items = new List<TreeViewItem>() { arrayIndexTreeItem };
             treeView.Items = new List<TreeViewItem>() { baseItem };
-            SetTreeItemEvents(baseItem, ext.file, baseField);
+            SetTreeItemEvents(baseItem, cont.FileInstance, baseField);
         }
 
         private void DataWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -67,7 +67,7 @@ namespace UABEAvalonia
             });
         }
 
-        private void SetPPtrEvents(TreeViewItem item, AssetsFileInstance fromFile, AssetExternal ext)
+        private void SetPPtrEvents(TreeViewItem item, AssetsFileInstance fromFile, AssetContainer cont)
         {
             item.Tag = false;
             var expandObs = item.GetObservable(TreeViewItem.IsExpandedProperty);
@@ -77,19 +77,19 @@ namespace UABEAvalonia
                 {
                     item.Tag = true; //don't load this again
 
-                    if (ext.file != null && ext.info != null && ext.info.index != 0)
+                    if (cont != null)
                     {
-                        AssetTypeValueField baseField = workspace.GetExtAssetReplaced(ext.file, 0, ext.info.index).instance.GetBaseField();
+                        AssetTypeValueField baseField = workspace.GetBaseField(cont);
                         TreeViewItem baseItem = CreateTreeItem($"{baseField.GetFieldType()} {baseField.GetName()}");
 
                         TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
                         baseItem.Items = new List<TreeViewItem>() { arrayIndexTreeItem };
                         item.Items = new List<TreeViewItem>() { baseItem };
-                        SetTreeItemEvents(baseItem, ext.file, baseField);
+                        SetTreeItemEvents(baseItem, cont.FileInstance, baseField);
                     }
                     else
                     {
-                        item.Items = new List<TreeViewItem>() { CreateTreeItem("[Null Asset]") };
+                        item.Items = new List<TreeViewItem>() { CreateTreeItem("[null asset]") };
                     }
                 }
             });
@@ -176,14 +176,14 @@ namespace UABEAvalonia
                     int fileId = fileIdField.GetValue().AsInt();
                     long pathId = pathIdField.GetValue().AsInt64();
 
-                    AssetExternal ext = workspace.am.GetExtAsset(fromFile, fileId, pathId, false);
+                    AssetContainer cont = workspace.GetAssetContainer(fromFile, fileId, pathId, false);
 
                     TreeViewItem childTreeItem = CreateTreeItem($"[view asset]");
                     items.Add(childTreeItem);
 
                     TreeViewItem dummyItem = CreateTreeItem("Loading...");
                     childTreeItem.Items = new List<TreeViewItem>() { dummyItem };
-                    SetPPtrEvents(childTreeItem, fromFile, ext);
+                    SetPPtrEvents(childTreeItem, fromFile, cont);
                 }
             }
 

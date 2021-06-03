@@ -7,7 +7,7 @@ namespace UABEAvalonia.Plugins
 {
     public interface UABEAPluginOption
     {
-        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetExternal> selection, out string name);
-        public Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetExternal> selection);
+        public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name);
+        public Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection);
     }
 }

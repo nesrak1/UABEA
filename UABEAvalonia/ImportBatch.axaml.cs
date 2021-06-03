@@ -43,42 +43,25 @@ namespace UABEAvalonia
             ignoreListEvents = false;
         }
 
-        public ImportBatch(AssetWorkspace workspace, List<AssetExternal> selection, string directory, string extension) : this()
+        public ImportBatch(AssetWorkspace workspace, List<AssetContainer> selection, string directory, string extension) : this()
         {
             this.workspace = workspace;
             this.directory = directory;
 
             List<string> filesInDir = Directory.GetFiles(directory, "*" + extension).ToList();
             List<ImportBatchDataGridItem> gridItems = new List<ImportBatchDataGridItem>();
-            foreach (AssetExternal ext in selection)
+            foreach (AssetContainer cont in selection)
             {
-                AssetFileInfoEx info = ext.info;
-
-                string assetName = AssetHelper.GetAssetNameFast(ext.file.file, workspace.am.classFile, ext.info);
-                if (info.curFileType == 0x01)
-                {
-                    assetName = $"GameObject {assetName}";
-                }
-                else if (info.curFileType == 0x72)
-                {
-                    if (assetName == string.Empty)
-                        assetName = $"MonoBehaviour";
-                    else
-                        assetName = $"MonoBehaviour {assetName}";
-                }
-                if (assetName == string.Empty)
-                {
-                    assetName = "Unnamed asset";
-                }
+                Extensions.GetUABENameFast(cont, workspace.am.classFile, out string assetName, out string _);
 
                 ImportBatchDataGridItem gridItem = new ImportBatchDataGridItem()
                 {
                     importInfo = new ImportBatchInfo()
                     {
                         assetName = assetName,
-                        assetFile = Path.GetFileName(ext.file.path),
-                        pathId = ext.info.index,
-                        ext = ext
+                        assetFile = Path.GetFileName(cont.FileInstance.path),
+                        pathId = cont.PathId,
+                        cont = cont
                     }
                 };
                 string endWith = gridItem.GetMatchName(extension);
@@ -143,7 +126,7 @@ namespace UABEAvalonia
 
     public class ImportBatchInfo
     {
-        public AssetExternal ext;
+        public AssetContainer cont;
         public string importFile;
         public string assetName;
         public string assetFile;

@@ -15,17 +15,17 @@ namespace UABEAvalonia
         private StreamReader sr;
         private AssetsFileWriter aw;
 
-        public void DumpRawAsset(FileStream fs, AssetsFile file, AssetFileInfoEx info)
+        public void DumpRawAsset(FileStream wfs, AssetsFileReader reader, long position, uint size)
         {
-            Stream assetFs = file.readerPar;
-            assetFs.Position = info.absoluteFilePos;
+            Stream assetFs = reader.BaseStream;
+            assetFs.Position = position;
             byte[] buf = new byte[4096];
-            int bytesLeft = (int)info.curFileSize;
+            int bytesLeft = (int)size;
             while (bytesLeft > 0)
             {
-                int size = assetFs.Read(buf, 0, buf.Length);
-                fs.Write(buf, 0, size);
-                bytesLeft -= size;
+                int readSize = assetFs.Read(buf, 0, Math.Min(bytesLeft, buf.Length));
+                wfs.Write(buf, 0, readSize);
+                bytesLeft -= readSize;
             }
         }
 
@@ -226,9 +226,9 @@ namespace UABEAvalonia
             return str.StartsWith(value + " ");
         }
 
-        public static AssetsReplacer CreateAssetReplacer(AssetsFile file, AssetFileInfoEx info, byte[] data)
+        public static AssetsReplacer CreateAssetReplacer(AssetContainer cont, byte[] data)
         {
-            return new AssetsReplacerFromMemory(0, info.index, (int)info.curFileType, AssetHelper.GetScriptIndex(file, info), data);
+            return new AssetsReplacerFromMemory(0, cont.PathId, (int)cont.ClassId, cont.MonoId, data);
         }
 
         public static BundleReplacer CreateBundleReplacer(string name, bool isSerialized, byte[] data)

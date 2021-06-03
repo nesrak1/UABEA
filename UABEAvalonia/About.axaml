@@ -4,8 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="135"
         Width="400" Height="135"
-        MaxWidth="400" MaxHeight="135"
-        MinWidth="400" MinHeight="135"
+        CanResize="False"
         x:Class="UABEAvalonia.About"
         Title="About Unity Assets Bundle Extractor Avalonia">
   <Grid>

@@ -115,13 +115,12 @@ namespace UABEAvalonia
             pluginManager.LoadPluginsInDirectory("plugins");
 
             ChangedAssetsDatas = new List<Tuple<string, byte[]>>();
-
-            //this.DataContext = this;
         }
 
-        private void MenuAdd_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private async void MenuAdd_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            AddAssetWindow win = new AddAssetWindow(Workspace);
+            await win.ShowDialog(this);
         }
 
         private async void MenuSave_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -141,8 +140,9 @@ namespace UABEAvalonia
         {
             if (Workspace.Modified)
             {
-                ButtonResult choice = await MessageBoxUtil.ShowDialog(this, "Changes made", "You've modified this file. Would you like to save?",
-                                                                      ButtonEnum.YesNo);
+                ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
+                    "Changes made", "You've modified this file. Would you like to save?",
+                    ButtonEnum.YesNo);
                 if (choice == ButtonResult.Yes)
                 {
                     await SaveFile();
@@ -175,10 +175,10 @@ namespace UABEAvalonia
                     return;
             }
 
-            List<AssetExternal> selectedExts = GetSelectedExternalsReplaced();
-            if (selectedExts.Count > 0)
+            List<AssetContainer> selectedConts = GetSelectedAssetsReplaced();
+            if (selectedConts.Count > 0)
             {
-                DataWindow data = new DataWindow(Workspace, selectedExts[0]);
+                DataWindow data = new DataWindow(Workspace, selectedConts[0]);
                 data.Show();
             }
         }
@@ -188,21 +188,12 @@ namespace UABEAvalonia
             if (await FailIfNothingSelected())
                 return;
 
-            SaveFileDialog sfd = new SaveFileDialog();
-            sfd.Title = "Save As";
-            sfd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "Raw Unity Asset", Extensions = new List<string>() { "dat" } }
-            };
-            string file = await sfd.ShowAsync(this);
+            List<AssetContainer> selection = GetSelectedAssetsReplaced();
 
-            if (file != null && file != string.Empty)
-            {
-                using (FileStream fs = File.OpenWrite(file))
-                {
-                    AssetImportExport dumper = new AssetImportExport();
-                    dumper.DumpRawAsset(fs, assetsFile.file, GetSelectedInfo());
-                }
-            }
+            if (selection.Count > 1)
+                await BatchExportRaw(selection);
+            else
+                await SingleExportRaw(selection);
         }
 
         private async void BtnExportDump_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -210,34 +201,12 @@ namespace UABEAvalonia
             if (await FailIfNothingSelected())
                 return;
 
-            SaveFileDialog sfd = new SaveFileDialog();
-            sfd.Title = "Save As";
-            sfd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
-                new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
-            };
+            List<AssetContainer> selection = GetSelectedAssetsReplaced();
 
-            string file = await sfd.ShowAsync(this);
-
-            if (file != null && file != string.Empty)
-            {
-                if (file.EndsWith(".json"))
-                {
-                    await MessageBoxUtil.ShowDialog(this, "Not implemented", "There's no json dump support yet, sorry. Exporting as .txt anyway.");
-                    file = file.Substring(0, file.Length - 5) + ".txt";
-                }
-
-                List<AssetExternal> selectedExts = GetSelectedExternalsReplaced();
-                if (selectedExts.Count > 0)
-                {
-                    using (FileStream fs = File.OpenWrite(file))
-                    using (StreamWriter sw = new StreamWriter(fs))
-                    {
-                        AssetImportExport dumper = new AssetImportExport();
-                        dumper.DumpTextAsset(sw, selectedExts[0].instance.GetBaseField());
-                    }
-                }
-            }
+            if (selection.Count > 1)
+                await BatchExportDump(selection);
+            else
+                await SingleExportDump(selection);
         }
 
         private async void BtnImportRaw_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -245,36 +214,12 @@ namespace UABEAvalonia
             if (await FailIfNothingSelected())
                 return;
 
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Title = "Open";
-            ofd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "Raw Unity Asset", Extensions = new List<string>() { "dat" } }
-            };
+            List<AssetContainer> selection = GetSelectedAssetsReplaced();
 
-            string[] fileList = await ofd.ShowAsync(this);
-            if (fileList.Length == 0)
-                return;
-
-            string file = fileList[0];
-
-            if (file != null && file != string.Empty)
-            {
-                using (FileStream fs = File.OpenRead(file))
-                {
-                    AssetFileInfoEx selectedInfo = GetSelectedInfo();
-                    long selectedId = selectedInfo.index;
-
-                    AssetImportExport importer = new AssetImportExport();
-                    byte[] bytes = importer.ImportRawAsset(fs);
-
-                    AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(assetsFile.file, selectedInfo, bytes);
-                    Workspace.AddReplacer(Workspace.mainFile, replacer, new MemoryStream(bytes));
-                    //newAssets[selectedId] = replacer;
-                    //newAssetDatas[selectedId] = new MemoryStream(bytes);
-
-                    SetSelectedFieldModified();
-                }
-            }
+            if (selection.Count > 1)
+                await BatchImportRaw(selection);
+            else
+                await SingleImportRaw(selection);
         }
 
         private async void BtnImportDump_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -282,53 +227,30 @@ namespace UABEAvalonia
             if (await FailIfNothingSelected())
                 return;
 
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Title = "Open";
-            ofd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
-                new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
-            };
+            List<AssetContainer> selection = GetSelectedAssetsReplaced();
 
-            string[] fileList = await ofd.ShowAsync(this);
-            if (fileList.Length == 0)
-                return;
-
-            string file = fileList[0];
-
-            if (file != null && file != string.Empty)
-            {
-                if (file.EndsWith(".json"))
-                {
-                    await MessageBoxUtil.ShowDialog(this, "Not implemented", "There's no json dump support yet, sorry.");
-                    return;
-                }
-
-                using (FileStream fs = File.OpenRead(file))
-                using (StreamReader sr = new StreamReader(fs))
-                {
-                    AssetFileInfoEx selectedInfo = GetSelectedInfo();
-                    long selectedId = selectedInfo.index;
-
-                    AssetImportExport importer = new AssetImportExport();
-                    byte[]? bytes = importer.ImportTextAsset(sr);
-
-                    if (bytes == null)
-                    {
-                        await MessageBoxUtil.ShowDialog(this, "Parse error", "Something went wrong when reading the dump file.");
-                        return;
-                    }
-
-                    AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(assetsFile.file, selectedInfo, bytes);
-                    Workspace.AddReplacer(Workspace.mainFile, replacer, new MemoryStream(bytes));
-
-                    SetSelectedFieldModified();
-                }
-            }
+            if (selection.Count > 1)
+                await BatchImportDump(selection);
+            else
+                await SingleImportDump(selection);
         }
 
-        private void BtnRemove_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private async void BtnRemove_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
+            if (await FailIfNothingSelected())
+                return;
 
+            ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
+                "Removing assets", "Removing an asset referenced by other assets can cause crashes!\nAre you sure?",
+                ButtonEnum.YesNo);
+            if (choice == ButtonResult.Yes)
+            {
+                List<AssetContainer> selection = GetSelectedAssetsReplaced();
+                foreach (AssetContainer cont in selection)
+                {
+                    Workspace.AddReplacer(cont.FileInstance, new AssetsRemover(0, cont.PathId, (int)cont.ClassId));
+                }
+            }
         }
 
         private async void BtnPlugin_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -336,9 +258,18 @@ namespace UABEAvalonia
             if (await FailIfNothingSelected())
                 return;
 
-            List<AssetExternal> exts = GetSelectedExternalsReplaced(true);
-            PluginWindow plug = new PluginWindow(this, Workspace, exts, pluginManager);
+            List<AssetContainer> conts = GetSelectedAssetsReplaced();
+            PluginWindow plug = new PluginWindow(this, Workspace, conts, pluginManager);
             await plug.ShowDialog(this);
+        }
+
+        private void DataGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            var gridItem = (AssetInfoDataGridItem)dataGrid.SelectedItem;
+            boxName.Text = gridItem.Name;
+            boxPathId.Text = gridItem.PathID.ToString();
+            boxFileId.Text = gridItem.FileID.ToString();
+            boxType.Text = $"0x{gridItem.TypeID:X8} ({gridItem.Type})";
         }
 
         private async Task SaveFile()
@@ -407,13 +338,259 @@ namespace UABEAvalonia
             Close();
         }
 
-        private void DataGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        private async Task BatchExportRaw(List<AssetContainer> selection)
         {
-            var gridItem = (AssetInfoDataGridItem)dataGrid.SelectedItem;
-            boxName.Text = gridItem.Name;
-            boxPathId.Text = gridItem.PathID.ToString();
-            boxFileId.Text = gridItem.FileID.ToString();
-            boxType.Text = $"0x{gridItem.TypeID:X8} ({gridItem.Type})";
+            OpenFolderDialog ofd = new OpenFolderDialog();
+            ofd.Title = "Select export directory";
+
+            string dir = await ofd.ShowAsync(this);
+
+            if (dir != null && dir != string.Empty)
+            {
+                foreach (AssetContainer selectedCont in selection)
+                {
+                    AssetsFileInstance selectedInst = selectedCont.FileInstance;
+
+                    Extensions.GetUABENameFast(selectedCont, am.classFile, out string assetName, out string _);
+                    string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.dat");
+
+                    using (FileStream fs = File.OpenWrite(file))
+                    {
+                        AssetImportExport dumper = new AssetImportExport();
+                        dumper.DumpRawAsset(fs, selectedCont.FileReader, selectedCont.FilePosition, selectedCont.Size);
+                    }
+                }
+            }
+        }
+        
+        private async Task SingleExportRaw(List<AssetContainer> selection)
+        {
+            AssetContainer selectedCont = selection[0];
+
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Title = "Save As";
+            sfd.Filters = new List<FileDialogFilter>() {
+                new FileDialogFilter() { Name = "Raw Unity Asset", Extensions = new List<string>() { "dat" } }
+            };
+            string file = await sfd.ShowAsync(this);
+
+            if (file != null && file != string.Empty)
+            {
+                using (FileStream fs = File.OpenWrite(file))
+                {
+                    AssetImportExport dumper = new AssetImportExport();
+                    dumper.DumpRawAsset(fs, selectedCont.FileReader, selectedCont.FilePosition, selectedCont.Size);
+                }
+            }
+        }
+
+        private async Task BatchExportDump(List<AssetContainer> selection)
+        {
+            //todo: ask for txt or json
+
+            OpenFolderDialog ofd = new OpenFolderDialog();
+            ofd.Title = "Select export directory";
+
+            string dir = await ofd.ShowAsync(this);
+
+            if (dir != null && dir != string.Empty)
+            {
+                foreach (AssetContainer selectedCont in selection)
+                {
+                    Extensions.GetUABENameFast(selectedCont, am.classFile, out string assetName, out string _);
+                    string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedCont.FileInstance.path)}-{selectedCont.PathId}.txt");
+
+                    using (FileStream fs = File.OpenWrite(file))
+                    using (StreamWriter sw = new StreamWriter(fs))
+                    {
+                        AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);
+
+                        AssetImportExport dumper = new AssetImportExport();
+                        dumper.DumpTextAsset(sw, baseField);
+                    }
+                }
+            }
+        }
+
+        private async Task SingleExportDump(List<AssetContainer> selection)
+        {
+            AssetContainer selectedCont = selection[0];
+            AssetsFileInstance selectedInst = selectedCont.FileInstance;
+
+            Extensions.GetUABENameFast(selectedCont, am.classFile, out string assetName, out string _);
+
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Title = "Save As";
+            sfd.Filters = new List<FileDialogFilter>() {
+                new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
+            };
+            sfd.InitialFileName = $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.txt";
+
+            string file = await sfd.ShowAsync(this);
+
+            if (file != null && file != string.Empty)
+            {
+                if (file.EndsWith(".json"))
+                {
+                    await MessageBoxUtil.ShowDialog(this, "Not implemented", "There's no json dump support yet, sorry. Exporting as .txt anyway.");
+                    file = file.Substring(0, file.Length - 5) + ".txt";
+                }
+
+                using (FileStream fs = File.OpenWrite(file))
+                using (StreamWriter sw = new StreamWriter(fs))
+                {
+                    AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);
+
+                    AssetImportExport dumper = new AssetImportExport();
+                    dumper.DumpTextAsset(sw, baseField);
+                }
+            }
+        }
+
+        private async Task BatchImportRaw(List<AssetContainer> selection)
+        {
+            OpenFolderDialog ofd = new OpenFolderDialog();
+            ofd.Title = "Select import directory";
+
+            string dir = await ofd.ShowAsync(this);
+
+            if (dir != null && dir != string.Empty)
+            {
+                ImportBatch dialog = new ImportBatch(Workspace, selection, dir, ".txt");
+                List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(this);
+                if (batchInfos != null)
+                {
+                    foreach (ImportBatchInfo batchInfo in batchInfos)
+                    {
+                        string selectedFilePath = batchInfo.importFile;
+                        AssetContainer selectedCont = batchInfo.cont;
+                        AssetsFileInstance selectedInst = selectedCont.FileInstance;
+
+                        using (FileStream fs = File.OpenRead(selectedFilePath))
+                        {
+                            AssetImportExport importer = new AssetImportExport();
+                            byte[] bytes = importer.ImportRawAsset(fs);
+
+                            AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(selectedCont, bytes);
+                            Workspace.AddReplacer(selectedInst, replacer, new MemoryStream(bytes));
+                        }
+                    }
+                }
+            }
+        }
+
+        private async Task SingleImportRaw(List<AssetContainer> selection)
+        {
+            AssetContainer selectedCont = selection[0];
+            AssetsFileInstance selectedInst = selectedCont.FileInstance;
+
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "Open";
+            ofd.Filters = new List<FileDialogFilter>() {
+                new FileDialogFilter() { Name = "Raw Unity Asset", Extensions = new List<string>() { "dat" } }
+            };
+
+            string[] fileList = await ofd.ShowAsync(this);
+            if (fileList.Length == 0)
+                return;
+
+            string file = fileList[0];
+
+            if (file != null && file != string.Empty)
+            {
+                using (FileStream fs = File.OpenRead(file))
+                {
+                    AssetImportExport importer = new AssetImportExport();
+                    byte[] bytes = importer.ImportRawAsset(fs);
+
+                    AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(selectedCont, bytes);
+                    Workspace.AddReplacer(selectedInst, replacer, new MemoryStream(bytes));
+                }
+            }
+        }
+
+        private async Task BatchImportDump(List<AssetContainer> selection)
+        {
+            OpenFolderDialog ofd = new OpenFolderDialog();
+            ofd.Title = "Select import directory";
+
+            string dir = await ofd.ShowAsync(this);
+
+            if (dir != null && dir != string.Empty)
+            {
+                ImportBatch dialog = new ImportBatch(Workspace, selection, dir, ".txt");
+                List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(this);
+                if (batchInfos != null)
+                {
+                    foreach (ImportBatchInfo batchInfo in batchInfos)
+                    {
+                        string selectedFilePath = batchInfo.importFile;
+                        AssetContainer selectedCont = batchInfo.cont;
+                        AssetsFileInstance selectedInst = selectedCont.FileInstance;
+
+                        using (FileStream fs = File.OpenRead(selectedFilePath))
+                        using (StreamReader sr = new StreamReader(fs))
+                        {
+                            AssetImportExport importer = new AssetImportExport();
+                            byte[]? bytes = importer.ImportTextAsset(sr);
+
+                            if (bytes == null)
+                            {
+                                await MessageBoxUtil.ShowDialog(this, "Parse error", "Something went wrong when reading the dump file.");
+                                return;
+                            }
+
+                            AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(selectedCont, bytes);
+                            Workspace.AddReplacer(selectedInst, replacer, new MemoryStream(bytes));
+                        }
+                    }
+                }
+            }
+        }
+
+        private async Task SingleImportDump(List<AssetContainer> selection)
+        {
+            AssetContainer selectedCont = selection[0];
+            AssetsFileInstance selectedInst = selectedCont.FileInstance;
+
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "Open";
+            ofd.Filters = new List<FileDialogFilter>() {
+                new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
+            };
+
+            string[] fileList = await ofd.ShowAsync(this);
+            if (fileList.Length == 0)
+                return;
+
+            string file = fileList[0];
+
+            if (file != null && file != string.Empty)
+            {
+                if (file.EndsWith(".json"))
+                {
+                    await MessageBoxUtil.ShowDialog(this, "Not implemented", "There's no json dump support yet, sorry.");
+                    return;
+                }
+
+                using (FileStream fs = File.OpenRead(file))
+                using (StreamReader sr = new StreamReader(fs))
+                {
+                    AssetImportExport importer = new AssetImportExport();
+                    byte[]? bytes = importer.ImportTextAsset(sr);
+
+                    if (bytes == null)
+                    {
+                        await MessageBoxUtil.ShowDialog(this, "Parse error", "Something went wrong when reading the dump file.");
+                        return;
+                    }
+
+                    AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(selectedCont, bytes);
+                    Workspace.AddReplacer(selectedInst, replacer, new MemoryStream(bytes));
+                }
+            }
         }
 
         private ObservableCollection<AssetInfoDataGridItem> MakeDataGridItems()
@@ -421,76 +598,54 @@ namespace UABEAvalonia
             dataGridItems = new ObservableCollection<AssetInfoDataGridItem>();
 
             LoadAllAssetsWithDeps();
+            Workspace.GenerateAssetsFileLookup();
 
-            foreach (AssetExternal ext in Workspace.LoadedAssets)
+            foreach (AssetContainer cont in Workspace.LoadedAssets.Values)
             {
-                AssetsFile thisFile = ext.file.file;
-                AssetFileInfoEx thisInfo = ext.info;
-                bool usingTypeTree = ext.file.file.typeTree.hasTypeTree;
-
-                string name;
-                string container;
-                string type;
-                int fileId;
-                long pathId;
-                int size;
-                string modified;
-
-                ClassDatabaseType cldbType = AssetHelper.FindAssetClassByID(am.classFile, thisInfo.curFileType);
-                name = AssetHelper.GetAssetNameFast(thisFile, am.classFile, thisInfo); //handles both cldb and typetree
-                container = string.Empty;
-                fileId = Workspace.LoadedFiles.IndexOf(ext.file); //todo faster lookup THIS IS JUST FOR TESTING
-                pathId = thisInfo.index;
-                size = (int)thisInfo.curFileSize;
-                modified = "";
-
-                if (usingTypeTree)
-                {
-                    Type_0D ttType = thisFile.typeTree.unity5Types[thisInfo.curFileTypeOrIndex];
-                    if (ttType.typeFieldsEx.Length != 0)
-                    {
-                        type = ttType.typeFieldsEx[0].GetTypeString(ttType.stringTable);
-                    }
-                    else
-                    {
-                        if (cldbType != null)
-                            type = cldbType.name.GetString(am.classFile);
-                        else
-                            type = $"0x{thisInfo.curFileType:X8}";
-                    }
-                }
-                else
-                {
-                    if (cldbType != null)
-                        type = cldbType.name.GetString(am.classFile);
-                    else
-                        type = $"0x{thisInfo.curFileType:X8}";
-                }
-
-                if (thisInfo.curFileType == 0x01)
-                {
-                    name = $"GameObject {name}";
-                }
-                if (name == string.Empty)
-                {
-                    name = "Unnamed asset";
-                }
-
-                var item = new AssetInfoDataGridItem()
-                {
-                    Name = name,
-                    Container = container,
-                    Type = type,
-                    TypeID = thisInfo.curFileType,
-                    FileID = fileId,
-                    PathID = pathId,
-                    Size = size,
-                    Modified = modified
-                };
-
-                dataGridItems.Add(item);
+                AddDataGridItem(cont);
             }
             return dataGridItems;
+        }
+
+        private AssetInfoDataGridItem AddDataGridItem(AssetContainer cont, bool isNewAsset = false)
+        {
+            AssetsFileInstance thisFileInst = cont.FileInstance;
+            AssetsFile thisFile = thisFileInst.file;
+
+            string name;
+            string container;
+            string type;
+            int fileId;
+            long pathId;
+            int size;
+            string modified;
+
+            container = string.Empty;
+            fileId = Workspace.LoadedFiles.IndexOf(thisFileInst); //todo faster lookup THIS IS JUST FOR TESTING
+            pathId = cont.PathId;
+            size = (int)cont.Size;
+            modified = "";
+
+            Extensions.GetUABENameFast(thisFile, am.classFile, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, out name, out type);
+
+            var item = new AssetInfoDataGridItem
+            {
+                Name = name,
+                Container = container,
+                Type = type,
+                TypeID = cont.ClassId,
+                FileID = fileId,
+                PathID = pathId,
+                Size = size,
+                Modified = modified,
+                assetContainer = cont
+            };
+
+            if (!isNewAsset)
+                dataGridItems.Add(item);
+            else
+                dataGridItems.Insert(0, item);
+            return item;
         }
 
         private void LoadAllAssetsWithDeps()
@@ -499,16 +654,17 @@ namespace UABEAvalonia
             RecurseGetAllAssets(assetsFile, Workspace.LoadedAssets, Workspace.LoadedFiles, fileNames);
         }
 
-        private void RecurseGetAllAssets(AssetsFileInstance fromFile, List<AssetExternal> exts, List<AssetsFileInstance> files, HashSet<string> fileNames)
+        private void RecurseGetAllAssets(AssetsFileInstance fromFile, Dictionary<AssetID, AssetContainer> conts, List<AssetsFileInstance> files, HashSet<string> fileNames)
         {
             fromFile.table.GenerateQuickLookupTree();
 
             files.Add(fromFile);
-            fileNames.Add(fromFile.path);
+            fileNames.Add(fromFile.path.ToLower());
 
             foreach (AssetFileInfoEx info in fromFile.table.assetFileInfo)
             {
-                exts.Add(am.GetExtAsset(fromFile, 0, info.index, true));
+                AssetContainer cont = new AssetContainer(info, fromFile);
+                conts.Add(cont.AssetId, cont);
             }
 
             for (int i = 0; i < fromFile.dependencies.Count; i++)
@@ -519,7 +675,7 @@ namespace UABEAvalonia
                 string depPath = dep.path.ToLower();
                 if (!fileNames.Contains(depPath))
                 {
-                    RecurseGetAllAssets(dep, exts, files, fileNames);
+                    RecurseGetAllAssets(dep, conts, files, fileNames);
                 }
                 else
                 {
@@ -553,28 +709,15 @@ namespace UABEAvalonia
             return dataGrid.SelectedItems.Cast<AssetInfoDataGridItem>().ToList();
         }
 
-        private AssetFileInfoEx GetSelectedInfo()
-        {
-            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
-            return am.GetExtAsset(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID).info;
-        }
-
-        private List<AssetExternal> GetSelectedExternalsReplaced(bool onlyInfo = false)
+        private List<AssetContainer> GetSelectedAssetsReplaced()
         {
             List<AssetInfoDataGridItem> gridItems = GetSelectedGridItems();
-            List<AssetExternal> exts = new List<AssetExternal>();
+            List<AssetContainer> exts = new List<AssetContainer>();
             foreach (var gridItem in gridItems)
             {
-                exts.Add(Workspace.GetExtAssetReplaced(Workspace.LoadedFiles[gridItem.FileID], 0, gridItem.PathID, onlyInfo));
+                exts.Add(gridItem.assetContainer);
             }
             return exts;
-        }
-
-        private void SetSelectedFieldModified()
-        {
-            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
-            gridItem.Modified = "*";
-            gridItem.Update();
         }
 
         private void SetFieldModified(AssetInfoDataGridItem gridItem)
@@ -595,11 +738,42 @@ namespace UABEAvalonia
             }
         }
 
-        private void Workspace_ItemUpdated(AssetID updatedAssetId)
+        private void Workspace_ItemUpdated(AssetsFileInstance file, AssetID assetId)
         {
-            var gridItem = dataGridItems.FirstOrDefault(i => i.PathID == updatedAssetId.pathID);
-            if (gridItem != null)
-                SetFieldModified(gridItem);
+            int fileId = Workspace.LoadedFiles.IndexOf(file);
+            long pathId = assetId.pathID;
+
+            var gridItem = dataGridItems.FirstOrDefault(i => i.FileID == fileId && i.PathID == pathId);
+
+            if (Workspace.LoadedAssets.ContainsKey(assetId))
+            {
+                //added/modified entry
+                if (file != null)
+                {
+                    AssetContainer? cont = Workspace.GetAssetContainer(file, 0, assetId.pathID);
+                    if (cont != null)
+                    {
+                        if (gridItem != null)
+                        {
+                            gridItem.assetContainer = cont;
+                            SetFieldModified(gridItem);
+                        }
+                        else
+                        {
+                            gridItem = AddDataGridItem(cont, true);
+                            gridItem.Modified = "*";
+                        }
+                    }
+                }
+            }
+            else
+            {
+                //removed entry
+                if (gridItem != null)
+                {
+                    dataGridItems.Remove(gridItem);
+                }
+            }
         }
 
         private void InitializeComponent()
@@ -618,6 +792,8 @@ namespace UABEAvalonia
         public long PathID { get; set; }
         public int Size { get; set; }
         public string Modified { get; set; }
+
+        public AssetContainer assetContainer;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
