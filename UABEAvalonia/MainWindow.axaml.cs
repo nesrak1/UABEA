@@ -317,8 +317,12 @@ namespace UABEAvalonia
 
                 foreach (var tup in assetDatas)
                 {
-                    string assetName = tup.Item1;
+                    string assetName = Path.GetFileName(tup.Item1);
                     byte[] assetData = tup.Item2;
+
+                    //only modify assets file we opened for now
+                    if (window.AssetsFileName != assetName)
+                        continue;
 
                     BundleReplacer replacer = AssetImportExport.CreateBundleReplacer(assetName, true, assetData);
                     newFiles[assetName] = replacer;

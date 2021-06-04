@@ -66,7 +66,7 @@ namespace UABEAvalonia
 
             AssetsFileInstance file = workspace.LoadedFiles[fileId];
 
-            AssetTypeTemplateField tempField = null;
+            AssetTypeTemplateField tempField;
             byte[] assetBytes;
             long pathId;
             int typeId;
@@ -78,71 +78,30 @@ namespace UABEAvalonia
                 return;
             }
 
-            if (!file.file.typeTree.hasTypeTree)
+            if (file.file.typeTree.hasTypeTree)
             {
-                ClassDatabaseFile cldb = workspace.am.classFile;
-                ClassDatabaseType cldbType;
-                bool needsTypeId;
-                if (int.TryParse(typeIdText, out typeId))
+                if (!TryParseTypeTree(file, typeIdText, createBlankAsset, out tempField, out typeId))
                 {
-                    cldbType = AssetHelper.FindAssetClassByID(cldb, (uint)typeId);
-                    needsTypeId = false;
-                }
-                else
-                {
-                    cldbType = AssetHelper.FindAssetClassByName(cldb, typeIdText);
-                    needsTypeId = true;
-                }
-
-                if (cldbType == null)
-                {
-                    //maybe ask to continue if there's some weird custom type they need to add or smth
-                    await MessageBoxUtil.ShowDialog(this, "Bad input", "Class type was invalid.");
-                    return;
-                }
-
-                if (needsTypeId)
-                {
-                    typeId = cldbType.classId;
-                }
-
-                if (createBlankAsset)
-                {
-                    tempField = new AssetTypeTemplateField();
-                    tempField.FromClassDatabase(cldb, cldbType, 0);
+                    if (!TryParseClassDatabase(typeIdText, createBlankAsset, out tempField, out typeId))
+                    {
+                        await MessageBoxUtil.ShowDialog(this, "Bad input", "Class type was invalid.");
+                        return;
+                    }
+                    else
+                    {
+                        //has typetree but had to lookup to cldb
+                        //we need to add a new typetree entry because this is
+                        //probably not a type that existed in this bundle
+                        file.file.typeTree.unity5Types.Add(C2T5.Cldb2TypeTree(workspace.am.classFile, typeId));
+                    }
                 }
             }
             else
             {
-                TypeTree tt = file.file.typeTree;
-                Type_0D ttType;
-                bool needsTypeId;
-                if (int.TryParse(typeIdText, out typeId))
-                {
-                    ttType = AssetHelper.FindTypeTreeTypeByID(tt, (uint)typeId);
-                    needsTypeId = false;
-                }
-                else
-                {
-                    ttType = AssetHelper.FindTypeTreeTypeByName(tt, typeIdText);
-                    needsTypeId = true;
-                }
-
-                if (ttType == null)
+                if (!TryParseClassDatabase(typeIdText, createBlankAsset, out tempField, out typeId))
                 {
                     await MessageBoxUtil.ShowDialog(this, "Bad input", "Class type was invalid.");
                     return;
-                }
-
-                if (needsTypeId)
-                {
-                    typeId = ttType.classId;
-                }
-
-                if (createBlankAsset)
-                {
-                    tempField = new AssetTypeTemplateField();
-                    tempField.From0D(ttType, 0);
                 }
             }
 
@@ -174,6 +133,78 @@ namespace UABEAvalonia
         private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(false);
+        }
+
+        private bool TryParseClassDatabase(string typeIdText, bool createBlankAsset, out AssetTypeTemplateField tempField, out int typeId)
+        {
+            tempField = null;
+
+            ClassDatabaseFile cldb = workspace.am.classFile;
+            ClassDatabaseType cldbType;
+            bool needsTypeId;
+            if (int.TryParse(typeIdText, out typeId))
+            {
+                cldbType = AssetHelper.FindAssetClassByID(cldb, (uint)typeId);
+                needsTypeId = false;
+            }
+            else
+            {
+                cldbType = AssetHelper.FindAssetClassByName(cldb, typeIdText);
+                needsTypeId = true;
+            }
+
+            if (cldbType == null)
+            {
+                return false;
+            }
+
+            if (needsTypeId)
+            {
+                typeId = cldbType.classId;
+            }
+
+            if (createBlankAsset)
+            {
+                tempField = new AssetTypeTemplateField();
+                tempField.FromClassDatabase(cldb, cldbType, 0);
+            }
+            return true;
+        }
+
+        private bool TryParseTypeTree(AssetsFileInstance file, string typeIdText, bool createBlankAsset, out AssetTypeTemplateField tempField, out int typeId)
+        {
+            tempField = null;
+
+            TypeTree tt = file.file.typeTree;
+            Type_0D ttType;
+            bool needsTypeId;
+            if (int.TryParse(typeIdText, out typeId))
+            {
+                ttType = AssetHelper.FindTypeTreeTypeByID(tt, (uint)typeId);
+                needsTypeId = false;
+            }
+            else
+            {
+                ttType = AssetHelper.FindTypeTreeTypeByName(tt, typeIdText);
+                needsTypeId = true;
+            }
+
+            if (ttType == null)
+            {
+                return false;
+            }
+
+            if (needsTypeId)
+            {
+                typeId = ttType.classId;
+            }
+
+            if (createBlankAsset)
+            {
+                tempField = new AssetTypeTemplateField();
+                tempField.From0D(ttType, 0);
+            }
+            return true;
         }
 
         private void InitializeComponent()

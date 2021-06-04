@@ -32,7 +32,7 @@ namespace UABEAvalonia
                 else
                     ttType = AssetHelper.FindTypeTreeTypeByID(file.typeTree, classId);
 
-                if (ttType.typeFieldsEx.Length != 0)
+                if (ttType != null && ttType.typeFieldsEx.Length != 0)
                 {
                     typeName = ttType.typeFieldsEx[0].GetTypeString(ttType.stringTable);
                     if (ttType.typeFieldsEx.Length > 1 && ttType.typeFieldsEx[1].GetNameString(ttType.stringTable) == "m_Name")

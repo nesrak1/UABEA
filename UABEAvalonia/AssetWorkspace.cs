@@ -134,10 +134,16 @@ namespace UABEAvalonia
             AssetTypeTemplateField baseField = new AssetTypeTemplateField();
             if (hasTypeTree)
             {
+                Type_0D type0d;
                 if (scriptIndex == 0xFFFF)
-                    baseField.From0D(AssetHelper.FindTypeTreeTypeByID(file.typeTree, fixedId), 0);
+                    type0d = AssetHelper.FindTypeTreeTypeByID(file.typeTree, fixedId);
                 else
-                    baseField.From0D(AssetHelper.FindTypeTreeTypeByScriptIndex(file.typeTree, scriptIndex), 0);
+                    type0d = AssetHelper.FindTypeTreeTypeByScriptIndex(file.typeTree, scriptIndex);
+
+                if (type0d != null && type0d.typeFieldsExCount > 0)
+                    baseField.From0D(type0d, 0);
+                else //fallback to cldb
+                    baseField.FromClassDatabase(am.classFile, AssetHelper.FindAssetClassByID(am.classFile, fixedId), 0);
             }
             else
             {
