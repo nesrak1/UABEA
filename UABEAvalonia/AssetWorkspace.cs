@@ -194,7 +194,13 @@ namespace UABEAvalonia
                 if (!tt.hasTypeTree || AssetHelper.FindTypeTreeTypeByScriptIndex(tt, cont.MonoId) == null)
                 {
                     //deserialize from dll (todo: ask user if dll isn't in normal location)
-                    string managedPath = Path.Combine(Path.GetDirectoryName(fileInst.path), "Managed");
+                    string filePath;
+                    if (fileInst.parentBundle != null)
+                        filePath = Path.GetDirectoryName(fileInst.parentBundle.path);
+                    else
+                        filePath = Path.GetDirectoryName(fileInst.path);
+
+                    string managedPath = Path.Combine(filePath, "Managed");
                     if (Directory.Exists(managedPath))
                     {
                         return GetConcatMonoBaseField(cont, managedPath);
