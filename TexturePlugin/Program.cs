@@ -243,6 +243,10 @@ namespace TexturePlugin
                     AssetTypeValueField texBaseField = cont.TypeInstance.GetBaseField();
                     TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
 
+                    //0x0 texture, usually called like Font Texture or smth
+                    if (texFile.m_Width == 0 && texFile.m_Height == 0)
+                        continue;
+
                     string file = Path.Combine(dir, $"{texFile.m_Name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png");
 
                     //bundle resS
