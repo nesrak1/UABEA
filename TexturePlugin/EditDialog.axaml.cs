@@ -124,6 +124,7 @@ namespace TexturePlugin
                 m_StreamData.Get("path").GetValue().Set("");
 
                 baseField.Get("m_TextureFormat").GetValue().Set((int)fmt);
+                baseField.Get("m_CompleteImageSize").GetValue().Set(encImageBytes.Length);
 
                 baseField.Get("m_Width").GetValue().Set(tex.m_Width);
                 baseField.Get("m_Height").GetValue().Set(tex.m_Height);
