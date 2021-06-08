@@ -47,6 +47,14 @@ namespace UABEAvalonia
             if (template.valueType == EnumValueTypes.String)
                 align = "1";
 
+            //mainly to handle enum fields not having the int type name
+            if (template.valueType != EnumValueTypes.None &&
+                template.valueType != EnumValueTypes.Array &&
+                template.valueType != EnumValueTypes.ByteArray)
+            {
+                typeName = CorrectTypeName(template.valueType);
+            }
+
             if (isArray)
             {
                 AssetTypeTemplateField sizeTemplate = template.children[0];
@@ -224,6 +232,38 @@ namespace UABEAvalonia
         private bool StartsWithSpace(string str, string value)
         {
             return str.StartsWith(value + " ");
+        }
+
+        private string CorrectTypeName(EnumValueTypes valueTypes)
+        {
+            switch (valueTypes)
+            {
+                case EnumValueTypes.Bool:
+                    return "bool";
+                case EnumValueTypes.UInt8:
+                    return "UInt8";
+                case EnumValueTypes.Int8:
+                    return "SInt8";
+                case EnumValueTypes.UInt16:
+                    return "UInt16";
+                case EnumValueTypes.Int16:
+                    return "Int16";
+                case EnumValueTypes.UInt32:
+                    return "unsigned int";
+                case EnumValueTypes.Int32:
+                    return "int";
+                case EnumValueTypes.UInt64:
+                    return "UInt64";
+                case EnumValueTypes.Int64:
+                    return "SInt64";
+                case EnumValueTypes.Float:
+                    return "float";
+                case EnumValueTypes.Double:
+                    return "double";
+                case EnumValueTypes.String:
+                    return "string";
+            }
+            return "UnknownBaseType";
         }
 
         public static AssetsReplacer CreateAssetReplacer(AssetContainer cont, byte[] data)
