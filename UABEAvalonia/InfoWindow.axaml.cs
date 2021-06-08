@@ -373,7 +373,7 @@ namespace UABEAvalonia
             sfd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "Raw Unity Asset", Extensions = new List<string>() { "dat" } }
             };
-            sfd.InitialFileName = $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.txt";
+            sfd.InitialFileName = $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.dat";
 
             string file = await sfd.ShowAsync(this);
 
@@ -460,7 +460,7 @@ namespace UABEAvalonia
 
             if (dir != null && dir != string.Empty)
             {
-                ImportBatch dialog = new ImportBatch(Workspace, selection, dir, ".txt");
+                ImportBatch dialog = new ImportBatch(Workspace, selection, dir, ".dat");
                 List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(this);
                 if (batchInfos != null)
                 {
