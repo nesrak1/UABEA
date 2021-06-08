@@ -5,7 +5,7 @@
         mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="125"
         Width="400" Height="125"
         x:Class="UABEAvalonia.MainWindow"
-        Title="Unity Assets Bundle Extractor Avalonia">
+        Title="UABEA">
   <Grid>
     <Menu Height="22" VerticalAlignment="Top">
       <MenuItem Header="File">

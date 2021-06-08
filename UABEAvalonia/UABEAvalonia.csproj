@@ -16,6 +16,11 @@
     <PackageReference Include="MessageBox.Avalonia" Version="1.2.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Update="LoadModPackageDialog.axaml.cs">
+      <DependentUpon>LoadModPackageDialog.axaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
   
   <Target Name="UABEAAfterBuild" AfterTargets="AfterBuild" Condition="'$(SolutionDir)' != '*Undefined*'">
     <ItemGroup>

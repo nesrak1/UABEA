@@ -72,14 +72,15 @@ namespace UABEAvalonia
             btnInfo = this.FindControl<Button>("btnInfo");
             //generated events
             menuOpen.Click += MenuOpen_Click;
-            menuAbout.Click += MenuAbout_Click;
+            menuLoadPackageFile.Click += MenuLoadPackageFile_Click;
+            menuClose.Click += MenuClose_Click;
             menuSave.Click += MenuSave_Click;
             menuCompress.Click += MenuCompress_Click;
-            menuClose.Click += MenuClose_Click;
+            menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
+            menuAbout.Click += MenuAbout_Click;
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
             btnInfo.Click += BtnInfo_Click;
-            menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
             Closing += MainWindow_Closing;
 
             newFiles = new Dictionary<string, BundleReplacer>();
@@ -146,6 +147,31 @@ namespace UABEAvalonia
             }
         }
 
+        private async void MenuLoadPackageFile_Click(object? sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filters = new List<FileDialogFilter>() {
+                new FileDialogFilter() { Name = "UABE Mod Installer Package", Extensions = new List<string>() { "emip" } }
+            };
+
+            string[] fileList = await ofd.ShowAsync(this);
+
+            if (fileList.Length == 0)
+                return;
+
+            string emipPath = fileList[0];
+
+            if (emipPath != null && emipPath != string.Empty)
+            {
+                AssetsFileReader r = new AssetsFileReader(File.OpenRead(emipPath)); //todo close this
+                InstallerPackageFile emip = new InstallerPackageFile();
+                emip.Read(r);
+
+                LoadModPackageDialog dialog = new LoadModPackageDialog(emip, am);
+                await dialog.ShowDialog(this);
+            }
+        }
+
         private void MenuAbout_Click(object? sender, RoutedEventArgs e)
         {
             About about = new About();
@@ -167,6 +193,7 @@ namespace UABEAvalonia
             await AskForSave();
             CloseAllFiles();
         }
+
         private async void BtnExport_Click(object? sender, RoutedEventArgs e)
         {
             if (bundleInst != null && comboBox.SelectedItem != null)

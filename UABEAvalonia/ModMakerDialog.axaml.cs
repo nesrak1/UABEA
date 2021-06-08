@@ -64,10 +64,6 @@ namespace UABEAvalonia
 
             //workaround since there is no textchanged event
             boxBaseFolder.GetObservable(TextBox.TextProperty).Subscribe(text => UpdateTree());
-            //treeView.ItemTemplate = new TreeDataTemplate()
-            //{
-            //    f;
-
         }
 
         //for assets files
@@ -80,7 +76,7 @@ namespace UABEAvalonia
         }
 
         //for assets files in bundles
-        //public ModMakerDialog(BundleWorkspace workspace)
+        //public ModMakerDialog(BundleWorkspace workspace) : this()
         //{
         //
         //}

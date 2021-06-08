@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ua="using:UABEAvalonia"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="400"
+        Width="300" Height="400"
+        x:Class="UABEAvalonia.LoadModPackageDialog"
+        Title="Load Package">
+  <Grid Margin="10,10,10,10">
+    <Grid Margin="0,0,0,31">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="70"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="26"></RowDefinition>
+        <RowDefinition Height="*"></RowDefinition>
+        <RowDefinition Height="26"></RowDefinition>
+        <RowDefinition Height="26"></RowDefinition>
+      </Grid.RowDefinitions>
+      <!-- temporary until I can get checkboxes working -->
+      <Label Grid.Row="0">Changes (double click to select)</Label>
+      <TreeView Grid.Row="1" Grid.ColumnSpan="2" Name="treeView">
+        <TreeView.DataTemplates>
+          <TreeDataTemplate DataType="ua:LoadModPackageTreeFileInfo" ItemsSource="{Binding Replacers}">
+            <TextBlock Text="{Binding DisplayText}" />
+          </TreeDataTemplate>
+        </TreeView.DataTemplates>
+      </TreeView>
+      <Label Grid.Row="2">Base folder</Label>
+      <TextBox Grid.Row="3" Name="boxBaseFolder"></TextBox>
+      <Button Grid.Column="1" Grid.Row="3" Name="btnBaseFolder">Select</Button>
+    </Grid>
+    <Grid Margin="0,0,0,0" VerticalAlignment="Bottom">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" Name="btnOk">Ok</Button>
+      <Button Grid.Column="1" Name="btnCancel">Cancel</Button>
+    </Grid>
+  </Grid>
+</Window>
+
