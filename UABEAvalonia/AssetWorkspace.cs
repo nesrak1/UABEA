@@ -13,7 +13,6 @@ namespace UABEAvalonia
     public class AssetWorkspace
     {
         public AssetsManager am { get; }
-        public AssetsFileInstance mainFile { get; }
         public bool fromBundle { get; }
 
         public List<AssetsFileInstance> LoadedFiles { get; }
@@ -27,15 +26,13 @@ namespace UABEAvalonia
         public HashSet<AssetID> RemovedAssets { get; }
 
         public bool Modified { get; set; }
-        public string AssetsFileName { get; }
 
         public delegate void AssetWorkspaceItemUpdateEvent(AssetsFileInstance file, AssetID assetId);
         public event AssetWorkspaceItemUpdateEvent? ItemUpdated;
 
-        public AssetWorkspace(AssetsManager am, AssetsFileInstance assetsFile, bool fromBundle, string assetsFileName)
+        public AssetWorkspace(AssetsManager am, bool fromBundle)
         {
             this.am = am;
-            this.mainFile = assetsFile;
             this.fromBundle = fromBundle;
 
             LoadedFiles = new List<AssetsFileInstance>();
@@ -49,8 +46,6 @@ namespace UABEAvalonia
             RemovedAssets = new HashSet<AssetID>();
 
             Modified = false;
-
-            AssetsFileName = assetsFileName;
         }
 
         public void AddReplacer(AssetsFileInstance forFile, AssetsReplacer replacer, Stream? previewStream = null)

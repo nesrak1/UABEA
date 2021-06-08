@@ -120,14 +120,12 @@ namespace UABEAvalonia
 
                 if (fileType == DetectedFileType.AssetsFile)
                 {
-                    string assetName = Path.GetFileNameWithoutExtension(selectedFile);
-
                     AssetsFileInstance fileInst = am.LoadAssetsFile(selectedFile, true);
 
                     if (!await LoadOrAskTypeData(fileInst))
                         return;
 
-                    InfoWindow info = new InfoWindow(am, fileInst, assetName, false);
+                    InfoWindow info = new InfoWindow(am, new List<AssetsFileInstance> { fileInst }, false);
                     info.Show();
                 }
                 else if (fileType == DetectedFileType.BundleFile)
@@ -266,15 +264,16 @@ namespace UABEAvalonia
                     if (bundleInst != null && fileInst.parentBundle == null)
                         fileInst.parentBundle = bundleInst;
 
-                    InfoWindow info = new InfoWindow(am, fileInst, bunAssetName, true);
+                    InfoWindow info = new InfoWindow(am, new List<AssetsFileInstance> { fileInst }, true);
                     info.Closing += InfoWindow_Closing;
                     info.Show();
                 }
                 else
                 {
-                    await MessageBoxUtil.ShowDialog(this, "Error", "This doesn't seem to be a valid assets file.\n" +
-                                                                   "If you want to export a non-assets file,\n" +
-                                                                   "use Export.");
+                    await MessageBoxUtil.ShowDialog(this,
+                        "Error", "This doesn't seem to be a valid assets file.\n" +
+                                 "If you want to export a non-assets file,\n" +
+                                 "use Export.");
                 }
             }
         }
@@ -311,17 +310,22 @@ namespace UABEAvalonia
 
             InfoWindow window = (InfoWindow)sender;
 
-            if (window.ChangedAssetsDatas != null)
+            if (window.Workspace.fromBundle && window.ChangedAssetsDatas != null)
             {
-                List<Tuple<string, byte[]>> assetDatas = window.ChangedAssetsDatas;
+                List<Tuple<AssetsFileInstance, byte[]>> assetDatas = window.ChangedAssetsDatas;
+
+                //file that user initially selected
+                AssetsFileInstance firstFile = window.Workspace.LoadedFiles[0];
 
                 foreach (var tup in assetDatas)
                 {
-                    string assetName = Path.GetFileName(tup.Item1);
+                    AssetsFileInstance fileInstance = tup.Item1;
                     byte[] assetData = tup.Item2;
 
+                    string assetName = Path.GetFileName(fileInstance.path);
+
                     //only modify assets file we opened for now
-                    if (window.AssetsFileName != assetName)
+                    if (fileInstance != firstFile)
                         continue;
 
                     BundleReplacer replacer = AssetImportExport.CreateBundleReplacer(assetName, true, assetData);
@@ -388,8 +392,9 @@ namespace UABEAvalonia
         {
             if (changesUnsaved && bundleInst != null)
             {
-                ButtonResult choice = await MessageBoxUtil.ShowDialog(this, "Changes made", "You've modified this file. Would you like to save?",
-                                                                      ButtonEnum.YesNo);
+                ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
+                    "Changes made", "You've modified this file. Would you like to save?",
+                    ButtonEnum.YesNo);
                 if (choice == ButtonResult.Yes)
                 {
                     await AskForLocationAndSave();
@@ -407,7 +412,7 @@ namespace UABEAvalonia
                 if (changesMade)
                 {
                     ButtonResult continueWithChanges = await MessageBoxUtil.ShowDialog(
-                        this, "Note", "You've modified this file, but only file before changes is loaded. If you want to compress the file with" +
+                        this, "Note", "You've modified this file, but only file before changes is loaded. If you want to compress the file with " +
                                       "changes, please close this bundle and open the new file. Click Ok to compress the file without changes.",
                         ButtonEnum.OkCancel);
 

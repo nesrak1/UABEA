@@ -47,12 +47,9 @@ namespace UABEAvalonia
         //todo, rework all this
         public AssetWorkspace Workspace { get; }
         public AssetsManager am { get => Workspace.am; }
-        public AssetsFileInstance assetsFile { get => Workspace.mainFile; }
-        public bool fromBundle { get => Workspace.fromBundle; }
 
-        public string AssetsFileName { get => Workspace.AssetsFileName; }
         //would prefer using a stream over byte[] but whatever, will for now
-        public List<Tuple<string, byte[]>> ChangedAssetsDatas { get; set; }
+        public List<Tuple<AssetsFileInstance, byte[]>> ChangedAssetsDatas { get; set; }
 
         private ObservableCollection<AssetInfoDataGridItem> dataGridItems;
 
@@ -103,18 +100,19 @@ namespace UABEAvalonia
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
         }
 
-        public InfoWindow(AssetsManager assetsManager, AssetsFileInstance assetsFile, string name, bool fromBundle) : this()
+        public InfoWindow(AssetsManager assetsManager, List<AssetsFileInstance> assetsFiles, bool fromBundle) : this()
         {
-            Workspace = new AssetWorkspace(assetsManager, assetsFile, fromBundle, name);
+            Workspace = new AssetWorkspace(assetsManager, fromBundle);
             Workspace.ItemUpdated += Workspace_ItemUpdated;
 
+            LoadAllAssetsWithDeps(assetsFiles);
             MakeDataGridItems();
             dataGrid.Items = dataGridItems;
 
             pluginManager = new PluginManager();
             pluginManager.LoadPluginsInDirectory("plugins");
 
-            ChangedAssetsDatas = new List<Tuple<string, byte[]>>();
+            ChangedAssetsDatas = new List<Tuple<AssetsFileInstance, byte[]>>();
         }
 
         private async void MenuAdd_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -274,9 +272,7 @@ namespace UABEAvalonia
 
         private async Task SaveFile()
         {
-            List<AssetsReplacer> newAssetsList = Workspace.NewAssets.Values.ToList();
-
-            var fileToReplacer = new Dictionary<string, List<AssetsReplacer>>();
+            var fileToReplacer = new Dictionary<AssetsFileInstance, List<AssetsReplacer>>();
 
             foreach (var newAsset in Workspace.NewAssets)
             {
@@ -284,25 +280,28 @@ namespace UABEAvalonia
                 AssetsReplacer replacer = newAsset.Value;
                 string fileName = assetId.fileName;
 
-                if (!fileToReplacer.ContainsKey(fileName))
-                    fileToReplacer[fileName] = new List<AssetsReplacer>();
+                if (Workspace.LoadedFileLookup.TryGetValue(fileName.ToLower(), out AssetsFileInstance? file))
+                {
+                    if (!fileToReplacer.ContainsKey(file))
+                        fileToReplacer[file] = new List<AssetsReplacer>();
 
-                fileToReplacer[fileName].Add(replacer);
+                    fileToReplacer[file].Add(replacer);
+                }
             }
 
-            if (fromBundle)
+            if (Workspace.fromBundle)
             {
                 ChangedAssetsDatas.Clear();
                 foreach (var kvp in fileToReplacer)
                 {
-                    string fileName = kvp.Key;
+                    AssetsFileInstance file = kvp.Key;
                     List<AssetsReplacer> replacers = kvp.Value;
 
                     using (MemoryStream ms = new MemoryStream())
                     using (AssetsFileWriter w = new AssetsFileWriter(ms))
                     {
-                        assetsFile.file.Write(w, 0, replacers, 0);
-                        ChangedAssetsDatas.Add(new Tuple<string, byte[]>(fileName, ms.ToArray()));
+                        file.file.Write(w, 0, replacers, 0);
+                        ChangedAssetsDatas.Add(new Tuple<AssetsFileInstance, byte[]>(file, ms.ToArray()));
                     }
                 }
             }
@@ -310,22 +309,22 @@ namespace UABEAvalonia
             {
                 foreach (var kvp in fileToReplacer)
                 {
-                    string fileName = kvp.Key;
+                    AssetsFileInstance file = kvp.Key;
                     List<AssetsReplacer> replacers = kvp.Value;
 
                     SaveFileDialog sfd = new SaveFileDialog();
                     sfd.Title = "Save as...";
-                    sfd.InitialFileName = fileName;
+                    sfd.InitialFileName = file.name;
 
-                    string file = await sfd.ShowAsync(this);
+                    string filePath = await sfd.ShowAsync(this);
 
-                    if (file == null)
-                        return;
+                    if (filePath == null)
+                        continue;
 
-                    using (FileStream fs = File.OpenWrite(file))
+                    using (FileStream fs = File.OpenWrite(filePath))
                     using (AssetsFileWriter w = new AssetsFileWriter(fs))
                     {
-                        assetsFile.file.Write(w, 0, newAssetsList, 0);
+                        file.file.Write(w, 0, replacers, 0);
                     }
                 }
             }
@@ -333,8 +332,7 @@ namespace UABEAvalonia
 
         private void CloseFile()
         {
-            am.files.Remove(assetsFile);
-            assetsFile.file.reader.Close();
+            am.UnloadAllAssetsFiles(true);
             Close();
         }
 
@@ -366,12 +364,17 @@ namespace UABEAvalonia
         private async Task SingleExportRaw(List<AssetContainer> selection)
         {
             AssetContainer selectedCont = selection[0];
+            AssetsFileInstance selectedInst = selectedCont.FileInstance;
+
+            Extensions.GetUABENameFast(selectedCont, am.classFile, out string assetName, out string _);
 
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Title = "Save As";
             sfd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "Raw Unity Asset", Extensions = new List<string>() { "dat" } }
             };
+            sfd.InitialFileName = $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.txt";
+
             string file = await sfd.ShowAsync(this);
 
             if (file != null && file != string.Empty)
@@ -597,7 +600,6 @@ namespace UABEAvalonia
         {
             dataGridItems = new ObservableCollection<AssetInfoDataGridItem>();
 
-            LoadAllAssetsWithDeps();
             Workspace.GenerateAssetsFileLookup();
 
             foreach (AssetContainer cont in Workspace.LoadedAssets.Values)
@@ -648,10 +650,13 @@ namespace UABEAvalonia
             return item;
         }
 
-        private void LoadAllAssetsWithDeps()
+        private void LoadAllAssetsWithDeps(List<AssetsFileInstance> files)
         {
             HashSet<string> fileNames = new HashSet<string>();
-            RecurseGetAllAssets(assetsFile, Workspace.LoadedAssets, Workspace.LoadedFiles, fileNames);
+            foreach (AssetsFileInstance file in files)
+            {
+                RecurseGetAllAssets(file, Workspace.LoadedAssets, Workspace.LoadedFiles, fileNames);
+            }
         }
 
         private void RecurseGetAllAssets(AssetsFileInstance fromFile, Dictionary<AssetID, AssetContainer> conts, List<AssetsFileInstance> files, HashSet<string> fileNames)
@@ -688,12 +693,7 @@ namespace UABEAvalonia
         {
             if (dataGrid.SelectedItem == null)
             {
-                await MessageBoxManager.GetMessageBoxStandardWindow(new MessageBoxStandardParams
-                {
-                    Style = Style.Windows,
-                    ContentHeader = "Note",
-                    ContentMessage = "No item selected."
-                }).ShowDialog(this);
+                await MessageBoxUtil.ShowDialog(this, "Note", "No item selected.");
                 return true;
             }
             return false;
