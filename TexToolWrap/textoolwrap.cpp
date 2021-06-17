@@ -70,6 +70,52 @@ bool GetPVRTexLibModes(int mode, PVRTuint64& pvrtlMode, PVRTexLibVariableType& p
 	return true;
 }
 
+PVRTexLibCompressorQuality GetPVRTexLibCompressionLevel(PVRTuint64 pvrtlMode) {
+	switch (pvrtlMode) {
+		case PVRTLPF_PVRTCI_2bpp_RGB:
+		case PVRTLPF_PVRTCI_2bpp_RGBA:
+		case PVRTLPF_PVRTCI_4bpp_RGB:
+		case PVRTLPF_PVRTCI_4bpp_RGBA:
+		case PVRTLPF_PVRTCII_2bpp:
+		case PVRTLPF_PVRTCII_4bpp:
+			return PVRTLCQ_PVRTCNormal;
+		case PVRTLPF_ETC1:
+		case PVRTLPF_ETC2_RGB:
+		case PVRTLPF_ETC2_RGBA:
+		case PVRTLPF_ETC2_RGB_A1:
+		case PVRTLPF_EAC_R11:
+		case PVRTLPF_EAC_RG11:
+			return PVRTLCQ_ETCNormal;
+		case PVRTLPF_ASTC_4x4:
+		case PVRTLPF_ASTC_5x4:
+		case PVRTLPF_ASTC_5x5:
+		case PVRTLPF_ASTC_6x5:
+		case PVRTLPF_ASTC_6x6:
+		case PVRTLPF_ASTC_8x5:
+		case PVRTLPF_ASTC_8x6:
+		case PVRTLPF_ASTC_8x8:
+		case PVRTLPF_ASTC_10x5:
+		case PVRTLPF_ASTC_10x6:
+		case PVRTLPF_ASTC_10x8:
+		case PVRTLPF_ASTC_10x10:
+		case PVRTLPF_ASTC_12x10:
+		case PVRTLPF_ASTC_12x12:
+		case PVRTLPF_ASTC_3x3x3:
+		case PVRTLPF_ASTC_4x3x3:
+		case PVRTLPF_ASTC_4x4x3:
+		case PVRTLPF_ASTC_4x4x4:
+		case PVRTLPF_ASTC_5x4x4:
+		case PVRTLPF_ASTC_5x5x4:
+		case PVRTLPF_ASTC_5x5x5:
+		case PVRTLPF_ASTC_6x5x5:
+		case PVRTLPF_ASTC_6x6x5:
+		case PVRTLPF_ASTC_6x6x6:
+			return PVRTLCQ_ASTCMedium;
+		default:
+			return PVRTLCQ_PVRTCNormal;
+	}
+}
+
 EXPORT unsigned int DecodeByPVRTexLib(void* data, void* outBuf, int mode, unsigned int width, unsigned int height) {
 	PVRTuint64 pvrtlMode;
 	PVRTexLibVariableType pvrtlVarType;
@@ -98,12 +144,13 @@ EXPORT unsigned int EncodeByPVRTexLib(void* data, void* outBuf, int mode, int le
 	if (!GetPVRTexLibModes(mode, pvrtlMode, pvrtlVarType)) {
 		return 0;
 	}
+	PVRTexLibCompressorQuality compLevel = GetPVRTexLibCompressionLevel(pvrtlMode);
 	
 	unsigned long long RGBA8888 = PVRTGENPIXELID4('r','g','b','a', 8,8,8,8);
 	pvrtexlib::PVRTextureHeader pvrth = pvrtexlib::PVRTextureHeader(RGBA8888, width, height);
 	pvrtexlib::PVRTexture pvrt = pvrtexlib::PVRTexture(pvrth, data);
 	
-	if (!pvrt.Transcode(pvrtlMode, pvrtlVarType, PVRTLCS_sRGB, PVRTLCQ_PVRTCNormal, false)) {
+	if (!pvrt.Transcode(pvrtlMode, pvrtlVarType, PVRTLCS_sRGB, compLevel, false)) {
 		return 0;
 	}
 	

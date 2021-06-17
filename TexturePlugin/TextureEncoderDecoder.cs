@@ -104,37 +104,6 @@ namespace TexturePlugin
             {
                 case TextureFormat.RGB9e5Float: //pls don't use (what is this?)
                     return null;
-                //crunch-unity
-                //case TextureFormat.DXT1Crunched:
-                //case TextureFormat.DXT5Crunched:
-                //case TextureFormat.ETC_RGB4Crunched:
-                //case TextureFormat.ETC2_RGBA8Crunched:
-                //{
-                //    byte[] dest = new byte[data.Length]; //just to be safe, buf is same size as original
-                //    uint size = 0;
-                //    unsafe
-                //    {
-                //        fixed (byte* dataPtr = data)
-                //        fixed (byte* destPtr = dest)
-                //        {
-                //            IntPtr dataIntPtr = (IntPtr)dataPtr;
-                //            IntPtr destIntPtr = (IntPtr)destPtr;
-                //            size = PInvoke.DecodeByCrunch(dataIntPtr, destIntPtr, (int)format, (uint)width, (uint)height);
-                //        }
-                //    }
-                //    if (size > 0)
-                //    {
-                //        byte[] resizedDest = new byte[size];
-                //        Buffer.BlockCopy(dest, 0, resizedDest, 0, (int)size);
-                //        dest = null;
-                //        return resizedDest;
-                //    }
-                //    else
-                //    {
-                //        dest = null;
-                //        return null;
-                //    }
-                //}
                 //pvrtexlib
                 case TextureFormat.ARGB32:
                 case TextureFormat.BGRA32New:
@@ -159,6 +128,7 @@ namespace TexturePlugin
                 case TextureFormat.EAC_R_SIGNED:
                 case TextureFormat.EAC_RG:
                 case TextureFormat.EAC_RG_SIGNED:
+                case TextureFormat.ETC_RGB4:
                 case TextureFormat.ETC_RGB4_3DS:
                 case TextureFormat.ETC_RGBA8_3DS:
                 case TextureFormat.ETC2_RGB4:
@@ -249,37 +219,6 @@ namespace TexturePlugin
             {
                 case TextureFormat.RGB9e5Float: //pls don't use (what is this?)
                     return null;
-                //crunch-unity
-                //case TextureFormat.DXT1Crunched:
-                //case TextureFormat.DXT5Crunched:
-                //case TextureFormat.ETC_RGB4Crunched:
-                //case TextureFormat.ETC2_RGBA8Crunched:
-                //{
-                //    byte[] dest = new byte[data.Length]; //just to be safe, buf is same size as original
-                //    uint size = 0;
-                //    unsafe
-                //    {
-                //        fixed (byte* dataPtr = data)
-                //        fixed (byte* destPtr = dest)
-                //        {
-                //            IntPtr dataIntPtr = (IntPtr)dataPtr;
-                //            IntPtr destIntPtr = (IntPtr)destPtr;
-                //            size = PInvoke.EncodeByCrunch(dataIntPtr, destIntPtr, (int)format, quality, (uint)width, (uint)height);
-                //        }
-                //    }
-                //    if (size > 0)
-                //    {
-                //        byte[] resizedDest = new byte[size];
-                //        Buffer.BlockCopy(dest, 0, resizedDest, 0, (int)size);
-                //        dest = null;
-                //        return resizedDest;
-                //    }
-                //    else
-                //    {
-                //        dest = null;
-                //        return null;
-                //    }
-                //}
                 //pvrtexlib
                 case TextureFormat.ARGB32:
                 case TextureFormat.BGRA32New:
@@ -304,6 +243,7 @@ namespace TexturePlugin
                 case TextureFormat.EAC_R_SIGNED:
                 case TextureFormat.EAC_RG:
                 case TextureFormat.EAC_RG_SIGNED:
+                case TextureFormat.ETC_RGB4:
                 case TextureFormat.ETC_RGB4_3DS:
                 case TextureFormat.ETC_RGBA8_3DS:
                 case TextureFormat.ETC2_RGB4:
@@ -380,6 +320,8 @@ namespace TexturePlugin
                     }
                 }
                 case TextureFormat.BC6H: //pls don't use
+                case TextureFormat.BC4:
+                case TextureFormat.BC5:
                     return null;
                 default:
                     return null;
