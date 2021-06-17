@@ -129,11 +129,7 @@ namespace UABEAvalonia
             AssetTypeTemplateField baseField = new AssetTypeTemplateField();
             if (hasTypeTree)
             {
-                Type_0D type0d;
-                if (scriptIndex == 0xFFFF)
-                    type0d = AssetHelper.FindTypeTreeTypeByID(file.typeTree, fixedId);
-                else
-                    type0d = AssetHelper.FindTypeTreeTypeByScriptIndex(file.typeTree, scriptIndex);
+                Type_0D type0d = Extensions.FindTypeTreeTypeByID(file.typeTree, fixedId, scriptIndex);
 
                 if (type0d != null && type0d.typeFieldsExCount > 0)
                     baseField.From0D(type0d, 0);
