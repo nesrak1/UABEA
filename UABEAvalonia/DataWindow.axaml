@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="550"
         Width="350" Height="550"
+        Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.DataWindow"
         Title="View Data">
   <TreeView Name="treeView">

@@ -5,6 +5,7 @@
         xmlns:local="clr-namespace:UABEAvalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
         Width="800" Height="500"
+        Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.InfoWindow"
         Title="Assets Info">  
   <Grid>

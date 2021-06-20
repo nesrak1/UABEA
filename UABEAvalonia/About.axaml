@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="135"
         Width="400" Height="135"
+        Icon="/Assets/uabeavalonia16.ico"
         CanResize="False"
         x:Class="UABEAvalonia.About"
         Title="About Unity Assets Bundle Extractor Avalonia">

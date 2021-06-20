@@ -4,6 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x64;x86</Platforms>
+    <ApplicationIcon>uabeavalonia.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
@@ -15,6 +16,9 @@
     <PackageReference Include="Avalonia.Diagnostics" Version="0.10.0" />
     <PackageReference Include="MessageBox.Avalonia" Version="1.2.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="LoadModPackageDialog.axaml.cs">

@@ -5,6 +5,7 @@
         xmlns:ua="using:UABEAvalonia"
         mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="400"
         Width="300" Height="400"
+        Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.LoadModPackageDialog"
         Title="Load Package">
   <Grid Margin="10,10,10,10">

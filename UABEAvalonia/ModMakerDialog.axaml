@@ -5,6 +5,7 @@
         xmlns:ua="using:UABEAvalonia"
         mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="250"
         Width="500" Height="250"
+        Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.ModMakerDialog"
         Title="Mod Maker Package Creator">
   <Grid Margin="10,10,10,10">
