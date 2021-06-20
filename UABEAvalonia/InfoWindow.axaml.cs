@@ -2,12 +2,14 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using MessageBox.Avalonia;
 using MessageBox.Avalonia.DTO;
 using MessageBox.Avalonia.Enums;
 using MessageBox.Avalonia.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -48,6 +50,13 @@ namespace UABEAvalonia
         public AssetWorkspace Workspace { get; }
         public AssetsManager am { get => Workspace.am; }
 
+        //searching
+        private string searchText;
+        private int searchStart;
+        private bool searchDown;
+        private bool searchCaseSensitive;
+        private bool searching;
+
         //would prefer using a stream over byte[] but whatever, will for now
         public List<Tuple<AssetsFileInstance, byte[]>> ChangedAssetsDatas { get; set; }
 
@@ -86,10 +95,13 @@ namespace UABEAvalonia
             boxFileId = this.FindControl<TextBox>("boxFileId");
             boxType = this.FindControl<TextBox>("boxType");
             //generated events
+            KeyDown += InfoWindow_KeyDown;
             menuAdd.Click += MenuAdd_Click;
             menuSave.Click += MenuSave_Click;
             menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
             menuClose.Click += MenuClose_Click;
+            menuSearchByName.Click += MenuSearchByName_Click;
+            menuContinueSearch.Click += MenuContinueSearch_Click;
             btnViewData.Click += BtnViewData_Click;
             btnExportRaw.Click += BtnExportRaw_Click;
             btnExportDump.Click += BtnExportDump_Click;
@@ -98,6 +110,14 @@ namespace UABEAvalonia
             btnRemove.Click += BtnRemove_Click;
             btnPlugin.Click += BtnPlugin_Click;
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
+        }
+
+        private void InfoWindow_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.F3)
+            {
+                NextSearch();
+            }
         }
 
         public InfoWindow(AssetsManager assetsManager, List<AssetsFileInstance> assetsFiles, bool fromBundle) : this()
@@ -111,6 +131,12 @@ namespace UABEAvalonia
 
             pluginManager = new PluginManager();
             pluginManager.LoadPluginsInDirectory("plugins");
+
+            searchText = "";
+            searchStart = 0;
+            searchDown = false;
+            searchCaseSensitive = true;
+            searching = false;
 
             ChangedAssetsDatas = new List<Tuple<AssetsFileInstance, byte[]>>();
         }
@@ -147,6 +173,28 @@ namespace UABEAvalonia
                 }
             }
             CloseFile();
+        }
+
+        private async void MenuSearchByName_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            SearchDialog dialog = new SearchDialog();
+            SearchDialogResult res = await dialog.ShowDialog<SearchDialogResult>(this);
+            if (res != null && res.ok)
+            {
+                int selectedIndex = dataGrid.SelectedIndex;
+
+                searchText = res.text;
+                searchStart = selectedIndex != -1 ? selectedIndex : 0;
+                searchDown = res.isDown;
+                searchCaseSensitive = res.caseSensitive;
+                searching = true;
+                NextSearch();
+            }
+        }
+
+        private void MenuContinueSearch_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            NextSearch();
         }
 
         private async void BtnViewData_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -593,6 +641,56 @@ namespace UABEAvalonia
                     AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(selectedCont, bytes);
                     Workspace.AddReplacer(selectedInst, replacer, new MemoryStream(bytes));
                 }
+            }
+        }
+
+        private async void NextSearch()
+        {
+            bool foundResult = false;
+            if (searching)
+            {
+                List<AssetInfoDataGridItem> itemList = dataGrid.Items.Cast<AssetInfoDataGridItem>().ToList();
+                if (searchDown)
+                {
+                    for (int i = searchStart; i < itemList.Count; i++)
+                    {
+                        string name = itemList[i].Name;
+                        if (Extensions.WildcardMatches(name, searchText, searchCaseSensitive))
+                        {
+                            dataGrid.SelectedIndex = i;
+                            dataGrid.ScrollIntoView(dataGrid.SelectedItem, null);
+                            searchStart = i + 1;
+                            foundResult = true;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = searchStart; i >= 0; i--)
+                    {
+                        string name = itemList[i].Name;
+                        if (Extensions.WildcardMatches(name, searchText, searchCaseSensitive))
+                        {
+                            dataGrid.SelectedIndex = i;
+                            dataGrid.ScrollIntoView(dataGrid.SelectedItem, null);
+                            searchStart = i - 1;
+                            foundResult = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!foundResult)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Search end", "Can't find any assets that match.");
+
+                searchText = "";
+                searchStart = 0;
+                searchDown = false;
+                searching = false;
+                return;
             }
         }
 

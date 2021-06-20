@@ -20,7 +20,7 @@
       </MenuItem>
       <MenuItem Header="View">
         <MenuItem Header="Search by name" Name="menuSearchByName" />
-        <MenuItem Header="Continue search (F3)" Name="menuContinueSearch" />
+        <MenuItem Header="Continue search" InputGesture="F3" Name="menuContinueSearch" />
         <MenuItem Header="Go to asset" Name="menuGoToAsset" />
         <MenuItem Header="Dependencies" Name="menuDependencies" />
         <MenuItem Header="Containters" Name="menuContainers" />

@@ -7,12 +7,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace UABEAvalonia
 {
     public static class Extensions
     {
+        //cheap * search check
+        public static bool WildcardMatches(string test, string pattern, bool caseSensitive = true)
+        {
+            RegexOptions options = 0;
+            if (!caseSensitive)
+                options |= RegexOptions.IgnoreCase;
+
+            return Regex.IsMatch(test, "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$", options);
+        }
+
         public static void GetUABENameFast(AssetContainer cont, ClassDatabaseFile cldb, out string assetName, out string typeName)
         {
             GetUABENameFast(cont.FileInstance.file, cldb, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, out assetName, out typeName);

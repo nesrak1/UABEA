@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="120"
+        Width="300" Height="120"
+        x:Class="UABEAvalonia.SearchDialog"
+        Title="Search">
+  <Grid Margin="10,10,10,10">
+    <Grid VerticalAlignment="Top">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="100"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <Label Grid.Column="0" Grid.Row="0">Name</Label>
+      <TextBox Grid.Column="1" Grid.Row="0" Name="boxName"></TextBox>
+      <Label Grid.Column="0" Grid.Row="1">Direction</Label>
+      <StackPanel Orientation="Horizontal" Spacing="10" Grid.Column="1" Grid.Row="1">
+        <RadioButton GroupName="rdoSearchDir" Name="rdoSearchUp">Up</RadioButton>
+        <RadioButton GroupName="rdoSearchDir" IsChecked="True" Name="rdoSearchDown">Down</RadioButton>
+      </StackPanel>
+      <Label Grid.Column="0" Grid.Row="2">Case sensitive</Label>
+      <CheckBox Grid.Column="1" Grid.Row="2" Name="chkCaseSensitive"></CheckBox>
+    </Grid> 
+    <Grid VerticalAlignment="Bottom">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" Name="btnOk">Ok</Button>
+      <Button Grid.Column="1" Name="btnCancel">Cancel</Button>
+    </Grid>
+  </Grid>
+</Window>
