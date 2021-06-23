@@ -1,5 +1,12 @@
+//for crunch lol
+#if defined(_WIN32)
+#define WIN32
+#endif
+
 #include "PVRTexLib/Include/PVRTexLib.hpp"
 #include "ispc/include/ispc_texcomp.h"
+#include "crunch/inc/crnlib.h"
+#include "crunch/inc/crn_decomp.h"
 #include <cstring>
 #include <stdio.h>
 
@@ -189,9 +196,74 @@ EXPORT unsigned int EncodeByISPC(void* data, void* outBuf, int mode, int level, 
 	return blockCountX * blockCountY * blockByteSize;
 }
 
-EXPORT unsigned int DecodeByCrunchUnity(void* data, void* outBuf, int mode, unsigned int width, unsigned int height) {
-	return 0; //todo
+EXPORT unsigned int DecodeByCrunchUnity(void* data, void* outBuf, int mode, unsigned int width, unsigned int height, unsigned int byteSize) {
+	crnd::crn_texture_info tex_info;
+	tex_info.m_struct_size = sizeof(crnd::crn_texture_info);
+	if (!crnd_get_texture_info(data, byteSize, &tex_info)) {
+		return 0;
+	}
+
+	crnd::crnd_unpack_context pContext = crnd::crnd_unpack_begin(data, byteSize);
+	if (!pContext) {
+		return 0;
+	}
+
+	const crnd::uint level_width = crnd::math::maximum<crnd::uint>(1U, tex_info.m_width);
+	const crnd::uint level_height = crnd::math::maximum<crnd::uint>(1U, tex_info.m_height);
+	const crnd::uint num_blocks_x = (level_width + 3U) >> 2U;
+	const crnd::uint num_blocks_y = (level_height + 3U) >> 2U;
+
+	const crnd::uint row_pitch = num_blocks_x * tex_info.m_bytes_per_block;
+	const crnd::uint size_of_face = num_blocks_y * row_pitch;
+
+	bool success = crnd::crnd_unpack_level(pContext, &outBuf, size_of_face, row_pitch, 0);
+	crnd::crnd_unpack_end(pContext);
+
+	if (success) {
+		return size_of_face;
+	} else {
+		return 0;
+	}
 }
 EXPORT unsigned int EncodeByCrunchUnity(void* data, void* outBuf, int mode, int level, unsigned int width, unsigned int height) {
-	return 0; //todo
+	crn_comp_params comp_params;
+	comp_params.m_width = width;
+	comp_params.m_height = height;
+	comp_params.set_flag(cCRNCompFlagPerceptual, true);
+	//comp_params.set_flag(cCRNCompFlagDXT1AForTransparency, false); //unsure if unity dxt1 is ever transparent?
+	comp_params.set_flag(cCRNCompFlagHierarchical, true);
+	comp_params.m_file_type = cCRNFileTypeCRN;
+
+	switch (mode) {
+		case 28:
+			comp_params.m_format = cCRNFmtDXT1;
+			break;
+		case 29:
+			comp_params.m_format = cCRNFmtDXT5;
+			break;
+		default:
+			return 0;
+	}
+
+	comp_params.m_pImages[0][0] = (crn_uint32*)data;
+	comp_params.m_quality_level = 128; //cDefaultCRNQualityLevel
+
+	comp_params.m_num_helper_threads = 1; //staying safe for xplat for now
+
+	crn_mipmap_params mip_params;
+	mip_params.m_gamma_filtering = true;
+	mip_params.m_mode = cCRNMipModeNoMips; //cCRNMipModeGenerateMips
+
+	crn_uint32 actual_quality_level;
+	float actual_bitrate;
+	crn_uint32 output_file_size;
+
+	void* newData = crn_compress(comp_params, mip_params, output_file_size, &actual_quality_level, &actual_bitrate);
+
+	if (outBuf != NULL) {
+		memcpy(outBuf, newData, output_file_size);
+		return output_file_size;
+	} else {
+		return 0;
+	}
 }

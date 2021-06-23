@@ -111,7 +111,7 @@ namespace UABEAvalonia
             ofd.Filters = new List<FileDialogFilter>() { new FileDialogFilter() { Name = "All files", Extensions = new List<string>() { "*" } } };
             string[] files = await ofd.ShowAsync(this);
 
-            if (files.Length > 0)
+            if (files != null && files.Length > 0)
             {
                 string selectedFile = files[0];
 

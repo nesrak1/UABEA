@@ -102,8 +102,53 @@ namespace TexturePlugin
         {
             switch (format)
             {
-                case TextureFormat.RGB9e5Float: //pls don't use (what is this?)
-                    return null;
+                //crunch
+                case TextureFormat.DXT1Crunched:
+                case TextureFormat.DXT5Crunched:
+                {
+                    byte[] dest = new byte[width * height * 4];
+                    uint size = 0;
+                    unsafe
+                    {
+                        fixed (byte* dataPtr = data)
+                        fixed (byte* destPtr = dest)
+                        {
+                            IntPtr dataIntPtr = (IntPtr)dataPtr;
+                            IntPtr destIntPtr = (IntPtr)destPtr;
+                            size = PInvoke.DecodeByCrunchUnity(dataIntPtr, destIntPtr, (int)format, (uint)width, (uint)height, (uint)data.Length);
+                        }
+                    }
+                    if (size > 0)
+                    {
+                        if (format == TextureFormat.DXT1Crunched)
+                        {
+                            byte[] dxt1 = DXTDecoders.ReadDXT1(dest, width, height);
+                            for (int i = 0; i < dxt1.Length; i += 4)
+                            {
+                                byte temp = dxt1[i];
+                                dxt1[i] = dxt1[i + 2];
+                                dxt1[i + 2] = temp;
+                            }
+                            return dxt1;
+                        }
+                        else //if (format == TextureFormat.DXT5Crunched)
+                        {
+                            byte[] dxt5 = DXTDecoders.ReadDXT5(dest, width, height);
+                            for (int i = 0; i < dxt5.Length; i += 4)
+                            {
+                                byte temp = dxt5[i];
+                                dxt5[i] = dxt5[i + 2];
+                                dxt5[i + 2] = temp;
+                            }
+                            return dxt5;
+                        }
+                    }
+                    else
+                    {
+                        dest = null;
+                        return null;
+                    }
+                }
                 //pvrtexlib
                 case TextureFormat.ARGB32:
                 case TextureFormat.BGRA32New:
@@ -175,9 +220,9 @@ namespace TexturePlugin
                         return null;
                     }
                 }
-                //bcnencoder does not decode imagine that
                 //detex
                 case TextureFormat.DXT1:
+                {
                     byte[] dxt1 = DXTDecoders.ReadDXT1(data, width, height);
                     for (int i = 0; i < dxt1.Length; i += 4)
                     {
@@ -186,7 +231,9 @@ namespace TexturePlugin
                         dxt1[i + 2] = temp;
                     }
                     return dxt1;
+                }
                 case TextureFormat.DXT5:
+                {
                     byte[] dxt5 = DXTDecoders.ReadDXT5(data, width, height);
                     for (int i = 0; i < dxt5.Length; i += 4)
                     {
@@ -195,7 +242,9 @@ namespace TexturePlugin
                         dxt5[i + 2] = temp;
                     }
                     return dxt5;
+                }
                 case TextureFormat.BC7:
+                {
                     byte[] bc7 = BC7Decoder.ReadBC7(data, width, height);
                     for (int i = 0; i < bc7.Length; i += 4)
                     {
@@ -204,9 +253,12 @@ namespace TexturePlugin
                         bc7[i + 2] = temp;
                     }
                     return bc7;
+                }
                 case TextureFormat.BC6H: //pls don't use
                 case TextureFormat.BC4:
                 case TextureFormat.BC5:
+                    return null;
+                case TextureFormat.RGB9e5Float: //pls don't use
                     return null;
                 default:
                     return null;
@@ -217,8 +269,35 @@ namespace TexturePlugin
         {
             switch (format)
             {
-                case TextureFormat.RGB9e5Float: //pls don't use (what is this?)
-                    return null;
+                //crunch
+                case TextureFormat.DXT1Crunched:
+                case TextureFormat.DXT5Crunched:
+                {
+                    byte[] dest = new byte[width * height * 4];
+                    uint size = 0;
+                    unsafe
+                    {
+                        fixed (byte* dataPtr = data)
+                        fixed (byte* destPtr = dest)
+                        {
+                            IntPtr dataIntPtr = (IntPtr)dataPtr;
+                            IntPtr destIntPtr = (IntPtr)destPtr;
+                            size = PInvoke.EncodeByCrunchUnity(dataIntPtr, destIntPtr, (int)format, quality, (uint)width, (uint)height);
+                        }
+                    }
+                    if (size > 0)
+                    {
+                        byte[] resizedDest = new byte[size];
+                        Buffer.BlockCopy(dest, 0, resizedDest, 0, (int)size);
+                        dest = null;
+                        return resizedDest;
+                    }
+                    else
+                    {
+                        dest = null;
+                        return null;
+                    }
+                }
                 //pvrtexlib
                 case TextureFormat.ARGB32:
                 case TextureFormat.BGRA32New:
@@ -322,6 +401,8 @@ namespace TexturePlugin
                 case TextureFormat.BC6H: //pls don't use
                 case TextureFormat.BC4:
                 case TextureFormat.BC5:
+                    return null;
+                case TextureFormat.RGB9e5Float: //pls don't use
                     return null;
                 default:
                     return null;

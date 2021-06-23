@@ -20,8 +20,8 @@ namespace UABEAvalonia.Plugins
 
         public bool LoadPlugin(string path)
         {
-            //try
-            //{
+            try
+            {
                 Assembly asm = Assembly.LoadFrom(path);
                 foreach (Type type in asm.GetTypes())
                 {
@@ -37,11 +37,11 @@ namespace UABEAvalonia.Plugins
                         return true;
                     }
                 }
-            //}
-            //catch
-            //{
-            //    return false;
-            //}
+            }
+            catch
+            {
+                return false;
+            }
             return false;
         }
 
@@ -75,22 +75,6 @@ namespace UABEAvalonia.Plugins
                 }
             }
             return menuInfos;
-            //List<IElementDescriptor> selectedDescriptors = new List<IElementDescriptor>();
-            //foreach (AssetExternal ext in selectedAssets)
-            //{
-            //    selectedDescriptors.Add(new ImportDescriptor());
-            //    selectedDescriptors.Add(new ExportDescriptor());
-            //}
-            //
-            //List<PluginInfo> supportedPlugins = new List<PluginInfo>();
-            //foreach (var plugin in loadedPlugins)
-            //{
-            //    foreach (var option in plugin.options)
-            //    {
-            //        option.supportCallback(pluginInterface, selectedDescriptors, new string[0], out string desc, out bool supportsBatch);
-            //    }
-            //}
-            //return supportedPlugins;
         }
     }
 }

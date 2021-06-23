@@ -40,13 +40,13 @@
     <!-- and I figure most people have 64bit computers          -->
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Windows)) AND ('$(Platform)' == 'x64' OR '$(Platform)' == 'AnyCPU')">
       <UABEANativeConfig>win-x64</UABEANativeConfig>
-      <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\bin\x64\$(Configuration)\TexToolWrap.dll</TexToolWrapBinDir>
+      <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\bin\x64\Release\TexToolWrap.dll</TexToolWrapBinDir>
       <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Windows_x86_64\PVRTexLib.dll</PVRTexToolBinDir>
       <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\win64\ispc_texcomp.dll</ISPCBinDir>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Windows)) AND '$(Platform)' == 'x86'">
       <UABEANativeConfig>win-x86</UABEANativeConfig>
-      <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\bin\Win32\$(Configuration)\TexToolWrap.dll</TexToolWrapBinDir>
+      <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\bin\Win32\Release\TexToolWrap.dll</TexToolWrapBinDir>
       <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Windows_x86_32\PVRTexLib.dll</PVRTexToolBinDir>
       <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\win32\ispc_texcomp.dll</ISPCBinDir>
     </PropertyGroup>
@@ -64,8 +64,8 @@
     </PropertyGroup>
     
     <!-- build textoolwrap for windows with vcxproj -->
-    <MSBuild Condition="'$(UABEANativeConfig)' == 'win-x64'" Projects="$(SolutionDir)TexToolWrap\TexToolWrap.vcxproj" Targets="Build" Properties="Configuration=$(Configuration);Platform=x64" />
-    <MSBuild Condition="'$(UABEANativeConfig)' == 'win-x86'" Projects="$(SolutionDir)TexToolWrap\TexToolWrap.vcxproj" Targets="Build" Properties="Configuration=$(Configuration);Platform=Win32" />
+    <MSBuild Condition="'$(UABEANativeConfig)' == 'win-x64'" Projects="$(SolutionDir)TexToolWrap\TexToolWrap.vcxproj" Targets="Build" Properties="Configuration=Release;Platform=x64" />
+    <MSBuild Condition="'$(UABEANativeConfig)' == 'win-x86'" Projects="$(SolutionDir)TexToolWrap\TexToolWrap.vcxproj" Targets="Build" Properties="Configuration=Release;Platform=Win32" />
 
     <!-- build textoolwrap for linux with make -->
     <Exec Condition="'$(UABEANativeConfig)' == 'linux-x64' OR '$(UABEANativeConfig)' == 'linux-x86'" Command="make" WorkingDirectory="$(SolutionDir)TexToolWrap" />
