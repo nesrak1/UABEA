@@ -8,6 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Image = SixLabors.ImageSharp.Image;
 
@@ -35,8 +36,6 @@ namespace TexturePlugin
         private AssetTypeValueField baseField;
 
         private byte[] modImageBytes;
-
-        public FilterMode filterMode;
 
         public EditDialog()
         {
@@ -87,7 +86,7 @@ namespace TexturePlugin
             boxMipMapBias.Text = tex.m_TextureSettings.m_MipBias.ToString();
             ddWrapModeU.SelectedIndex = tex.m_TextureSettings.m_WrapU;
             ddWrapModeV.SelectedIndex = tex.m_TextureSettings.m_WrapV;
-            boxLightMapFormat.Text = tex.m_LightmapFormat.ToString("X2");
+            boxLightMapFormat.Text = "0x" + tex.m_LightmapFormat.ToString("X2");
             ddColorSpace.SelectedIndex = tex.m_ColorSpace;
         }
 
@@ -122,6 +121,34 @@ namespace TexturePlugin
                 m_StreamData.Get("offset").GetValue().Set(0);
                 m_StreamData.Get("size").GetValue().Set(0);
                 m_StreamData.Get("path").GetValue().Set("");
+
+                baseField.Get("m_Name").GetValue().Set(boxName.Text);
+                baseField.Get("m_MipMap").GetValue().Set(chkHasMipMaps.IsChecked ?? false);
+                baseField.Get("m_ReadAllowed").GetValue().Set(chkIsReadable.IsChecked ?? false);
+                AssetTypeValueField m_TextureSettings = baseField.Get("m_TextureSettings");
+                m_TextureSettings.Get("m_FilterMode").GetValue().Set(ddFilterMode.SelectedIndex);
+
+                if (int.TryParse(boxAnisotFilter.Text, out int aniso))
+                    m_TextureSettings.Get("m_Aniso").GetValue().Set(aniso);
+
+                if (int.TryParse(boxMipMapBias.Text, out int mipBias))
+                    m_TextureSettings.Get("m_MipBias").GetValue().Set(mipBias);
+
+                m_TextureSettings.Get("m_WrapU").GetValue().Set(ddWrapModeU.SelectedIndex);
+                m_TextureSettings.Get("m_WrapV").GetValue().Set(ddWrapModeV.SelectedIndex);
+
+                if (boxLightMapFormat.Text.StartsWith("0x"))
+                {
+                    if (int.TryParse(boxLightMapFormat.Text, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out int lightFmt))
+                        baseField.Get("m_LightmapFormat").GetValue().Set(lightFmt);
+                }
+                else
+                {
+                    if (int.TryParse(boxLightMapFormat.Text, out int lightFmt))
+                        baseField.Get("m_LightmapFormat").GetValue().Set(lightFmt);
+                }
+
+                baseField.Get("m_ColorSpace").GetValue().Set(ddColorSpace.SelectedIndex);
 
                 baseField.Get("m_TextureFormat").GetValue().Set((int)fmt);
                 baseField.Get("m_CompleteImageSize").GetValue().Set(encImageBytes.Length);
