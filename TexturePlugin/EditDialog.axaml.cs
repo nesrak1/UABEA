@@ -123,9 +123,15 @@ namespace TexturePlugin
                 m_StreamData.Get("path").GetValue().Set("");
 
                 baseField.Get("m_Name").GetValue().Set(boxName.Text);
-                baseField.Get("m_MipMap").GetValue().Set(chkHasMipMaps.IsChecked ?? false);
-                baseField.Get("m_ReadAllowed").GetValue().Set(chkIsReadable.IsChecked ?? false);
+
+                if (!baseField.Get("m_MipMap").IsDummy())
+                    baseField.Get("m_MipMap").GetValue().Set(chkHasMipMaps.IsChecked ?? false);
+
+                if (!baseField.Get("m_ReadAllowed").IsDummy())
+                    baseField.Get("m_ReadAllowed").GetValue().Set(chkIsReadable.IsChecked ?? false);
+
                 AssetTypeValueField m_TextureSettings = baseField.Get("m_TextureSettings");
+
                 m_TextureSettings.Get("m_FilterMode").GetValue().Set(ddFilterMode.SelectedIndex);
 
                 if (int.TryParse(boxAnisotFilter.Text, out int aniso))
