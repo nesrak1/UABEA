@@ -364,15 +364,39 @@ namespace UABEAvalonia
                     sfd.Title = "Save as...";
                     sfd.InitialFileName = file.name;
 
-                    string filePath = await sfd.ShowAsync(this);
+                    string filePath;
 
-                    if (filePath == null)
-                        continue;
-
-                    using (FileStream fs = File.OpenWrite(filePath))
-                    using (AssetsFileWriter w = new AssetsFileWriter(fs))
+                    while (true)
                     {
-                        file.file.Write(w, 0, replacers, 0);
+                        filePath = await sfd.ShowAsync(this);
+
+                        if (filePath == "" || filePath == null)
+                            continue;
+
+                        if (Path.GetFullPath(filePath) == Path.GetFullPath(file.path))
+                        {
+                            await MessageBoxUtil.ShowDialog(this,
+                                "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
+                            continue;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    try
+                    {
+                        using (FileStream fs = File.OpenWrite(filePath))
+                        using (AssetsFileWriter w = new AssetsFileWriter(fs))
+                        {
+                            file.file.Write(w, 0, replacers, 0);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        await MessageBoxUtil.ShowDialog(this,
+                            "Write exception", "There was a problem while writing the file:\n" + ex.Message);
                     }
                 }
             }
