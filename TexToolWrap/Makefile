@@ -8,4 +8,4 @@ textoolwrap.o: textoolwrap.cpp
 	$(CXX) -c -fpic -o textoolwrap.o textoolwrap.cpp
 
 libtextoolwrap.so: textoolwrap.o
-	$(CXX) -shared -o libtextoolwrap.so crunch/linux64/crnlib.a textoolwrap.o -LPVRTexLib/Linux_x86_64 -lPVRTexLib -Lispc/linux64 -lispc_texcomp -Wl,-rpath,"\$$ORIGIN"
+	$(CXX) -shared -o libtextoolwrap.so textoolwrap.o -LPVRTexLib/Linux_x86_64 -lPVRTexLib -Lispc/linux64 -lispc_texcomp -Lcrunch/linux64 -lcrnlib -Wl,-rpath,"\$$ORIGIN"

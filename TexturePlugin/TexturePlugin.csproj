@@ -43,24 +43,28 @@
       <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\bin\x64\Release\TexToolWrap.dll</TexToolWrapBinDir>
       <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Windows_x86_64\PVRTexLib.dll</PVRTexToolBinDir>
       <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\win64\ispc_texcomp.dll</ISPCBinDir>
+      <CrunchBinDir>$(SolutionDir)TexToolWrap\crunch\win64\libcrnlib.dll</CrunchBinDir>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Windows)) AND '$(Platform)' == 'x86'">
       <UABEANativeConfig>win-x86</UABEANativeConfig>
       <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\bin\Win32\Release\TexToolWrap.dll</TexToolWrapBinDir>
       <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Windows_x86_32\PVRTexLib.dll</PVRTexToolBinDir>
       <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\win32\ispc_texcomp.dll</ISPCBinDir>
+      <CrunchBinDir>$(SolutionDir)TexToolWrap\crunch\win32\libcrnlib.dll</CrunchBinDir>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Linux)) AND '$(LinuxUnameM)' == 'x86_64'">
       <UABEANativeConfig>linux-x64</UABEANativeConfig>
       <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\libtextoolwrap.so</TexToolWrapBinDir>
       <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Linux_x86_64\libPVRTexLib.so</PVRTexToolBinDir>
       <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\linux64\libispc_texcomp.so</ISPCBinDir>
+      <CrunchBinDir>$(SolutionDir)TexToolWrap\crunch\linux64\libcrnlib.so</CrunchBinDir>
     </PropertyGroup>
     <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Linux)) AND ('$(LinuxUnameM)' == 'i386' OR '$(Platform)' == 'i686')">
       <UABEANativeConfig>linux-x86</UABEANativeConfig>
       <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\libtextoolwrap.so</TexToolWrapBinDir>
       <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Linux_x86_32\libPVRTexLib.so</PVRTexToolBinDir>
       <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\linux32\libispc_texcomp.so</ISPCBinDir>
+      <CrunchBinDir>$(SolutionDir)TexToolWrap\crunch\linux32\libcrnlib.so</CrunchBinDir>
     </PropertyGroup>
     
     <!-- build textoolwrap for windows with vcxproj -->
@@ -89,6 +93,7 @@
     <Copy SourceFiles="$(TexToolWrapBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(PVRTexToolBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(ISPCBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
+    <Copy SourceFiles="$(CrunchBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     
     <!-- copy textureplugin -->
     <Copy SourceFiles="$(OutputPath)TexturePlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
@@ -104,6 +109,7 @@
     <Copy SourceFiles="$(TexToolWrapBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(PVRTexToolBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     <Copy SourceFiles="$(ISPCBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
+    <Copy SourceFiles="$(CrunchBinDir)" DestinationFolder="$(UABEABinDir)runtimes\$(UABEANativeConfig)\native" ContinueOnError="true" />
     
     <!-- copy textureplugin -->
     <Copy SourceFiles="$(OutputPath)TexturePlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
