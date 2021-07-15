@@ -127,6 +127,9 @@ namespace TexturePlugin
                 if (!baseField.Get("m_MipMap").IsDummy())
                     baseField.Get("m_MipMap").GetValue().Set(chkHasMipMaps.IsChecked ?? false);
 
+                if (!baseField.Get("m_MipCount").IsDummy())
+                    baseField.Get("m_MipCount").GetValue().Set(1);
+
                 if (!baseField.Get("m_ReadAllowed").IsDummy())
                     baseField.Get("m_ReadAllowed").GetValue().Set(chkIsReadable.IsChecked ?? false);
 
