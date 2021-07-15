@@ -158,9 +158,9 @@ namespace UABEAvalonia
             {
                 magic = "EMIP",
                 includesCldb = false,
-                modName = boxModName.Text,
-                modCreators = boxCredits.Text,
-                modDescription = boxDesc.Text
+                modName = boxModName.Text ?? "",
+                modCreators = boxCredits.Text ?? "",
+                modDescription = boxDesc.Text ?? ""
             };
 
             emip.affectedFiles = new List<InstallerPackageAssetsDesc>();
