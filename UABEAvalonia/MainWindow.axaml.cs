@@ -119,6 +119,19 @@ namespace UABEAvalonia
 
                 CloseAllFiles();
 
+                //can you even have split bundles?
+                if (fileType != DetectedFileType.Unknown)
+                {
+                    if (selectedFile.EndsWith(".split0"))
+                    {
+                        string? splitFilePath = await AskLoadSplitFile(selectedFile);
+                        if (splitFilePath == null)
+                            return;
+                        else
+                            selectedFile = splitFilePath;
+                    }
+                }
+
                 if (fileType == DetectedFileType.AssetsFile)
                 {
                     AssetsFileInstance fileInst = am.LoadAssetsFile(selectedFile, true);
@@ -479,6 +492,55 @@ namespace UABEAvalonia
             else
             {
                 await MessageBoxUtil.ShowDialog(this, "Note", "Please open a bundle file before using compress.");
+            }
+        }
+
+        private async Task<string?> AskLoadSplitFile(string selectedFile)
+        {
+            ButtonResult splitRes = await MessageBoxUtil.ShowDialog(this,
+                "Split file detected", "This file ends with .split0. Create merged file?\n",
+                ButtonEnum.YesNoCancel);
+
+            if (splitRes == ButtonResult.Yes)
+            {
+                SaveFileDialog sfd = new SaveFileDialog();
+                sfd.Title = "Select location for merged file";
+                sfd.Directory = Path.GetDirectoryName(selectedFile);
+                sfd.InitialFileName = Path.GetFileName(selectedFile.Substring(0, selectedFile.Length - ".split0".Length));
+                string splitFilePath = await sfd.ShowAsync(this);
+
+                if (splitFilePath != null && splitFilePath != string.Empty)
+                {
+                    using (FileStream mergeFile = File.OpenWrite(splitFilePath))
+                    {
+                        int idx = 0;
+                        string thisSplitFileNoNum = selectedFile.Substring(0, selectedFile.Length - 1);
+                        string thisSplitFileNum = selectedFile;
+                        while (File.Exists(thisSplitFileNum))
+                        {
+                            using (FileStream thisSplitFile = File.OpenRead(thisSplitFileNum))
+                            {
+                                thisSplitFile.CopyTo(mergeFile);
+                            }
+
+                            idx++;
+                            thisSplitFileNum = $"{thisSplitFileNoNum}{idx}";
+                        };
+                    }
+                    return splitFilePath;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else if (splitRes == ButtonResult.No)
+            {
+                return selectedFile;
+            }
+            else //if (splitRes == ButtonResult.Cancel)
+            {
+                return null;
             }
         }
 
