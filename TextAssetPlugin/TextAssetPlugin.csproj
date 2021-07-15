@@ -6,14 +6,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AssetsTools.NET" Version="2.0.9" />
     <PackageReference Include="Avalonia" Version="0.10.0" />
     <PackageReference Include="Avalonia.Desktop" Version="0.10.0" />
     <PackageReference Include="Avalonia.Diagnostics" Version="0.10.0" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\UABEAvalonia\UABEAvalonia.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="AssetsTools.NET">
+      <HintPath>..\Libs\AssetsTools.NET.dll</HintPath>
+    </Reference>
   </ItemGroup>
   
   <!-- there seems to be no flag for checking if building  -->
