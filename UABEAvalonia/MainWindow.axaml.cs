@@ -558,10 +558,26 @@ namespace UABEAvalonia
                 SaveFileDialog sfd = new SaveFileDialog();
                 sfd.Title = "Save as...";
                 sfd.Filters = new List<FileDialogFilter>() { new FileDialogFilter() { Name = "All files", Extensions = new List<string>() { "*" } } };
-                string savePath = await sfd.ShowAsync(this);
 
-                if (savePath == null)
-                    return;
+                string savePath;
+                while (true)
+                {
+                    savePath = await sfd.ShowAsync(this);
+
+                    if (savePath == "" || savePath == null)
+                        return;
+
+                    if (Path.GetFullPath(savePath) == Path.GetFullPath(bundleInst.path))
+                    {
+                        await MessageBoxUtil.ShowDialog(this,
+                            "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
+                        continue;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
 
                 DecompressToFile(bundleInst, savePath);
             }

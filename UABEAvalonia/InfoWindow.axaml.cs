@@ -371,7 +371,7 @@ namespace UABEAvalonia
                         filePath = await sfd.ShowAsync(this);
 
                         if (filePath == "" || filePath == null)
-                            continue;
+                            return;
 
                         if (Path.GetFullPath(filePath) == Path.GetFullPath(file.path))
                         {

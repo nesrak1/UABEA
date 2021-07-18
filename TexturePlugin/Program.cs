@@ -296,6 +296,12 @@ namespace TexturePlugin
 
                 byte[] data = TextureHelper.GetRawTextureBytes(texFile, cont.FileInstance);
 
+                if (data == null)
+                {
+                    await MessageBoxUtil.ShowDialog(win, "Error", "resS was detected but no file was found on disk");
+                    return false;
+                }
+
                 bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                 if (!success)
                 {
