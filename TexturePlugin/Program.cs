@@ -333,7 +333,7 @@ namespace TexturePlugin
                 if (!success)
                 {
                     string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
-                    await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to decode texture format {texFormat}");
+                    await MessageBoxUtil.ShowDialog(win, "Error", $"[{errorAssetName}]: Failed to decode texture format {texFormat}");
                 }
                 return success;
             }
