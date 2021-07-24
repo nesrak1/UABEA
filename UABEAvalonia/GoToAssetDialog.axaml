@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="110"
+        Width="300" Height="110"
+        Icon="/Assets/uabeavalonia16.ico"
+        x:Class="UABEAvalonia.GoToAssetDialog"
+        Title="Go to asset">
+  <Grid Margin="10,10,10,10">
+    <Grid VerticalAlignment="Top">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="100"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <Label Grid.Column="0" Grid.Row="0">File ID</Label>
+      <ComboBox Grid.Column="1" Grid.Row="0" Name="ddFileId"></ComboBox>
+      <Label Grid.Column="0" Grid.Row="1">Path ID</Label>
+      <TextBox Grid.Column="1" Grid.Row="1" Name="boxPathId"></TextBox>
+    </Grid>
+    <Grid VerticalAlignment="Bottom">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" Name="btnOk">Ok</Button>
+      <Button Grid.Column="1" Name="btnCancel">Cancel</Button>
+    </Grid>
+  </Grid>
+</Window>

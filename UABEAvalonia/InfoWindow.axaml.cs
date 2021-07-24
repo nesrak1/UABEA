@@ -102,6 +102,7 @@ namespace UABEAvalonia
             menuClose.Click += MenuClose_Click;
             menuSearchByName.Click += MenuSearchByName_Click;
             menuContinueSearch.Click += MenuContinueSearch_Click;
+            menuGoToAsset.Click += MenuGoToAsset_Click;
             btnViewData.Click += BtnViewData_Click;
             btnExportRaw.Click += BtnExportRaw_Click;
             btnExportDump.Click += BtnExportDump_Click;
@@ -116,7 +117,7 @@ namespace UABEAvalonia
         {
             if (e.Key == Key.F3)
             {
-                NextSearch();
+                NextNameSearch();
             }
         }
 
@@ -188,13 +189,26 @@ namespace UABEAvalonia
                 searchDown = res.isDown;
                 searchCaseSensitive = res.caseSensitive;
                 searching = true;
-                NextSearch();
+                NextNameSearch();
             }
         }
 
         private void MenuContinueSearch_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            NextSearch();
+            NextNameSearch();
+        }
+
+        private async void MenuGoToAsset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            GoToAssetDialog dialog = new GoToAssetDialog(Workspace);
+            AssetPPtr res = await dialog.ShowDialog<AssetPPtr>(this);
+            if (res != null)
+            {
+                AssetsFileInstance targetFile = Workspace.LoadedFiles[res.fileID];
+                long targetPathId = res.pathID;
+
+                IdSearch(targetFile, targetPathId);
+            }
         }
 
         private async void BtnViewData_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -668,7 +682,7 @@ namespace UABEAvalonia
             }
         }
 
-        private async void NextSearch()
+        private async void NextNameSearch()
         {
             bool foundResult = false;
             if (searching)
@@ -703,6 +717,35 @@ namespace UABEAvalonia
                             break;
                         }
                     }
+                }
+            }
+
+            if (!foundResult)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Search end", "Can't find any assets that match.");
+
+                searchText = "";
+                searchStart = 0;
+                searchDown = false;
+                searching = false;
+                return;
+            }
+        }
+
+        private async void IdSearch(AssetsFileInstance targetFile, long targetPathId)
+        {
+            bool foundResult = false;
+
+            List<AssetInfoDataGridItem> itemList = dataGrid.Items.Cast<AssetInfoDataGridItem>().ToList();
+            for (int i = 0; i < itemList.Count; i++)
+            {
+                AssetContainer cont = itemList[i].assetContainer;
+                if (cont.FileInstance == targetFile && cont.PathId == targetPathId)
+                {
+                    dataGrid.SelectedIndex = i;
+                    dataGrid.ScrollIntoView(dataGrid.SelectedItem, null);
+                    foundResult = true;
+                    break;
                 }
             }
 

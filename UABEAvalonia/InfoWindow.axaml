@@ -26,9 +26,6 @@
         <MenuItem Header="Dependencies" Name="menuDependencies" />
         <MenuItem Header="Containters" Name="menuContainers" />
       </MenuItem>
-      <MenuItem Header="Tools">
-        <MenuItem Header="Get script information" Name="menuGetScriptInformation" />
-      </MenuItem>
     </Menu>
     <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="Assets" />
     <Border Margin="10,53,200,10" BorderBrush="Black" BorderThickness="1">
