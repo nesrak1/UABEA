@@ -1,10 +1,12 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia.Controls;
+using MessageBox.Avalonia.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using UABEAvalonia;
 using UABEAvalonia.Plugins;
@@ -88,7 +90,7 @@ namespace TexturePlugin
 
                 if (encImageBytes == null)
                 {
-                    await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to decode texture\n({fmt})");
+                    await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to encode texture format {fmt}");
                     return false;
                 }
 
@@ -238,8 +240,12 @@ namespace TexturePlugin
 
             if (dir != null && dir != string.Empty)
             {
+                StringBuilder errorBuilder = new StringBuilder();
+
                 foreach (AssetContainer cont in selection)
                 {
+                    string errorAssetName = $"{Path.GetFileName(cont.FileInstance.path)}/{cont.PathId}";
+
                     AssetTypeValueField texBaseField = cont.TypeInstance.GetBaseField();
                     TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
 
@@ -252,19 +258,36 @@ namespace TexturePlugin
                     //bundle resS
                     if (!GetResSTexture(texFile, cont))
                     {
-                        await MessageBoxUtil.ShowDialog(win, "Error", "resS was detected but no file was found in bundle");
-                        return false;
+                        string resSName = Path.GetFileName(texFile.m_StreamData.path);
+                        errorBuilder.AppendLine($"[{errorAssetName}]: resS was detected but {resSName} was not found in bundle");
+                        continue;
                     }
 
                     byte[] data = TextureHelper.GetRawTextureBytes(texFile, cont.FileInstance);
 
+                    if (data == null)
+                    {
+                        string resSName = Path.GetFileName(texFile.m_StreamData.path);
+                        errorBuilder.AppendLine($"[{errorAssetName}]: resS was detected but {resSName} was not found on disk");
+                        continue;
+                    }
+
                     bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                     if (!success)
                     {
-                        await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to decode texture\n({(TextureFormat)texFile.m_TextureFormat})");
-                        return false;
+                        string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
+                        errorBuilder.AppendLine($"[{errorAssetName}]: Failed to decode texture format {texFormat}");
+                        continue;
                     }
                 }
+
+                if (errorBuilder.Length > 0)
+                {
+                    string[] firstLines = errorBuilder.ToString().Split('\n').Take(20).ToArray();
+                    string firstLinesStr = string.Join('\n', firstLines);
+                    await MessageBoxUtil.ShowDialog(win, "Some errors occurred while exporting", firstLinesStr);
+                }
+
                 return true;
             }
             return false;
@@ -287,10 +310,13 @@ namespace TexturePlugin
 
             if (file != null && file != string.Empty)
             {
+                string errorAssetName = $"{Path.GetFileName(cont.FileInstance.path)}/{cont.PathId}";
+
                 //bundle resS
                 if (!GetResSTexture(texFile, cont))
                 {
-                    await MessageBoxUtil.ShowDialog(win, "Error", "resS was detected but no file was found in bundle");
+                    string resSName = Path.GetFileName(texFile.m_StreamData.path);
+                    await MessageBoxUtil.ShowDialog(win, "Error", $"[{errorAssetName}]: resS was detected but {resSName} was not found in bundle");
                     return false;
                 }
 
@@ -298,14 +324,16 @@ namespace TexturePlugin
 
                 if (data == null)
                 {
-                    await MessageBoxUtil.ShowDialog(win, "Error", "resS was detected but no file was found on disk");
+                    string resSName = Path.GetFileName(texFile.m_StreamData.path);
+                    await MessageBoxUtil.ShowDialog(win, "Error", $"[{errorAssetName}]: resS was detected but {resSName} was not found on disk");
                     return false;
                 }
 
                 bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                 if (!success)
                 {
-                    await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to decode texture\n({(TextureFormat)texFile.m_TextureFormat})");
+                    string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
+                    await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to decode texture format {texFormat}");
                 }
                 return success;
             }
