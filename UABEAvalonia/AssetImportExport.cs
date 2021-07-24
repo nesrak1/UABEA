@@ -212,6 +212,7 @@ namespace UABEAvalonia
                         int lastQuote = valueStr.LastIndexOf('"');
                         string valueStrFix = valueStr.Substring(firstQuote + 1, lastQuote - firstQuote - 1);
                         valueStrFix = valueStrFix
+                            .Replace("\\\\", "\\")
                             .Replace("\\r", "\r")
                             .Replace("\\n", "\n");
                         aw.WriteCountStringInt32(valueStrFix);
