@@ -194,7 +194,9 @@ namespace UABEAvalonia
                     string managedPath = Path.Combine(filePath, "Managed");
                     if (Directory.Exists(managedPath))
                     {
-                        return GetConcatMonoBaseField(cont, managedPath);
+                        AssetTypeValueField monoBaseField = GetConcatMonoBaseField(cont, managedPath);
+                        if (monoBaseField != null)
+                            return monoBaseField;
                     }
                     //fallback to no mono deserialization for now
                 }
