@@ -72,7 +72,7 @@ namespace UABEAvalonia
 
         private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            Close(false);
+            Close(null);
         }
 
         private void InitializeComponent()
