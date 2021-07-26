@@ -2,6 +2,7 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using System.Collections.Generic;
 using System.IO;
@@ -38,6 +39,9 @@ namespace UABEAvalonia
             //generated events
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
+            boxPathId.KeyDown += TextBoxKeyDown;
+            boxTypeId.KeyDown += TextBoxKeyDown;
+            boxMonoId.KeyDown += TextBoxKeyDown;
         }
 
         public AddAssetWindow(AssetWorkspace workspace) : this()
@@ -51,12 +55,31 @@ namespace UABEAvalonia
                 loadedFiles.Add($"{index++} - {Path.GetFileName(inst.path)}");
             }
             ddFileId.Items = loadedFiles;
+            ddFileId.SelectedIndex = 0;
             boxPathId.Text = "1"; //todo get last id (including new assets)
             boxTypeId.Text = "1";
             boxMonoId.Text = "-1";
         }
 
-        private async void BtnOk_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private void BtnOk_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            ReturnAssetToAdd();
+        }
+
+        private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            Close(false);
+        }
+
+        private void TextBoxKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                ReturnAssetToAdd();
+            }
+        }
+
+        private async void ReturnAssetToAdd()
         {
             int fileId = ddFileId.SelectedIndex; //hopefully in order
             string pathIdText = boxPathId.Text;
@@ -128,11 +151,6 @@ namespace UABEAvalonia
             workspace.AddReplacer(file, new AssetsReplacerFromMemory(0, pathId, typeId, monoId, assetBytes), new MemoryStream(assetBytes));
 
             Close(true);
-        }
-
-        private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            Close(false);
         }
 
         private bool TryParseClassDatabase(string typeIdText, bool createBlankAsset, out AssetTypeTemplateField tempField, out int typeId)

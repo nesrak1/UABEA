@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 
 namespace UABEAvalonia
@@ -30,19 +31,33 @@ namespace UABEAvalonia
             //generated events
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
+            boxName.KeyDown += BoxName_KeyDown;
         }
 
         private void BtnOk_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (boxName.Text != null && boxName.Text != string.Empty)
-                Close(new SearchDialogResult(true, boxName.Text, rdoSearchDown.IsChecked ?? false, chkCaseSensitive.IsChecked ?? false));
-            else
-                Close(new SearchDialogResult(false));
+            ReturnAssetToSearch();
         }
 
         private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(new SearchDialogResult(false));
+        }
+
+        private void BoxName_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                ReturnAssetToSearch();
+            }
+        }
+
+        private void ReturnAssetToSearch()
+        {
+            if (boxName.Text != null && boxName.Text != string.Empty)
+                Close(new SearchDialogResult(true, boxName.Text, rdoSearchDown.IsChecked ?? false, chkCaseSensitive.IsChecked ?? false));
+            else
+                Close(new SearchDialogResult(false));
         }
 
         private void InitializeComponent()
