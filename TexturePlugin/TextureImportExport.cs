@@ -32,7 +32,7 @@ namespace TexturePlugin
             byte[] encData = TextureEncoderDecoder.Encode(decData, width, height, format);
             return encData;
         }
-        public static async Task<bool> ExportPng(byte[] encData, string file, int width, int height, TextureFormat format)
+        public static bool ExportPng(byte[] encData, string file, int width, int height, TextureFormat format)
         {
             byte[] decData = TextureEncoderDecoder.Decode(encData, width, height, format);
             if (decData == null)

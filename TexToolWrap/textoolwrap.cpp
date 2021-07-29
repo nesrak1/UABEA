@@ -241,6 +241,12 @@ EXPORT unsigned int EncodeByCrunchUnity(void* data, void* outBuf, int mode, int 
 		case 29:
 			comp_params.m_format = cCRNFmtDXT5;
 			break;
+		case 64:
+			comp_params.m_format = cCRNFmtETC1;
+			break;
+		case 65:
+			comp_params.m_format = cCRNFmtETC2A;
+			break;
 		default:
 			return 0;
 	}

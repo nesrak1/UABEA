@@ -76,22 +76,27 @@ namespace TexturePlugin
 
         private async Task<bool> ImportTextures(Window win, List<ImportBatchInfo> batchInfos)
         {
+            StringBuilder errorBuilder = new StringBuilder();
+
             foreach (ImportBatchInfo batchInfo in batchInfos)
             {
+                AssetContainer cont = batchInfo.cont;
+
+                string errorAssetName = $"{Path.GetFileName(cont.FileInstance.path)}/{cont.PathId}";
                 string selectedFilePath = batchInfo.importFile;
 
-                if (!batchInfo.cont.HasInstance)
+                if (!cont.HasInstance)
                     continue;
 
-                AssetTypeValueField baseField = batchInfo.cont.TypeInstance.GetBaseField();
+                AssetTypeValueField baseField = cont.TypeInstance.GetBaseField();
                 TextureFormat fmt = (TextureFormat)baseField.Get("m_TextureFormat").GetValue().AsInt();
 
                 byte[] encImageBytes = TextureImportExport.ImportPng(selectedFilePath, fmt, out int width, out int height);
 
                 if (encImageBytes == null)
                 {
-                    await MessageBoxUtil.ShowDialog(win, "Error", $"Failed to encode texture format {fmt}");
-                    return false;
+                    errorBuilder.AppendLine($"[{errorAssetName}]: Failed to encode texture format {fmt}");
+                    continue;
                 }
 
                 AssetTypeValueField m_StreamData = baseField.Get("m_StreamData");
@@ -113,6 +118,13 @@ namespace TexturePlugin
                     data = encImageBytes
                 };
                 image_data.GetValue().Set(byteArray);
+            }
+
+            if (errorBuilder.Length > 0)
+            {
+                string[] firstLines = errorBuilder.ToString().Split('\n').Take(20).ToArray();
+                string firstLinesStr = string.Join('\n', firstLines);
+                await MessageBoxUtil.ShowDialog(win, "Some errors occurred while exporting", firstLinesStr);
             }
 
             return true;
@@ -272,7 +284,7 @@ namespace TexturePlugin
                         continue;
                     }
 
-                    bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
+                    bool success = TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                     if (!success)
                     {
                         string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
@@ -329,7 +341,7 @@ namespace TexturePlugin
                     return false;
                 }
 
-                bool success = await TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
+                bool success = TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                 if (!success)
                 {
                     string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
