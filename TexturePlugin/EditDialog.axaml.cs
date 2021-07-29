@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using UABEAvalonia;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace TexturePlugin
@@ -110,12 +111,19 @@ namespace TexturePlugin
             }
         }
 
-        private void BtnSave_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private async void BtnSave_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             if (modImageBytes != null)
             {
                 TextureFormat fmt = (TextureFormat)(ddTextureFmt.SelectedIndex + 1);
                 byte[] encImageBytes = TextureEncoderDecoder.Encode(modImageBytes, tex.m_Width, tex.m_Height, fmt);
+
+                if (encImageBytes == null)
+                {
+                    await MessageBoxUtil.ShowDialog(this, "Error", $"Failed to encode texture format {fmt}");
+                    Close(false);
+                    return;
+                }
 
                 AssetTypeValueField m_StreamData = baseField.Get("m_StreamData");
                 m_StreamData.Get("offset").GetValue().Set(0);
@@ -174,8 +182,19 @@ namespace TexturePlugin
                     data = encImageBytes
                 };
                 image_data.GetValue().Set(byteArray);
+
+                Close(true);
             }
-            Close(true);
+            else
+            {
+                await MessageBoxUtil.ShowDialog(this, "Error",
+                    "Texture reencoding is not supported atm.\n" +
+                    "If you want to change the texture format,\n" +
+                    "export it to png first then reimport it here.\n" +
+                    "Sorry for the inconvenience.");
+
+                Close(false);
+            }
         }
 
         private void BtnCancel_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
