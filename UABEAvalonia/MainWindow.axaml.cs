@@ -377,7 +377,7 @@ namespace UABEAvalonia
 
                     if (inst != null)
                     {
-                        assetsManagerName = inst.name;
+                        assetsManagerName = inst.path;
                         am.files.Remove(inst);
                     }
                     else //shouldn't happen
