@@ -435,7 +435,7 @@ namespace UABEAvalonia
                 {
                     AssetsFileInstance selectedInst = selectedCont.FileInstance;
 
-                    Extensions.GetUABENameFast(selectedCont, am.classFile, out string assetName, out string _);
+                    Extensions.GetUABENameFast(selectedCont, am.classFile, false, out string assetName, out string _);
                     string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.dat");
 
                     using (FileStream fs = File.OpenWrite(file))
@@ -452,7 +452,7 @@ namespace UABEAvalonia
             AssetContainer selectedCont = selection[0];
             AssetsFileInstance selectedInst = selectedCont.FileInstance;
 
-            Extensions.GetUABENameFast(selectedCont, am.classFile, out string assetName, out string _);
+            Extensions.GetUABENameFast(selectedCont, am.classFile, false, out string assetName, out string _);
 
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Title = "Save As";
@@ -486,7 +486,8 @@ namespace UABEAvalonia
             {
                 foreach (AssetContainer selectedCont in selection)
                 {
-                    Extensions.GetUABENameFast(selectedCont, am.classFile, out string assetName, out string _);
+                    Extensions.GetUABENameFast(selectedCont, am.classFile, false, out string assetName, out string _);
+                    assetName = Extensions.ReplaceInvalidPathChars(assetName);
                     string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedCont.FileInstance.path)}-{selectedCont.PathId}.txt");
 
                     using (FileStream fs = File.OpenWrite(file))
@@ -506,7 +507,8 @@ namespace UABEAvalonia
             AssetContainer selectedCont = selection[0];
             AssetsFileInstance selectedInst = selectedCont.FileInstance;
 
-            Extensions.GetUABENameFast(selectedCont, am.classFile, out string assetName, out string _);
+            Extensions.GetUABENameFast(selectedCont, am.classFile, false, out string assetName, out string _);
+            assetName = Extensions.ReplaceInvalidPathChars(assetName);
 
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Title = "Save As";
@@ -793,7 +795,7 @@ namespace UABEAvalonia
             size = (int)cont.Size;
             modified = "";
 
-            Extensions.GetUABENameFast(thisFile, am.classFile, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, out name, out type);
+            Extensions.GetUABENameFast(thisFile, am.classFile, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, true, out name, out type);
 
             var item = new AssetInfoDataGridItem
             {

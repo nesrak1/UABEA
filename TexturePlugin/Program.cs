@@ -265,7 +265,8 @@ namespace TexturePlugin
                     if (texFile.m_Width == 0 && texFile.m_Height == 0)
                         continue;
 
-                    string file = Path.Combine(dir, $"{texFile.m_Name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png");
+                    string assetName = Extensions.ReplaceInvalidPathChars(texFile.m_Name);
+                    string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png");
 
                     //bundle resS
                     if (!GetResSTexture(texFile, cont))
@@ -310,13 +311,15 @@ namespace TexturePlugin
 
             AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, cont).GetBaseField();
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
-            SaveFileDialog sfd = new SaveFileDialog();
 
+            string assetName = Extensions.ReplaceInvalidPathChars(texFile.m_Name);
+
+            SaveFileDialog sfd = new SaveFileDialog();
             sfd.Title = "Save texture";
             sfd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "PNG file", Extensions = new List<string>() { "png" } }
             };
-            sfd.InitialFileName = $"{texFile.m_Name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png";
+            sfd.InitialFileName = $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png";
 
             string file = await sfd.ShowAsync(win);
 

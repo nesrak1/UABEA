@@ -149,6 +149,7 @@ namespace TexturePlugin
                     string name = baseField.Get("m_Name").GetValue().AsString();
                     byte[] byteData = baseField.Get("m_Script").GetValue().AsStringBytes();
 
+                    name = Extensions.ReplaceInvalidPathChars(name);
                     string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.txt");
 
                     File.WriteAllBytes(file, byteData);
@@ -165,6 +166,7 @@ namespace TexturePlugin
 
             AssetTypeValueField baseField = workspace.GetBaseField(cont);
             string name = baseField.Get("m_Name").GetValue().AsString();
+            name = Extensions.ReplaceInvalidPathChars(name);
 
             sfd.Title = "Save text file";
             sfd.Filters = new List<FileDialogFilter>() {

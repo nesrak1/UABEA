@@ -24,14 +24,14 @@ namespace UABEAvalonia
             return Regex.IsMatch(test, "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$", options);
         }
 
-        public static void GetUABENameFast(AssetContainer cont, ClassDatabaseFile cldb, out string assetName, out string typeName)
+        public static void GetUABENameFast(AssetContainer cont, ClassDatabaseFile cldb, bool usePrefix, out string assetName, out string typeName)
         {
-            GetUABENameFast(cont.FileInstance.file, cldb, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, out assetName, out typeName);
+            GetUABENameFast(cont.FileInstance.file, cldb, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, usePrefix, out assetName, out typeName);
         }
 
         //codeflow needs work but should be fine for now
         public static void GetUABENameFast(AssetsFile file, ClassDatabaseFile cldb, AssetsFileReader reader, long filePosition, uint classId, ushort monoId,
-                                           out string assetName, out string typeName)
+                                           bool usePrefix, out string assetName, out string typeName)
         {
             ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, classId);
 
@@ -62,7 +62,8 @@ namespace UABEAvalonia
                         reader.Position += size * componentSize;
                         reader.Position += 0x04;
                         assetName = reader.ReadCountStringInt32();
-                        assetName = $"GameObject {assetName}";
+                        if (usePrefix)
+                            assetName = $"GameObject {assetName}";
                         return;
                     }
                     else if (typeName == "MonoBehaviour")
@@ -110,7 +111,8 @@ namespace UABEAvalonia
                 reader.Position += size * componentSize;
                 reader.Position += 0x04;
                 assetName = reader.ReadCountStringInt32();
-                assetName = $"GameObject {assetName}";
+                if (usePrefix)
+                    assetName = $"GameObject {assetName}";
                 return;
             }
             else if (typeName == "MonoBehaviour")
@@ -126,112 +128,10 @@ namespace UABEAvalonia
             return;
         }
 
-        #region REMOVE WHEN ASSETS TOOLS NUGET UPDATED
-        public static AssetExternal GetExtAssetFixed(this AssetsManager _this, AssetsFileInstance relativeTo, int fileId, long pathId,
-                                                     bool onlyGetInfo = false, bool forceFromCldb = false)
+        //https://stackoverflow.com/a/23182807
+        public static string ReplaceInvalidPathChars(string filename)
         {
-            AssetExternal ext = new AssetExternal
-            {
-                info = null,
-                instance = null,
-                file = null
-            };
-
-            if (fileId == 0 && pathId == 0)
-            {
-                return ext;
-            }
-            else if (fileId != 0)
-            {
-                AssetsFileInstance dep = relativeTo.GetDependency(_this, fileId - 1);
-
-                if (dep == null)
-                    return ext;
-
-                ext.file = dep;
-                ext.info = dep.table.GetAssetInfo(pathId);
-
-                if (ext.info == null)
-                    return ext;
-
-                if (!onlyGetInfo)
-                    ext.instance = _this.GetTypeInstance(dep.file, ext.info, forceFromCldb);
-                else
-                    ext.instance = null;
-
-                return ext;
-            }
-            else
-            {
-                ext.file = relativeTo;
-                ext.info = relativeTo.table.GetAssetInfo(pathId);
-
-                if (ext.info == null)
-                    return ext;
-
-                if (!onlyGetInfo)
-                    ext.instance = _this.GetTypeInstance(relativeTo.file, ext.info, forceFromCldb);
-                else
-                    ext.instance = null;
-
-                return ext;
-            }
+            return string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
         }
-
-        public static void UnpackInfoOnly(this AssetBundleFile bundle)
-        {
-            AssetsFileReader reader = bundle.reader;
-
-            reader.Position = 0;
-            if (bundle.Read(reader, true))
-            {
-                reader.Position = bundle.bundleHeader6.GetBundleInfoOffset();
-                MemoryStream blocksInfoStream;
-                AssetsFileReader memReader;
-                int compressedSize = (int)bundle.bundleHeader6.compressedSize;
-                switch (bundle.bundleHeader6.GetCompressionType())
-                {
-                    case 1:
-                        using (MemoryStream mstream = new MemoryStream(reader.ReadBytes(compressedSize)))
-                        {
-                            blocksInfoStream = SevenZipHelper.StreamDecompress(mstream);
-                        }
-                        break;
-                    case 2:
-                    case 3:
-                        byte[] uncompressedBytes = new byte[bundle.bundleHeader6.decompressedSize];
-                        using (MemoryStream mstream = new MemoryStream(reader.ReadBytes(compressedSize)))
-                        {
-                            var decoder = new Lz4DecoderStream(mstream);
-                            decoder.Read(uncompressedBytes, 0, (int)bundle.bundleHeader6.decompressedSize);
-                            decoder.Dispose();
-                        }
-                        blocksInfoStream = new MemoryStream(uncompressedBytes);
-                        break;
-                    default:
-                        blocksInfoStream = null;
-                        break;
-                }
-                if (bundle.bundleHeader6.GetCompressionType() != 0)
-                {
-                    using (memReader = new AssetsFileReader(blocksInfoStream))
-                    {
-                        memReader.Position = 0;
-                        bundle.bundleInf6.Read(0, memReader);
-                    }
-                }
-            }
-        }
-
-        public static Type_0D FindTypeTreeTypeByID(TypeTree typeTree, uint id, ushort scriptIndex)
-        {
-            foreach (Type_0D type in typeTree.unity5Types)
-            {
-                if (type.classId == id && type.scriptIndex == scriptIndex)
-                    return type;
-            }
-            return null;
-        }
-        #endregion
     }
 }
