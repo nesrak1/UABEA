@@ -29,6 +29,7 @@ namespace UABEAvalonia
             Console.WriteLine("  -md decompress into memory. Doesn't write .decomp files.");
             Console.WriteLine("      -kd and -fd won't do anything with this flag set.");
             Console.WriteLine("Batch file example:");
+            Console.WriteLine("  (+ to include file/folder, - to exclude file/folder)");
             Console.WriteLine("  +DIR C:/somefolder/bundles/");
             Console.WriteLine("  -FILE C:/somefolder/bundles/specialbundlefile");
         }
