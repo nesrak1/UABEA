@@ -6,7 +6,7 @@
 
 ## Why UABEAvalonia
 
-UABE has currently not been updated in a while. The goal of UABEA was to remake UABE to keep it up to date. At the moment, implementing base features of UABE is still in progress. Also, it is built with Avalonia so it (should be) cross platform, no Wine needed.
+[UABE](https://github.com/DerPopo/UABE) has currently not been updated in a while and does not support newer Unity versions. The goal of UABEA is to remake UABE to keep it up to date. All of the UI has been kept the same for those familiar with UABE. At the moment, implementing base features of UABE is still in progress. Also, it is built with Avalonia so it (should be) cross platform, no Wine needed.
 
 ## New features
 
