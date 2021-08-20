@@ -92,9 +92,10 @@ namespace UABEAvalonia
         private async void MainWindow_Initialized(object? sender, EventArgs e)
         {
             am = new AssetsManager();
-            if (File.Exists("classdata.tpk"))
+            string classDataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "classdata.tpk");
+            if (File.Exists(classDataPath))
             {
-                am.LoadClassPackage("classdata.tpk");
+                am.LoadClassPackage(classDataPath);
             }
             else
             {
