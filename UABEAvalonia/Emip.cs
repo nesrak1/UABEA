@@ -202,6 +202,7 @@ namespace UABEAvalonia
                     else
                     {
                         replacer = new AssetsReplacerFromStream(fileId, pathId, classId, monoScriptIndex, reader.BaseStream, reader.Position, bufLength);
+                        reader.Position += bufLength;
                     }
 
                     if (propertiesHash != null)
