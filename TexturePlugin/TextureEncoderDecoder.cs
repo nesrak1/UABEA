@@ -233,7 +233,9 @@ namespace TexturePlugin
                 {
                     IntPtr dataIntPtr = (IntPtr)dataPtr;
                     IntPtr destIntPtr = (IntPtr)destPtr;
-                    size = PInvoke.EncodeByCrunchUnity(dataIntPtr, destIntPtr, (int)format, quality, (uint)width, (uint)height);
+                    //setting ver to 1 bypasses "The texture could not be loaded because it has been
+                    //encoded with an older version of Crunch" not sure if this breaks older games though
+                    size = PInvoke.EncodeByCrunchUnity(dataIntPtr, destIntPtr, (int)format, quality, (uint)width, (uint)height, 1);
                 }
             }
             if (size > 0)

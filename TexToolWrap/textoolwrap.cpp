@@ -225,7 +225,7 @@ EXPORT unsigned int DecodeByCrunchUnity(void* data, void* outBuf, int mode, unsi
 		return 0;
 	}
 }
-EXPORT unsigned int EncodeByCrunchUnity(void* data, void* outBuf, int mode, int level, unsigned int width, unsigned int height) {
+EXPORT unsigned int EncodeByCrunchUnity(void* data, void* outBuf, int mode, int level, unsigned int width, unsigned int height, unsigned int ver) {
 	crn_comp_params comp_params;
 	comp_params.m_width = width;
 	comp_params.m_height = height;
@@ -254,6 +254,7 @@ EXPORT unsigned int EncodeByCrunchUnity(void* data, void* outBuf, int mode, int 
 	comp_params.m_pImages[0][0] = (crn_uint32*)data;
 	comp_params.m_quality_level = 128; //cDefaultCRNQualityLevel
 
+	comp_params.m_userdata0 = ver; //custom version field??? idek
 	comp_params.m_num_helper_threads = 1; //staying safe for xplat for now
 
 	crn_mipmap_params mip_params;
