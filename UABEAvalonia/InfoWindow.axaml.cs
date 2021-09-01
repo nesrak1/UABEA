@@ -131,7 +131,7 @@ namespace UABEAvalonia
             dataGrid.Items = dataGridItems;
 
             pluginManager = new PluginManager();
-            pluginManager.LoadPluginsInDirectory("plugins");
+            pluginManager.LoadPluginsInDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins"));
 
             searchText = "";
             searchStart = 0;
