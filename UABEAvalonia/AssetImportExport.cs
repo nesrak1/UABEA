@@ -248,7 +248,7 @@ namespace UABEAvalonia
                 case EnumValueTypes.UInt16:
                     return "UInt16";
                 case EnumValueTypes.Int16:
-                    return "Int16";
+                    return "SInt16";
                 case EnumValueTypes.UInt32:
                     return "unsigned int";
                 case EnumValueTypes.Int32:
