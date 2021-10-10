@@ -211,10 +211,7 @@ namespace UABEAvalonia
                         int firstQuote = valueStr.IndexOf('"');
                         int lastQuote = valueStr.LastIndexOf('"');
                         string valueStrFix = valueStr.Substring(firstQuote + 1, lastQuote - firstQuote - 1);
-                        valueStrFix = valueStrFix
-                            .Replace("\\\\", "\\")
-                            .Replace("\\r", "\r")
-                            .Replace("\\n", "\n");
+                        valueStrFix = UnescapeDumpString(valueStrFix);
                         aw.WriteCountStringInt32(valueStrFix);
                     }
 
@@ -233,6 +230,40 @@ namespace UABEAvalonia
         private bool StartsWithSpace(string str, string value)
         {
             return str.StartsWith(value + " ");
+        }
+
+        private string UnescapeDumpString(string str)
+        {
+            StringBuilder sb = new StringBuilder(str.Length);
+            bool escaping = false;
+            foreach (char c in str)
+            {
+                if (!escaping && c == '\\')
+                {
+                    escaping = true;
+                    continue;
+                }
+
+                if (escaping)
+                {
+                    if (c == '\\')
+                        sb.Append('\\');
+                    else if (c == 'r')
+                        sb.Append('\r');
+                    else if (c == 'n')
+                        sb.Append('\n');
+                    else
+                        sb.Append(c);
+
+                    escaping = false;
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
         }
 
         private string CorrectTypeName(EnumValueTypes valueTypes)
