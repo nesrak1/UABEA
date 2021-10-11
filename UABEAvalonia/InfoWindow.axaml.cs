@@ -57,6 +57,8 @@ namespace UABEAvalonia
         private bool searchCaseSensitive;
         private bool searching;
 
+        private bool ignoreCloseEvent;
+
         //would prefer using a stream over byte[] but whatever, will for now
         public List<Tuple<AssetsFileInstance, byte[]>> ChangedAssetsDatas { get; set; }
 
@@ -111,6 +113,9 @@ namespace UABEAvalonia
             btnRemove.Click += BtnRemove_Click;
             btnPlugin.Click += BtnPlugin_Click;
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
+            Closing += InfoWindow_Closing;
+
+            ignoreCloseEvent = false;
         }
 
         private void InfoWindow_KeyDown(object? sender, KeyEventArgs e)
@@ -163,16 +168,8 @@ namespace UABEAvalonia
 
         private async void MenuClose_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (Workspace.Modified)
-            {
-                ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
-                    "Changes made", "You've modified this file. Would you like to save?",
-                    ButtonEnum.YesNo);
-                if (choice == ButtonResult.Yes)
-                {
-                    await SaveFile();
-                }
-            }
+            await AskForSave();
+            ignoreCloseEvent = true;
             CloseFile();
         }
 
@@ -330,6 +327,34 @@ namespace UABEAvalonia
             boxPathId.Text = gridItem.PathID.ToString();
             boxFileId.Text = gridItem.FileID.ToString();
             boxType.Text = $"0x{gridItem.TypeID:X8} ({gridItem.Type})";
+        }
+
+        private async void InfoWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!Workspace.Modified || ignoreCloseEvent)
+            {
+                e.Cancel = false;
+                ignoreCloseEvent = false;
+            }
+            else
+            {
+                e.Cancel = true;
+                ignoreCloseEvent = true;
+
+                await AskForSave();
+                CloseFile();
+            }
+        }
+
+        private async Task AskForSave()
+        {
+            ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
+                "Changes made", "You've modified this file. Would you like to save?",
+                ButtonEnum.YesNo);
+            if (choice == ButtonResult.Yes)
+            {
+                await SaveFile();
+            }
         }
 
         private async Task SaveFile()
