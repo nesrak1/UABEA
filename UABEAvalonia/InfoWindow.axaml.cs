@@ -329,7 +329,7 @@ namespace UABEAvalonia
             boxType.Text = $"0x{gridItem.TypeID:X8} ({gridItem.Type})";
         }
 
-        private async void InfoWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        private async void InfoWindow_Closing(object? sender, CancelEventArgs e)
         {
             if (!Workspace.Modified || ignoreCloseEvent)
             {
