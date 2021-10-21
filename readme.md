@@ -1,4 +1,4 @@
-![](UABEAvalonia/Assets/logo.png)
+<div style="text-align: center"><img src="UABEAvalonia/Assets/logo.png" /></div>
 
 ## [Latest Build](https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip)
 
