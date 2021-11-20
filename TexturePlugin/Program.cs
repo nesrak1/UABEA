@@ -104,7 +104,11 @@ namespace TexturePlugin
                 m_StreamData.Get("size").GetValue().Set(0);
                 m_StreamData.Get("path").GetValue().Set("");
 
+                if (!baseField.Get("m_MipCount").IsDummy())
+                    baseField.Get("m_MipCount").GetValue().Set(1);
+
                 baseField.Get("m_TextureFormat").GetValue().Set((int)fmt);
+                baseField.Get("m_CompleteImageSize").GetValue().Set(encImageBytes.Length);
 
                 baseField.Get("m_Width").GetValue().Set(width);
                 baseField.Get("m_Height").GetValue().Set(height);
