@@ -168,7 +168,10 @@ namespace UABEAvalonia
 
         private async void MenuClose_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            await AskForSave();
+            if (Workspace.Modified)
+            {
+                await AskForSave();
+            }
             ignoreCloseEvent = true;
             CloseFile();
         }
