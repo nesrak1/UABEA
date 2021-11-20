@@ -355,8 +355,8 @@ namespace UABEAvalonia
             {
                 List<Tuple<AssetsFileInstance, byte[]>> assetDatas = window.ChangedAssetsDatas;
 
-                //file that user initially selected
-                AssetsFileInstance firstFile = window.Workspace.LoadedFiles[0];
+                ////file that user initially selected
+                //AssetsFileInstance firstFile = window.Workspace.LoadedFiles[0];
 
                 foreach (var tup in assetDatas)
                 {
@@ -365,9 +365,9 @@ namespace UABEAvalonia
 
                     string assetName = Path.GetFileName(fileInstance.path);
 
-                    //only modify assets file we opened for now
-                    if (fileInstance != firstFile)
-                        continue;
+                    ////only modify assets file we opened for now
+                    //if (fileInstance != firstFile)
+                    //    continue;
 
                     BundleReplacer replacer = AssetImportExport.CreateBundleReplacer(assetName, true, assetData);
                     newFiles[assetName] = replacer;
@@ -392,8 +392,11 @@ namespace UABEAvalonia
                     am.LoadAssetsFile(assetsStream, assetsManagerName, true);
                 }
 
-                changesUnsaved = true;
-                changesMade = true;
+                if (assetDatas.Count > 0)
+                {
+                    changesUnsaved = true;
+                    changesMade = true;
+                }
             }
         }
 
