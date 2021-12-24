@@ -1,6 +1,7 @@
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
@@ -15,6 +16,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using UABEAvalonia.Plugins;
 
@@ -65,6 +67,8 @@ namespace UABEAvalonia
         private ObservableCollection<AssetInfoDataGridItem> dataGridItems;
 
         private PluginManager pluginManager;
+
+        private DataGridCollectionView dgcv;
 
         //for preview
         public InfoWindow()
@@ -134,6 +138,8 @@ namespace UABEAvalonia
             LoadAllAssetsWithDeps(assetsFiles);
             MakeDataGridItems();
             dataGrid.Items = dataGridItems;
+
+            this.dgcv = GetDataGridCollectionView(dataGrid);
 
             pluginManager = new PluginManager();
             pluginManager.LoadPluginsInDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins"));
@@ -474,7 +480,7 @@ namespace UABEAvalonia
                 }
             }
         }
-        
+
         private async Task SingleExportRaw(List<AssetContainer> selection)
         {
             AssetContainer selectedCont = selection[0];
@@ -717,7 +723,8 @@ namespace UABEAvalonia
             bool foundResult = false;
             if (searching)
             {
-                List<AssetInfoDataGridItem> itemList = dataGrid.Items.Cast<AssetInfoDataGridItem>().ToList();
+                //List<AssetInfoDataGridItem> itemList = dataGrid.Items.Cast<AssetInfoDataGridItem>().ToList();
+                List<AssetInfoDataGridItem> itemList = GetDataGridItemsSorted(dgcv);
                 if (searchDown)
                 {
                     for (int i = searchStart; i < itemList.Count; i++)
@@ -970,6 +977,36 @@ namespace UABEAvalonia
                 }
             }
         }
+
+        // TEMPORARY DATAGRID HACKS
+        private DataGridCollectionView GetDataGridCollectionView(DataGrid dg)
+        {
+            object dgdc = typeof(DataGrid)
+                .GetProperty("DataConnection", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(dg);
+
+            object dgds = dgdc.GetType()
+                .GetProperty("DataSource", BindingFlags.Public | BindingFlags.Instance)
+                .GetValue(dgdc);
+
+            if (dgds is DataGridCollectionView dgcv)
+            {
+                return dgcv;
+            }
+            return null;
+        }
+
+        private List<AssetInfoDataGridItem> GetDataGridItemsSorted(DataGridCollectionView dgcv)
+        {
+            int itemCount = dgcv.ItemCount;
+            List<AssetInfoDataGridItem> items = new List<AssetInfoDataGridItem>();
+            for (int i = 0; i < itemCount; i++)
+            {
+                items.Add(dgcv.GetItemAt(i) as AssetInfoDataGridItem);
+            }
+            return items;
+        }
+        // END TEMPORARY DATAGRID HACKS
 
         private void InitializeComponent()
         {
