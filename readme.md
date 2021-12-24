@@ -20,6 +20,10 @@ UABEA can export textures and asset dumps, but that's about it. If you're trying
 
 If you're doing something that requires scripting such as dumping all of the fields from a MonoBehaviour, importing multiple text files or textures, etc. without interacting with the gui, try using [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET) instead. UABEA can be a good way to figure out how the file is laid out, but the script can be written with AssetsTools. If AssetsTools is too complicated, you can also try [UnityPy](https://github.com/K0lb3/UnityPy) which has a simpler api with the cost of supporting less assets.
 
+## MonoBehaviours
+
+Many newer Unity games (especially non-pc games) are compiled with il2cpp which means that out of the box, UABEA cannot correctly deserialize any MonoBehaviour scripts. This is especially obvious when you export dump and import dump and find the file size much smaller. To fix this, dump il2cpp dummy dlls using a tool like [il2cppdumper](https://github.com/Perfare/Il2CppDumper) or [cpp2il](https://github.com/SamboyCoding/Cpp2IL). Then, create a folder called Managed in the same directory as the assets file/bundle file you want to open and copy all the dummy dlls generated with the tool you used into that folder.
+
 ## Differences between UABE and UABEA
 
 |                                     | UABE           | UABEA                                 |
