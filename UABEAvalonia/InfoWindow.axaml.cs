@@ -563,19 +563,17 @@ namespace UABEAvalonia
 
             if (file != null && file != string.Empty)
             {
-                if (file.EndsWith(".json"))
-                {
-                    await MessageBoxUtil.ShowDialog(this, "Not implemented", "There's no json dump support yet, sorry. Exporting as .txt anyway.");
-                    file = file.Substring(0, file.Length - 5) + ".txt";
-                }
-
                 using (FileStream fs = File.OpenWrite(file))
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
                     AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);
 
                     AssetImportExport dumper = new AssetImportExport();
-                    dumper.DumpTextAsset(sw, baseField);
+
+                    if (file.EndsWith(".json"))
+                        dumper.DumpJsonAsset(sw, baseField);
+                    else
+                        dumper.DumpTextAsset(sw, baseField);
                 }
             }
         }
@@ -665,11 +663,11 @@ namespace UABEAvalonia
                         using (StreamReader sr = new StreamReader(fs))
                         {
                             AssetImportExport importer = new AssetImportExport();
-                            byte[]? bytes = importer.ImportTextAsset(sr);
+                            byte[]? bytes = importer.ImportTextAsset(sr, out string? exceptionMessage);
 
                             if (bytes == null)
                             {
-                                await MessageBoxUtil.ShowDialog(this, "Parse error", "Something went wrong when reading the dump file.");
+                                await MessageBoxUtil.ShowDialog(this, "Parse error", "Something went wrong when reading the dump file:\n" + exceptionMessage);
                                 return;
                             }
 
@@ -701,21 +699,26 @@ namespace UABEAvalonia
 
             if (file != null && file != string.Empty)
             {
-                if (file.EndsWith(".json"))
-                {
-                    await MessageBoxUtil.ShowDialog(this, "Not implemented", "There's no json dump support yet, sorry.");
-                    return;
-                }
-
                 using (FileStream fs = File.OpenRead(file))
                 using (StreamReader sr = new StreamReader(fs))
                 {
                     AssetImportExport importer = new AssetImportExport();
-                    byte[]? bytes = importer.ImportTextAsset(sr);
+
+                    byte[]? bytes = null;
+                    string? exceptionMessage = null;
+                    if (file.EndsWith(".json"))
+                    {
+                        AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont, true);
+                        bytes = importer.ImportJsonAsset(tempField, sr, out exceptionMessage);
+                    }
+                    else
+                    {
+                        bytes = importer.ImportTextAsset(sr, out exceptionMessage);
+                    }
 
                     if (bytes == null)
                     {
-                        await MessageBoxUtil.ShowDialog(this, "Parse error", "Something went wrong when reading the dump file.");
+                        await MessageBoxUtil.ShowDialog(this, "Parse error", "Something went wrong when reading the dump file:\n" + exceptionMessage);
                         return;
                     }
 
@@ -838,6 +841,11 @@ namespace UABEAvalonia
             modified = "";
 
             Extensions.GetUABENameFast(thisFile, am.classFile, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, true, out name, out type);
+
+            if (name.Length > 100)
+            {
+                name = name.Substring(0, 100);
+            }
 
             var item = new AssetInfoDataGridItem
             {

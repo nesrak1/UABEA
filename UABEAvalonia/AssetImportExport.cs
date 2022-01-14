@@ -1,5 +1,6 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -100,6 +101,69 @@ namespace UABEAvalonia
             }
         }
 
+        public void DumpJsonAsset(StreamWriter sw, AssetTypeValueField baseField)
+        {
+            this.sw = sw;
+            JToken jBaseField = RecurseJsonDump(baseField, false);
+            sw.Write(jBaseField.ToString());
+        }
+
+        private JToken RecurseJsonDump(AssetTypeValueField field, bool uabeFlavor)
+        {
+            AssetTypeTemplateField template = field.GetTemplateField();
+
+            bool isArray = template.isArray;
+
+            if (isArray)
+            {
+                JArray jArray = new JArray();
+
+                for (int i = 0; i < field.childrenCount; i++)
+                {
+                    jArray.Add(RecurseJsonDump(field.children[i], uabeFlavor));
+                }
+
+                return jArray;
+            }
+            else
+            {
+                if (field.GetValue() != null)
+                {
+                    EnumValueTypes evt = field.GetValue().GetValueType();
+                    
+                    object value = evt switch
+                    {
+                        EnumValueTypes.Bool => field.GetValue().AsBool(),
+                        EnumValueTypes.Int8 or
+                        EnumValueTypes.Int16 or
+                        EnumValueTypes.Int32 => field.GetValue().AsInt(),
+                        EnumValueTypes.Int64 => field.GetValue().AsInt64(),
+                        EnumValueTypes.UInt8 or
+                        EnumValueTypes.UInt16 or
+                        EnumValueTypes.UInt32 => field.GetValue().AsUInt(),
+                        EnumValueTypes.UInt64 => field.GetValue().AsUInt64(),
+                        EnumValueTypes.String => field.GetValue().AsString(),
+                        EnumValueTypes.Float => field.GetValue().AsFloat(),
+                        EnumValueTypes.Double => field.GetValue().AsDouble(),
+                        _ => "invalid value"
+                    };
+
+                    return (JValue)JToken.FromObject(value);
+                }
+                else
+                {
+                    JObject jObject = new JObject();
+
+                    for (int i = 0; i < field.childrenCount; i++)
+                    {
+                        jObject.Add(field.children[i].GetName(), RecurseJsonDump(field.children[i], uabeFlavor));
+                    }
+
+                    return jObject;
+                }
+            }
+        }
+
         public byte[] ImportRawAsset(FileStream fs)
         {
             using (MemoryStream ms = new MemoryStream())
@@ -109,7 +173,7 @@ namespace UABEAvalonia
             }
         }
 
-        public byte[]? ImportTextAsset(StreamReader sr)
+        public byte[]? ImportTextAsset(StreamReader sr, out string? exceptionMessage)
         {
             this.sr = sr;
             using (MemoryStream ms = new MemoryStream())
@@ -119,9 +183,11 @@ namespace UABEAvalonia
                 try
                 {
                     ImportTextAssetLoop();
+                    exceptionMessage = null;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    exceptionMessage = ex.Message;
                     return null;
                 }
                 return ms.ToArray();
@@ -227,6 +293,151 @@ namespace UABEAvalonia
             }
         }
 
+        public byte[]? ImportJsonAsset(AssetTypeTemplateField tempField, StreamReader sr, out string? exceptionMessage)
+        {
+            this.sr = sr;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                aw = new AssetsFileWriter(ms);
+                aw.bigEndian = false;
+
+                try
+                {
+                    string jsonText = sr.ReadToEnd();
+                    JToken token = JToken.Parse(jsonText);
+
+                    RecurseJsonImport(tempField, token);
+                    exceptionMessage = null;
+                }
+                catch (Exception ex)
+                {
+                    exceptionMessage = ex.Message;
+                    return null;
+                }
+                return ms.ToArray();
+            }
+        }
+
+        private void RecurseJsonImport(AssetTypeTemplateField tempField, JToken token)
+        {
+            bool align = tempField.align;
+
+            if (!tempField.hasValue && !tempField.isArray)
+            {
+                foreach (AssetTypeTemplateField childTempField in tempField.children)
+                {
+                    JToken? childToken = token[childTempField.name];
+
+                    if (childToken == null)
+                        throw new Exception($"Missing field {childTempField.name} in json.");
+                        
+                    RecurseJsonImport(childTempField, childToken);
+                }
+
+                if (align)
+                {
+                    aw.Align();
+                }
+            }
+            else
+            {
+                switch (tempField.valueType)
+                {
+                    case EnumValueTypes.Bool:
+                    {
+                        aw.Write((bool)token);
+                        break;
+                    }
+                    case EnumValueTypes.UInt8:
+                    {
+                        aw.Write((byte)token);
+                        break;
+                    }
+                    case EnumValueTypes.Int8:
+                    {
+                        aw.Write((sbyte)token);
+                        break;
+                    }
+                    case EnumValueTypes.UInt16:
+                    {
+                        aw.Write((ushort)token);
+                        break;
+                    }
+                    case EnumValueTypes.Int16:
+                    {
+                        aw.Write((short)token);
+                        break;
+                    }
+                    case EnumValueTypes.UInt32:
+                    {
+                        aw.Write((uint)token);
+                        break;
+                    }
+                    case EnumValueTypes.Int32:
+                    {
+                        aw.Write((int)token);
+                        break;
+                    }
+                    case EnumValueTypes.UInt64:
+                    {
+                        aw.Write((ulong)token);
+                        break;
+                    }
+                    case EnumValueTypes.Int64:
+                    {
+                        aw.Write((long)token);
+                        break;
+                    }
+                    case EnumValueTypes.Float:
+                    {
+                        aw.Write((float)token);
+                        break;
+                    }
+                    case EnumValueTypes.Double:
+                    {
+                        aw.Write((double)token);
+                        break;
+                    }
+                    case EnumValueTypes.String:
+                    {
+                        align = true;
+                        aw.WriteCountStringInt32((string?)token ?? "");
+                        break;
+                    }
+                    case EnumValueTypes.ByteArray:
+                    {
+                        byte[] byteArrayData = ((byte[]?)token) ?? Array.Empty<byte>();
+                        aw.Write(byteArrayData.Length);
+                        aw.Write(byteArrayData);
+                        break;
+                    }
+                }
+
+                //have to do this because of bug in MonoDeserializer
+                if (tempField.isArray && tempField.valueType != EnumValueTypes.ByteArray)
+                {
+                    //children[0] is size field, children[1] is the data field
+                    AssetTypeTemplateField childTempField = tempField.children[1];
+
+                    JArray? tokenArray = (JArray?)token;
+
+                    if (tokenArray == null)
+                        throw new Exception($"Field {tempField.name} was not an array in json.");
+
+                    aw.Write(tokenArray.Count);
+                    foreach (JToken childToken in tokenArray.Children())
+                    {
+                        RecurseJsonImport(childTempField, childToken);
+                    }
+                }
+
+                if (align)
+                {
+                    aw.Align();
+                }
+            }
+        }
+
         private bool StartsWithSpace(string str, string value)
         {
             return str.StartsWith(value + " ");
@@ -306,6 +517,11 @@ namespace UABEAvalonia
         public static BundleReplacer CreateBundleReplacer(string name, bool isSerialized, byte[] data)
         {
             return new BundleReplacerFromMemory(name, name, isSerialized, data, -1);
+        }
+
+        public static BundleReplacer CreateBundleReplacer(string name, bool isSerialized, Stream stream, long start, long size)
+        {
+            return new BundleReplacerFromStream(name, name, isSerialized, stream, start, size);
         }
     }
 }
