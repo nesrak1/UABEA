@@ -109,6 +109,7 @@ namespace UABEAvalonia
             menuSearchByName.Click += MenuSearchByName_Click;
             menuContinueSearch.Click += MenuContinueSearch_Click;
             menuGoToAsset.Click += MenuGoToAsset_Click;
+            menuDependencies.Click += MenuDependencies_Click;
             btnViewData.Click += BtnViewData_Click;
             btnExportRaw.Click += BtnExportRaw_Click;
             btnExportDump.Click += BtnExportDump_Click;
@@ -215,6 +216,12 @@ namespace UABEAvalonia
 
                 IdSearch(targetFile, targetPathId);
             }
+        }
+
+        private void MenuDependencies_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            DependenciesWindow dialog = new DependenciesWindow(Workspace);
+            dialog.Show(this);
         }
 
         private async void BtnViewData_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)

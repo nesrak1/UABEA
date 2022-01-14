@@ -1,0 +1,29 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="450"
+        Width="300" Height="450"
+        Icon="/Assets/uabeavalonia16.ico"
+        x:Class="UABEAvalonia.DependenciesWindow"
+        Title="Dependencies">
+  <Grid>
+    <ListBox Margin="10,10,10,75" Name="boxDependenciesList">
+      <ListBox.Items>
+        <ListBoxItem>Test</ListBoxItem>
+        <ListBoxItem>Stuff</ListBoxItem>
+        <ListBoxItem>Goes</ListBoxItem>
+        <ListBoxItem>Here</ListBoxItem>
+      </ListBox.Items>
+    </ListBox>
+    <Grid Margin="10,10,10,10" VerticalAlignment="Bottom">
+      <Grid.RowDefinitions>
+        <RowDefinition></RowDefinition>
+        <RowDefinition Height="8"></RowDefinition>
+        <RowDefinition></RowDefinition>
+      </Grid.RowDefinitions>
+      <ComboBox Grid.Row="0" Height="26" Name="cbxFiles" />
+      <Button Grid.Row="2" Name="btnOk">Ok</Button>
+    </Grid>
+  </Grid>
+</Window>
