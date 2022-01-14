@@ -33,6 +33,8 @@ namespace UABEAvalonia
         private Button btnExport;
         private Button btnImport;
         private Button btnInfo;
+        private Button btnExportAll;
+        private Button btnImportAll;
 
         private AssetsManager am;
         private BundleFileInstance bundleInst;
@@ -70,6 +72,8 @@ namespace UABEAvalonia
             btnExport = this.FindControl<Button>("btnExport");
             btnImport = this.FindControl<Button>("btnImport");
             btnInfo = this.FindControl<Button>("btnInfo");
+            btnExportAll = this.FindControl<Button>("btnExportAll");
+            btnImportAll = this.FindControl<Button>("btnImportAll");
             //generated events
             menuOpen.Click += MenuOpen_Click;
             menuLoadPackageFile.Click += MenuLoadPackageFile_Click;
@@ -77,10 +81,12 @@ namespace UABEAvalonia
             menuSave.Click += MenuSave_Click;
             menuCompress.Click += MenuCompress_Click;
             menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
+            menuExit.Click += MenuExit_Click;
             menuAbout.Click += MenuAbout_Click;
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
             btnInfo.Click += BtnInfo_Click;
+            btnExportAll.Click += BtnExportAll_Click;
             Closing += MainWindow_Closing;
 
             newFiles = new Dictionary<string, BundleReplacer>();
@@ -158,6 +164,10 @@ namespace UABEAvalonia
                         LoadBundle(bundleInst);
                     }
                 }
+                else
+                {
+                    await MessageBoxUtil.ShowDialog(this, "Error", "This doesn't seem to be an assets file or bundle.");
+                }
             }
         }
 
@@ -214,8 +224,9 @@ namespace UABEAvalonia
             {
                 int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
 
-                string bunAssetName = bundleInst.file.bundleInf6.dirInf[index].name;
-                byte[] assetData = BundleHelper.LoadAssetDataFromBundle(bundleInst.file, index);
+                AssetBundleDirectoryInfo06 dirInf = bundleInst.file.bundleInf6.dirInf[index];
+
+                string bunAssetName = dirInf.name;
 
                 SaveFileDialog sfd = new SaveFileDialog();
                 sfd.Title = "Save as...";
@@ -223,10 +234,14 @@ namespace UABEAvalonia
 
                 string file = await sfd.ShowAsync(this);
 
-                if (file == null)
+                if (file == null || !File.Exists(file))
                     return;
 
-                File.WriteAllBytes(file, assetData);
+                using FileStream fileStream = File.OpenWrite(file);
+
+                AssetsFileReader bundleReader = bundleInst.file.reader;
+                bundleReader.Position = bundleInst.file.bundleHeader6.GetFileDataOffset() + dirInf.offset;
+                bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.decompressedSize);
             }
         }
 
@@ -247,18 +262,30 @@ namespace UABEAvalonia
                 if (file == null)
                     return;
 
+                //todo replacer from stream rather than bytes
+                //also need to handle closing them somewhere
+                //and replacers don't support closing
                 byte[] fileBytes = File.ReadAllBytes(file);
                 string fileName = Path.GetFileName(file);
 
                 newFiles[fileName] = AssetImportExport.CreateBundleReplacer(fileName, true, fileBytes);
 
-                //todo handle overwriting
-                comboItems.Add(new ComboBoxItem()
+                //check for existing combobox item
+                ComboBoxItem? comboBoxItem = comboItems.FirstOrDefault(i => (string)i.Content == fileName);
+                if (comboBoxItem != null)
                 {
-                    Content = fileName,
-                    Tag = comboItems.Count
-                });
-                comboBox.SelectedIndex = comboItems.Count - 1;
+                    comboBox.SelectedItem = comboBoxItem;
+                }
+                else
+                {
+                    //make a new one since this is a new file
+                    comboItems.Add(new ComboBoxItem()
+                    {
+                        Content = fileName,
+                        Tag = comboItems.Count
+                    });
+                    comboBox.SelectedIndex = comboItems.Count - 1;
+                }
 
                 changesUnsaved = true;
                 changesMade = true;
@@ -319,12 +346,55 @@ namespace UABEAvalonia
             }
         }
 
+        private async void BtnExportAll_Click(object? sender, RoutedEventArgs e)
+        {
+            if (bundleInst == null)
+                return;
+
+            OpenFolderDialog ofd = new OpenFolderDialog();
+            ofd.Title = "Select export directory";
+
+            string dir = await ofd.ShowAsync(this);
+
+            if (dir != null && dir != string.Empty)
+            {
+                for (int i = 0; i < bundleInst.file.bundleInf6.directoryCount; i++)
+                {
+                    AssetBundleDirectoryInfo06 dirInf = bundleInst.file.bundleInf6.dirInf[i];
+
+                    string bunAssetName = dirInf.name;
+                    string bunAssetPath = Path.Combine(dir, bunAssetName);
+
+                    //create dirs if bundle contains / in path
+                    if (bunAssetName.Contains("\\") || bunAssetName.Contains("/"))
+                    {
+                        string bunAssetDir = Path.GetDirectoryName(bunAssetPath);
+                        if (!Directory.Exists(bunAssetDir))
+                        {
+                            Directory.CreateDirectory(bunAssetDir);
+                        }    
+                    }
+
+                    using FileStream fileStream = File.OpenWrite(bunAssetPath);
+
+                    AssetsFileReader bundleReader = bundleInst.file.reader;
+                    bundleReader.Position = bundleInst.file.bundleHeader6.GetFileDataOffset() + dirInf.offset;
+                    bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.decompressedSize);
+                }
+            }
+        }
+
         private async void MenuCreatePackageFile_Click(object? sender, RoutedEventArgs e)
         {
             await MessageBoxUtil.ShowDialog(this, "Not implemented",
                 "Bundle pkgs are not supported at the moment.\n" +
                 "Trying to install an emip file? Try running\n" +
                 "UABEAvalonia applyemip from the command line.");
+        }
+
+        private void MenuExit_Click(object? sender, RoutedEventArgs e)
+        {
+            Close();
         }
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -427,6 +497,13 @@ namespace UABEAvalonia
 
                 if (file == null)
                     return;
+
+                if (Path.GetFullPath(file) == Path.GetFullPath(bundleInst.path))
+                {
+                    await MessageBoxUtil.ShowDialog(this,
+                        "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
+                    return;
+                }
 
                 SaveBundle(bundleInst, file);
             }
@@ -550,11 +627,14 @@ namespace UABEAvalonia
 
         private async void AskLoadCompressedBundle(BundleFileInstance bundleInst)
         {
+            bundleInst.file.UnpackInfoOnly();
+            string decompSize = Extensions.GetFormattedByteSize(GetBundleDataDecompressedSize(bundleInst.file));
+
             const string fileOption = "File";
             const string memoryOption = "Memory";
             const string cancelOption = "Cancel";
             string result = await MessageBoxUtil.ShowDialogCustom(
-                this, "Note", "This bundle is compressed. Decompress to file or memory?",
+                this, "Note", "This bundle is compressed. Decompress to file or memory?\nSize: " + decompSize,
                 fileOption, memoryOption, cancelOption);
 
             if (result == fileOption)
@@ -631,6 +711,8 @@ namespace UABEAvalonia
 
         private void LoadBundle(BundleFileInstance bundleInst)
         {
+            SetBundleControlsEnabled(true);
+
             var infos = bundleInst.file.bundleInf6.dirInf;
             comboItems = new ObservableCollection<ComboBoxItem>();
             for (int i = 0; i < infos.Length; i++)
@@ -679,9 +761,31 @@ namespace UABEAvalonia
             comboItems = new ObservableCollection<ComboBoxItem>();
             comboBox.Items = comboItems;
 
+            SetBundleControlsEnabled(false);
+
             bundleInst = null;
 
             lblFileName.Text = "No file opened.";
+        }
+
+        private void SetBundleControlsEnabled(bool enabled)
+        {
+            comboBox.IsEnabled = enabled;
+            btnExport.IsEnabled = enabled;
+            btnImport.IsEnabled = enabled;
+            btnInfo.IsEnabled = enabled;
+            btnExportAll.IsEnabled = enabled;
+            btnImportAll.IsEnabled = enabled;
+        }
+
+        private long GetBundleDataDecompressedSize(AssetBundleFile bundleFile)
+        {
+            long totalSize = 0;
+            foreach (AssetBundleDirectoryInfo06 dirInf in bundleFile.bundleInf6.dirInf)
+            {
+                totalSize += dirInf.decompressedSize;
+            }
+            return totalSize;
         }
 
         private void InitializeComponent()

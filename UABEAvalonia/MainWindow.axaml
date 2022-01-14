@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="125"
-        Width="400" Height="125"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="150"
+        Width="400" Height="150"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.MainWindow"
         Title="UABEA">
@@ -32,18 +32,31 @@
     </Menu>
 
     <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="No file opened." TextAlignment="Center" FontWeight="Bold" FontSize="14" Name="lblFileName" />
-    <ComboBox Margin="10,56,10,0" VerticalAlignment="Top" Height="26" Name="comboBox" />
+    <ComboBox Margin="10,56,10,0" VerticalAlignment="Top" Height="26" IsEnabled="False" Name="comboBox" />
 
     <Grid Margin="10,87,10,0" VerticalAlignment="Top" Grid.IsSharedSizeScope="True">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*"></ColumnDefinition>
-        <ColumnDefinition Width="*"></ColumnDefinition>
-        <ColumnDefinition Width="*"></ColumnDefinition>
-      </Grid.ColumnDefinitions>
-      <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnExport">Export</Button>
-      <Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnImport">Import</Button>
-      <Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnInfo">Info</Button>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="*"></RowDefinition>
+        <RowDefinition Height="*"></RowDefinition>
+      </Grid.RowDefinitions>
+      <Grid Grid.Row="0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnExport">Export</Button>
+        <Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnImport">Import</Button>
+        <Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnInfo">Info</Button>
+      </Grid>
+      <Grid Grid.Row="1">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnExportAll">Export All</Button>
+        <Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnImportAll">Import All</Button>
+      </Grid>
     </Grid>
-
   </Grid>
 </Window>

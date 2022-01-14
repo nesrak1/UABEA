@@ -133,5 +133,14 @@ namespace UABEAvalonia
         {
             return string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
         }
+
+        private static string[] byteSizeSuffixes = new string[] { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
+        public static string GetFormattedByteSize(long size)
+        {
+            int log = (int)Math.Log(size, 1024);
+            double div = log == 0 ? 1 : Math.Pow(1024, log);
+            double num = size / div;
+            return $"{num:f2}{byteSizeSuffixes[log]}";
+        }
     }
 }
