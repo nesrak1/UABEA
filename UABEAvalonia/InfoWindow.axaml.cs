@@ -244,7 +244,7 @@ namespace UABEAvalonia
             List<AssetContainer> selectedConts = GetSelectedAssetsReplaced();
             if (selectedConts.Count > 0)
             {
-                DataWindow data = new DataWindow(Workspace, selectedConts[0]);
+                DataWindow data = new DataWindow(this, Workspace, selectedConts[0]);
                 data.Show();
             }
         }
@@ -771,6 +771,15 @@ namespace UABEAvalonia
 
         private async void IdSearch(AssetsFileInstance targetFile, long targetPathId)
         {
+            if (!SelectAsset(targetFile, targetPathId))
+            {
+                await MessageBoxUtil.ShowDialog(this, "Search end", "Can't find any assets that match.");
+                return;
+            }
+        }
+
+        public bool SelectAsset(AssetsFileInstance targetFile, long targetPathId)
+        {
             bool foundResult = false;
 
             List<AssetInfoDataGridItem> itemList = dataGrid.Items.Cast<AssetInfoDataGridItem>().ToList();
@@ -786,16 +795,7 @@ namespace UABEAvalonia
                 }
             }
 
-            if (!foundResult)
-            {
-                await MessageBoxUtil.ShowDialog(this, "Search end", "Can't find any assets that match.");
-
-                searchText = "";
-                searchStart = 0;
-                searchDown = false;
-                searching = false;
-                return;
-            }
+            return foundResult;
         }
 
         private ObservableCollection<AssetInfoDataGridItem> MakeDataGridItems()

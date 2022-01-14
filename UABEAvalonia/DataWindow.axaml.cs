@@ -2,6 +2,7 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using System;
@@ -13,7 +14,9 @@ namespace UABEAvalonia
     {
         //controls
         private TreeView treeView;
+        private MenuItem menuVisitAsset;
 
+        private InfoWindow win;
         private AssetWorkspace workspace;
 
         public DataWindow()
@@ -24,11 +27,16 @@ namespace UABEAvalonia
 #endif
             //generated items
             treeView = this.FindControl<TreeView>("treeView");
-            this.Closing += DataWindow_Closing;
+            menuVisitAsset = this.FindControl<MenuItem>("menuVisitAsset");
+            //generated events
+            treeView.DoubleTapped += TreeView_DoubleTapped;
+            menuVisitAsset.Click += MenuVisitAsset_Click;
+            Closing += DataWindow_Closing;
         }
 
-        public DataWindow(AssetWorkspace workspace, AssetContainer cont) : this()
+        public DataWindow(InfoWindow win, AssetWorkspace workspace, AssetContainer cont) : this()
         {
+            this.win = win;
             this.workspace = workspace;
 
             AssetTypeValueField baseField = workspace.GetBaseField(cont);
@@ -37,7 +45,23 @@ namespace UABEAvalonia
             TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
             baseItem.Items = new List<TreeViewItem>() { arrayIndexTreeItem };
             treeView.Items = new List<TreeViewItem>() { baseItem };
-            SetTreeItemEvents(baseItem, cont.FileInstance, baseField);
+            SetTreeItemEvents(baseItem, cont.FileInstance, cont.PathId, baseField);
+        }
+
+        private void TreeView_DoubleTapped(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            TreeViewItem item = (TreeViewItem)treeView.SelectedItem;
+            item.IsExpanded = !item.IsExpanded;
+        }
+
+        private void MenuVisitAsset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            TreeViewItem item = (TreeViewItem)treeView.SelectedItem;
+            if (item != null && item.Tag != null)
+            {
+                TreeViewItemInfo info = (TreeViewItemInfo)item.Tag;
+                win.SelectAsset(info.fromFile, info.fromPathId);
+            }
         }
 
         private void DataWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -52,30 +76,32 @@ namespace UABEAvalonia
 
         //lazy load tree items. avalonia is really slow to load if
         //we just throw everything in the treeview at once
-        private void SetTreeItemEvents(TreeViewItem item, AssetsFileInstance fromFile, AssetTypeValueField field)
+        private void SetTreeItemEvents(TreeViewItem item, AssetsFileInstance fromFile, long fromPathId, AssetTypeValueField field)
         {
-            item.Tag = false;
+            item.Tag = new TreeViewItemInfo(fromFile, fromPathId);
             //avalonia's treeviews have no Expanded event so this is all we can do
             var expandObs = item.GetObservable(TreeViewItem.IsExpandedProperty);
             expandObs.Subscribe(isExpanded =>
             {
-                if (isExpanded && !(bool)item.Tag)
+                TreeViewItemInfo itemInfo = (TreeViewItemInfo)item.Tag;
+                if (isExpanded && !itemInfo.loaded)
                 {
-                    item.Tag = true; //don't load this again
-                    TreeLoad(fromFile, field, item);
+                    itemInfo.loaded = true; //don't load this again
+                    TreeLoad(fromFile, field, fromPathId, item);
                 }
             });
         }
 
-        private void SetPPtrEvents(TreeViewItem item, AssetsFileInstance fromFile, AssetContainer cont)
+        private void SetPPtrEvents(TreeViewItem item, AssetsFileInstance fromFile, long fromPathId, AssetContainer cont)
         {
-            item.Tag = false;
+            item.Tag = new TreeViewItemInfo(fromFile, fromPathId);
             var expandObs = item.GetObservable(TreeViewItem.IsExpandedProperty);
             expandObs.Subscribe(isExpanded =>
             {
-                if (isExpanded && !(bool)item.Tag)
+                TreeViewItemInfo itemInfo = (TreeViewItemInfo)item.Tag;
+                if (isExpanded && !itemInfo.loaded)
                 {
-                    item.Tag = true; //don't load this again
+                    itemInfo.loaded = true; //don't load this again
 
                     if (cont != null)
                     {
@@ -85,7 +111,7 @@ namespace UABEAvalonia
                         TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
                         baseItem.Items = new List<TreeViewItem>() { arrayIndexTreeItem };
                         item.Items = new List<TreeViewItem>() { baseItem };
-                        SetTreeItemEvents(baseItem, cont.FileInstance, baseField);
+                        SetTreeItemEvents(baseItem, cont.FileInstance, fromPathId, baseField);
                     }
                     else
                     {
@@ -95,7 +121,7 @@ namespace UABEAvalonia
             });
         }
 
-        private void TreeLoad(AssetsFileInstance fromFile, AssetTypeValueField assetField, TreeViewItem treeItem)
+        private void TreeLoad(AssetsFileInstance fromFile, AssetTypeValueField assetField, long fromPathId, TreeViewItem treeItem)
         {
             if (assetField.childrenCount == 0) return;
 
@@ -145,7 +171,7 @@ namespace UABEAvalonia
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
                         childTreeItem.Items = new List<TreeViewItem>() { dummyItem };
-                        SetTreeItemEvents(childTreeItem, fromFile, childField);
+                        SetTreeItemEvents(childTreeItem, fromFile, fromPathId, childField);
                     }
 
                     arrayIdx++;
@@ -159,7 +185,7 @@ namespace UABEAvalonia
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
                         childTreeItem.Items = new List<TreeViewItem>() { dummyItem };
-                        SetTreeItemEvents(childTreeItem, fromFile, childField);
+                        SetTreeItemEvents(childTreeItem, fromFile, fromPathId, childField);
                     }
                 }
             }
@@ -183,7 +209,7 @@ namespace UABEAvalonia
 
                     TreeViewItem dummyItem = CreateTreeItem("Loading...");
                     childTreeItem.Items = new List<TreeViewItem>() { dummyItem };
-                    SetPPtrEvents(childTreeItem, fromFile, cont);
+                    SetPPtrEvents(childTreeItem, fromFile, pathId, cont);
                 }
             }
 
@@ -193,6 +219,20 @@ namespace UABEAvalonia
         private void InitializeComponent()
         {
             AvaloniaXamlLoader.Load(this);
+        }
+
+        private class TreeViewItemInfo
+        {
+            public bool loaded;
+            public AssetsFileInstance fromFile;
+            public long fromPathId;
+
+            public TreeViewItemInfo(AssetsFileInstance fromFile, long fromPathId)
+            {
+                this.loaded = false;
+                this.fromFile = fromFile;
+                this.fromPathId = fromPathId;
+            }
         }
     }
 }
