@@ -1,6 +1,6 @@
-<div style="text-align: center"><img src="UABEAvalonia/Assets/logo.png" /></div>
+<p style="text-align: center"><img src="UABEAvalonia/Assets/logo.png" /></p>
 
-## [Latest Build](https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip)
+## [Latest Nightly Build](https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip) [Latest Release](https://github.com/nesrak1/UABEA/releases)
 
 [![GitHub issues](https://img.shields.io/github/issues/nesrak1/UABEA?logo=GitHub&style=flat-square)](https://github.com/nesrak1/UABEA/issues) [![discord](https://img.shields.io/discord/862035581491478558?label=discord&logo=discord&logoColor=FFFFFF&style=flat-square)](https://discord.gg/hd9VdswwZs)
 
