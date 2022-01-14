@@ -2,21 +2,24 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="135"
-        Width="400" Height="135"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="210"
+        Width="400" Height="210"
         Icon="/Assets/uabeavalonia16.ico"
         CanResize="False"
         x:Class="UABEAvalonia.About"
         Title="About Unity Assets Bundle Extractor Avalonia">
-  <Grid>
-    <TextBlock>
+  <Grid Margin="10,10,10,10">
+    <StackPanel Orientation="Vertical">
+      <Image Source="/Assets/uabeavalonia64.png" HorizontalAlignment="Left" Width="64" Height="64" />
+      <TextBlock>
 Remake of DerPopo's UABE in C# w/ Avalonia
 Most code ported from UABE.NET
 
 https://github.com/DerPopo/UABE
 https://github.com/nesrak1/UABEA
 https://github.com/nesrak1/AssetsTools.NET
-    </TextBlock>
-    <Button Content="OK" Margin="0,0,10,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" HorizontalContentAlignment="Center" Height="30" Width="70" Name="btnOk" />
+      </TextBlock>
+      <Button Content="OK" VerticalAlignment="Bottom" HorizontalAlignment="Right" Height="30" Width="70" Name="btnOk" />
+    </StackPanel>
   </Grid>
 </Window>
