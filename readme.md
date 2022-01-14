@@ -1,4 +1,4 @@
-<p style="text-align: center"><img src="UABEAvalonia/Assets/logo.png" /></p>
+<p align="center"><img src="UABEAvalonia/Assets/logo.png" /></p>
 
 ## [Latest Nightly Build](https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip) [Latest Release](https://github.com/nesrak1/UABEA/releases)
 
