@@ -555,7 +555,7 @@ namespace UABEAvalonia
             sfd.Title = "Save As";
             sfd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
-                new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
+                new FileDialogFilter() { Name = "UABEA json dump", Extensions = new List<string>() { "json" } }
             };
             sfd.InitialFileName = $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.txt";
 
@@ -688,7 +688,7 @@ namespace UABEAvalonia
             ofd.Title = "Open";
             ofd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "UABE text dump", Extensions = new List<string>() { "txt" } },
-                new FileDialogFilter() { Name = "UABE json dump", Extensions = new List<string>() { "json" } }
+                new FileDialogFilter() { Name = "UABEA json dump", Extensions = new List<string>() { "json" } }
             };
 
             string[] fileList = await ofd.ShowAsync(this);

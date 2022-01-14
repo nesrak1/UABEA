@@ -50,8 +50,11 @@ namespace UABEAvalonia
 
         private void TreeView_DoubleTapped(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            TreeViewItem item = (TreeViewItem)treeView.SelectedItem;
-            item.IsExpanded = !item.IsExpanded;
+            if (treeView.SelectedItem != null)
+            {
+                TreeViewItem item = (TreeViewItem)treeView.SelectedItem;
+                item.IsExpanded = !item.IsExpanded;
+            }
         }
 
         private void MenuVisitAsset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
