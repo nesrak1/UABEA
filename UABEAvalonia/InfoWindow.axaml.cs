@@ -516,8 +516,6 @@ namespace UABEAvalonia
 
         private async Task BatchExportDump(List<AssetContainer> selection)
         {
-            //todo: ask for txt or json
-
             OpenFolderDialog ofd = new OpenFolderDialog();
             ofd.Title = "Select export directory";
 
@@ -525,11 +523,17 @@ namespace UABEAvalonia
 
             if (dir != null && dir != string.Empty)
             {
+                SelectDumpWindow selectDumpWindow = new SelectDumpWindow(true);
+                string? extension = await selectDumpWindow.ShowDialog<string?>(this);
+
+                if (extension == null)
+                    return;
+
                 foreach (AssetContainer selectedCont in selection)
                 {
                     Extensions.GetUABENameFast(selectedCont, am.classFile, false, out string assetName, out string _);
                     assetName = Extensions.ReplaceInvalidPathChars(assetName);
-                    string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedCont.FileInstance.path)}-{selectedCont.PathId}.txt");
+                    string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedCont.FileInstance.path)}-{selectedCont.PathId}.{extension}");
 
                     using (FileStream fs = File.OpenWrite(file))
                     using (StreamWriter sw = new StreamWriter(fs))
@@ -537,7 +541,10 @@ namespace UABEAvalonia
                         AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);
 
                         AssetImportExport dumper = new AssetImportExport();
-                        dumper.DumpTextAsset(sw, baseField);
+                        if (extension == "json")
+                            dumper.DumpJsonAsset(sw, baseField);
+                        else //if (extension == "txt")
+                            dumper.DumpTextAsset(sw, baseField);
                     }
                 }
             }
@@ -572,7 +579,7 @@ namespace UABEAvalonia
 
                     if (file.EndsWith(".json"))
                         dumper.DumpJsonAsset(sw, baseField);
-                    else
+                    else //if (extension == "txt")
                         dumper.DumpTextAsset(sw, baseField);
                 }
             }
@@ -587,7 +594,9 @@ namespace UABEAvalonia
 
             if (dir != null && dir != string.Empty)
             {
-                ImportBatch dialog = new ImportBatch(Workspace, selection, dir, ".dat");
+                List<string> extensions = new List<string>() { ".dat" };
+
+                ImportBatch dialog = new ImportBatch(Workspace, selection, dir, extensions);
                 List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(this);
                 if (batchInfos != null)
                 {
@@ -649,7 +658,19 @@ namespace UABEAvalonia
 
             if (dir != null && dir != string.Empty)
             {
-                ImportBatch dialog = new ImportBatch(Workspace, selection, dir, ".txt");
+                SelectDumpWindow selectDumpWindow = new SelectDumpWindow(false);
+                string? extension = await selectDumpWindow.ShowDialog<string?>(this);
+
+                if (extension == null)
+                    return;
+
+                List<string> extensions;
+                if (extension == "any")
+                    extensions = SelectDumpWindow.ALL_EXTENSIONS;
+                else
+                    extensions = new List<string>() { extension };
+
+                ImportBatch dialog = new ImportBatch(Workspace, selection, dir, extensions);
                 List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(this);
                 if (batchInfos != null)
                 {
@@ -663,7 +684,19 @@ namespace UABEAvalonia
                         using (StreamReader sr = new StreamReader(fs))
                         {
                             AssetImportExport importer = new AssetImportExport();
-                            byte[]? bytes = importer.ImportTextAsset(sr, out string? exceptionMessage);
+
+                            byte[]? bytes;
+                            string? exceptionMessage;
+
+                            if (selectedFilePath.EndsWith(".json"))
+                            {
+                                AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont, true);
+                                bytes = importer.ImportJsonAsset(tempField, sr, out exceptionMessage);
+                            }
+                            else
+                            {
+                                bytes = importer.ImportTextAsset(sr, out exceptionMessage);
+                            }
 
                             if (bytes == null)
                             {
@@ -839,6 +872,9 @@ namespace UABEAvalonia
             pathId = cont.PathId;
             size = (int)cont.Size;
             modified = "";
+
+            name = "idk";
+            type = "idk";
 
             Extensions.GetUABENameFast(thisFile, am.classFile, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, true, out name, out type);
 

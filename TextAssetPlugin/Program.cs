@@ -47,7 +47,8 @@ namespace TexturePlugin
 
             if (dir != null && dir != string.Empty)
             {
-                ImportBatch dialog = new ImportBatch(workspace, selection, dir, ".png");
+                List<string> extensions = new List<string>() { "txt" };
+                ImportBatch dialog = new ImportBatch(workspace, selection, dir, extensions);
                 List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
                 foreach (ImportBatchInfo batchInfo in batchInfos)
                 {

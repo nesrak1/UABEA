@@ -43,12 +43,13 @@ namespace UABEAvalonia
             ignoreListEvents = false;
         }
 
-        public ImportBatch(AssetWorkspace workspace, List<AssetContainer> selection, string directory, string extension) : this()
+        public ImportBatch(AssetWorkspace workspace, List<AssetContainer> selection, string directory, List<string> extensions) : this()
         {
             this.workspace = workspace;
             this.directory = directory;
 
-            List<string> filesInDir = Directory.GetFiles(directory, "*" + extension).ToList();
+            List<string> filesInDir = Extensions.GetFilesInDirectory(directory, extensions);
+
             List<ImportBatchDataGridItem> gridItems = new List<ImportBatchDataGridItem>();
             foreach (AssetContainer cont in selection)
             {
@@ -64,8 +65,9 @@ namespace UABEAvalonia
                         cont = cont
                     }
                 };
-                string endWith = gridItem.GetMatchName(extension);
-                List<string> matchingFiles = filesInDir.Where(f => f.EndsWith(endWith)).Select(f => Path.GetFileName(f)).ToList();
+                List<string> matchingFiles = filesInDir
+                    .Where(f => extensions.Any(x => f.EndsWith(gridItem.GetMatchName(x))))
+                    .Select(f => Path.GetFileName(f)).ToList();
                 gridItem.matchingFiles = matchingFiles;
                 gridItem.selectedIndex = matchingFiles.Count > 0 ? 0 : -1;
                 gridItems.Add(gridItem);
@@ -148,7 +150,7 @@ namespace UABEAvalonia
 
         public string GetMatchName(string ext)
         {
-            return $"-{File}-{PathID}{ext}";
+            return $"-{File}-{PathID}.{ext}";
         }
         public void Update(string propertyName = "")
         {

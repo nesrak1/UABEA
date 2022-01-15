@@ -142,5 +142,15 @@ namespace UABEAvalonia
             double num = size / div;
             return $"{num:f2}{byteSizeSuffixes[log]}";
         }
+
+        public static List<string> GetFilesInDirectory(string path, List<string> extensions)
+        {
+            List<string> files = new List<string>();
+            foreach (string extension in extensions)
+            {
+                files.AddRange(Directory.GetFiles(path, "*." + extension));
+            }
+            return files;
+        }
     }
 }
