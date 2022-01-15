@@ -873,9 +873,6 @@ namespace UABEAvalonia
             size = (int)cont.Size;
             modified = "";
 
-            name = "idk";
-            type = "idk";
-
             Extensions.GetUABENameFast(thisFile, am.classFile, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, true, out name, out type);
 
             if (name.Length > 100)
