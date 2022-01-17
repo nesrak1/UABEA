@@ -24,15 +24,16 @@ namespace UABEAvalonia
             return Regex.IsMatch(test, "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$", options);
         }
 
-        public static void GetUABENameFast(AssetContainer cont, ClassDatabaseFile cldb, bool usePrefix, out string assetName, out string typeName)
-        {
-            GetUABENameFast(cont.FileInstance.file, cldb, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, usePrefix, out assetName, out typeName);
-        }
-
         //codeflow needs work but should be fine for now
-        public static void GetUABENameFast(AssetsFile file, ClassDatabaseFile cldb, AssetsFileReader reader, long filePosition, uint classId, ushort monoId,
-                                           bool usePrefix, out string assetName, out string typeName)
+        public static void GetUABENameFast(AssetWorkspace workspace, AssetContainer cont, bool usePrefix, out string assetName, out string typeName)
         {
+            ClassDatabaseFile cldb = workspace.am.classFile;
+            AssetsFile file = cont.FileInstance.file;
+            AssetsFileReader reader = cont.FileReader;
+            long filePosition = cont.FilePosition;
+            uint classId = cont.ClassId;
+            ushort monoId = cont.MonoId;
+
             ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, classId);
 
             if (file.typeTree.hasTypeTree)
@@ -72,7 +73,11 @@ namespace UABEAvalonia
                         reader.Position += 0x1c;
                         assetName = reader.ReadCountStringInt32();
                         if (assetName == "")
-                            assetName = "Unnamed asset";
+                        {
+                            assetName = GetMonoBehaviourNameFast(workspace, cont);
+                            if (assetName == "")
+                                assetName = "Unnamed asset";
+                        }
                         return;
                     }
                     assetName = "Unnamed asset";
@@ -121,11 +126,42 @@ namespace UABEAvalonia
                 reader.Position += 0x1c;
                 assetName = reader.ReadCountStringInt32();
                 if (assetName == "")
-                    assetName = "Unnamed asset";
+                {
+                    assetName = GetMonoBehaviourNameFast(workspace, cont);
+                    if (assetName == "")
+                        assetName = "Unnamed asset";
+                }
                 return;
             }
             assetName = "Unnamed asset";
             return;
+        }
+
+        //not very fast but w/e at least it's stable
+        public static string GetMonoBehaviourNameFast(AssetWorkspace workspace, AssetContainer cont)
+        {
+            if (cont.ClassId != (uint)AssetClassID.MonoBehaviour)
+                return string.Empty;
+
+            AssetTypeValueField monoBf;
+            if (cont.HasInstance)
+            {
+                monoBf = cont.TypeInstance.GetBaseField();
+            }
+            else
+            {
+                AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont, false);
+                monoBf = new AssetTypeInstance(monoTemp, cont.FileReader, cont.FilePosition).GetBaseField();
+            }
+
+            AssetContainer monoScriptCont = workspace.GetAssetContainer(cont.FileInstance, monoBf.Get("m_Script"), false);
+            if (monoScriptCont == null)
+                return string.Empty;
+
+            AssetTypeValueField scriptBaseField = monoScriptCont.TypeInstance.GetBaseField();
+            string scriptClassName = scriptBaseField.Get("m_ClassName").GetValue().AsString();
+
+            return scriptClassName;
         }
 
         //https://stackoverflow.com/a/23182807

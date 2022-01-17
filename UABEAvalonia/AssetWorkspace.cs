@@ -205,8 +205,6 @@ namespace UABEAvalonia
 
         public AssetTypeValueField GetBaseField(AssetContainer cont)
         {
-            AssetsFileInstance fileInst = cont.FileInstance;
-
             if (cont.HasInstance)
                 return cont.TypeInstance.GetBaseField();
 
@@ -258,13 +256,13 @@ namespace UABEAvalonia
                     return baseTemp;
 
                 AssetTypeValueField scriptBaseField = monoScriptCont.TypeInstance.GetBaseField();
-                string scriptName = scriptBaseField.Get("m_Name").GetValue().AsString();
+                string scriptClassName = scriptBaseField.Get("m_ClassName").GetValue().AsString();
                 string scriptNamespace = scriptBaseField.Get("m_Namespace").GetValue().AsString();
                 string assemblyName = scriptBaseField.Get("m_AssemblyName").GetValue().AsString();
                 string assemblyPath = Path.Combine(managedPath, assemblyName);
 
                 if (scriptNamespace != string.Empty)
-                    scriptName = scriptNamespace + "." + scriptName;
+                    scriptClassName = scriptNamespace + "." + scriptClassName;
 
                 if (!File.Exists(assemblyPath))
                     return baseTemp;
@@ -278,7 +276,7 @@ namespace UABEAvalonia
                 asmDef = LoadedAssemblies[assemblyName];
 
                 MonoDeserializer mc = new MonoDeserializer();
-                mc.Read(scriptName, asmDef, file.header.format);
+                mc.Read(scriptClassName, asmDef, file.header.format);
                 List<AssetTypeTemplateField> monoTemplateFields = mc.children;
 
                 AssetTypeTemplateField[] templateField = baseTemp.children.Concat(monoTemplateFields).ToArray();
