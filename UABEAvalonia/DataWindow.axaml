@@ -2,16 +2,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:uabea="clr-namespace:UABEAvalonia"
         mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="550"
         Width="350" Height="550"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.DataWindow"
         Title="View Data">
-  <TreeView Name="treeView">
+  <uabea:AssetDataTreeView Name="treeView">
     <TreeView.ContextMenu>
       <ContextMenu>
         <MenuItem Header="Visit Asset" Name="menuVisitAsset"/>
       </ContextMenu>
     </TreeView.ContextMenu>
-  </TreeView>
+  </uabea:AssetDataTreeView>
 </Window>

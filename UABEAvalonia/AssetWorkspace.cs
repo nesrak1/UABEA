@@ -207,6 +207,9 @@ namespace UABEAvalonia
         {
             AssetsFileInstance fileInst = cont.FileInstance;
 
+            if (cont.HasInstance)
+                return cont.TypeInstance.GetBaseField();
+
             cont = GetAssetContainer(cont.FileInstance, 0, cont.PathId, false);
             if (cont != null)
                 return cont.TypeInstance.GetBaseField();
@@ -216,6 +219,17 @@ namespace UABEAvalonia
 
         public AssetTypeValueField GetBaseField(AssetsFileInstance fileInst, int fileId, long pathId)
         {
+            AssetContainer? cont = GetAssetContainer(fileInst, fileId, pathId, false);
+            if (cont != null)
+                return GetBaseField(cont);
+            else
+                return null;
+        }
+
+        public AssetTypeValueField GetBaseField(AssetsFileInstance fileInst, AssetTypeValueField pptrField)
+        {
+            int fileId = pptrField.Get("m_FileID").GetValue().AsInt();
+            long pathId = pptrField.Get("m_PathID").GetValue().AsInt64();
             AssetContainer? cont = GetAssetContainer(fileInst, fileId, pathId, false);
             if (cont != null)
                 return GetBaseField(cont);

@@ -14,10 +14,12 @@ namespace UABEAvalonia
             Console.WriteLine("WARNING: Command line support VERY EARLY");
             Console.WriteLine("There is a high chance of stuff breaking");
             Console.WriteLine("Use at your own risk");
-            Console.WriteLine("  UABEAvalonia batchexport <batch file>");
-            Console.WriteLine("  UABEAvalonia batchimport <batch file>");
+            Console.WriteLine("  UABEAvalonia batchexportbundle <directory>");
+            Console.WriteLine("  UABEAvalonia batchimportbundle <directory>");
+            Console.WriteLine("  UABEAvalonia batchexportasset <directory> <dump-type> [<asset-types>]");
+            Console.WriteLine("  UABEAvalonia batchimportasset <directory> <dump-type> [<asset-types>]");
             Console.WriteLine("  UABEAvalonia applyemip <emip file> <directory>");
-            Console.WriteLine("Import/export arguments:");
+            Console.WriteLine("Bundle import/export arguments:");
             Console.WriteLine("  -keepnames writes out to the exact file name in the bundle.");
             Console.WriteLine("      Normally, file names are prepended with the bundle's name.");
             Console.WriteLine("      Note: these names are not compatible with batchimport.");
@@ -28,10 +30,13 @@ namespace UABEAvalonia
             Console.WriteLine("  -fd overwrite old .decomp files.");
             Console.WriteLine("  -md decompress into memory. Doesn't write .decomp files.");
             Console.WriteLine("      -kd and -fd won't do anything with this flag set.");
-            Console.WriteLine("Batch file example:");
-            Console.WriteLine("  (+ to include file/folder, - to exclude file/folder)");
-            Console.WriteLine("  +DIR C:/somefolder/bundles/");
-            Console.WriteLine("  -FILE C:/somefolder/bundles/specialbundlefile");
+            Console.WriteLine("Asset import/export arguments:");
+            Console.WriteLine("  dump-type");
+            Console.WriteLine("      Can be either txt or json.");
+            Console.WriteLine("  asset-types");
+            Console.WriteLine("      Optionally list asset type names separated by commas.");
+            Console.WriteLine("      If left empty, this includes all asset types.");
+            Console.WriteLine("      Example: GameObject,TextAsset,MonoBehaviour");
         }
 
         private static string GetMainFileName(string[] args)
@@ -53,40 +58,6 @@ namespace UABEAvalonia
                     flags.Add(args[i]);
             }
             return flags;
-        }
-
-        private static HashSet<string> GetAllFilesFromBatchFile(string filePath)
-        {
-            string[] lines = File.ReadAllLines(filePath);
-            HashSet<string> allPaths = new HashSet<string>();
-            foreach (string line in lines)
-            {
-                if (line.StartsWith("+DIR "))
-                {
-                    string dirName = line.Substring(5).Trim();
-                    string[] files = Directory.GetFiles(dirName, "*", SearchOption.AllDirectories);
-                    foreach (string file in files)
-                        allPaths.Add(file);
-                }
-                else if (line.StartsWith("-DIR "))
-                {
-                    string dirName = line.Substring(5).Trim();
-                    string[] files = Directory.GetFiles(dirName, "*", SearchOption.AllDirectories);
-                    foreach (string file in files)
-                        allPaths.Remove(file);
-                }
-                else if (line.StartsWith("+FILE "))
-                {
-                    string fileName = line.Substring(6).Trim();
-                    allPaths.Add(fileName);
-                }
-                else if (line.StartsWith("-FILE "))
-                {
-                    string fileName = line.Substring(6).Trim();
-                    allPaths.Remove(fileName);
-                }
-            }
-            return allPaths;
         }
 
         private static AssetBundleFile DecompressBundle(string file, string? decompFile)
@@ -136,15 +107,19 @@ namespace UABEAvalonia
             return null;
         }
 
-        private static void BatchExport(string[] args)
+        private static void BatchExportBundle(string[] args)
         {
-            string mainFileName = GetMainFileName(args);
+            string exportDirectory = GetMainFileName(args);
+            if (!Directory.Exists(exportDirectory))
+            {
+                Console.WriteLine("Directory does not exist!");
+                return;
+            }
+
             HashSet<string> flags = GetFlags(args);
-            HashSet<string> files = GetAllFilesFromBatchFile(mainFileName);
-            foreach (string file in files)
+            foreach (string file in Directory.EnumerateFiles(exportDirectory))
             {
                 string decompFile = $"{file}.decomp";
-                string filePath = Path.GetDirectoryName(file);
 
                 if (flags.Contains("-md"))
                     decompFile = null;
@@ -154,6 +129,13 @@ namespace UABEAvalonia
                     Console.WriteLine($"File {file} does not exist!");
                     return;
                 }
+
+                DetectedFileType fileType = AssetBundleDetector.DetectFileType(file);
+                if (fileType != DetectedFileType.BundleFile)
+                {
+                    continue;
+                }
+
                 Console.WriteLine($"Decompressing {file}...");
                 AssetBundleFile bun = DecompressBundle(file, decompFile);
 
@@ -164,9 +146,9 @@ namespace UABEAvalonia
                     byte[] data = BundleHelper.LoadAssetDataFromBundle(bun, i);
                     string outName;
                     if (flags.Contains("-keepnames"))
-                        outName = Path.Combine(filePath, $"{name}.assets");
+                        outName = Path.Combine(exportDirectory, $"{name}.assets");
                     else
-                        outName = Path.Combine(filePath, $"{Path.GetFileName(file)}_{name}.assets");
+                        outName = Path.Combine(exportDirectory, $"{Path.GetFileName(file)}_{name}.assets");
                     Console.WriteLine($"Exporting {outName}...");
                     File.WriteAllBytes(outName, data);
                 }
@@ -180,12 +162,17 @@ namespace UABEAvalonia
             }
         }
 
-        private static void BatchImport(string[] args)
+        private static void BatchImportBundle(string[] args)
         {
-            string mainFileName = GetMainFileName(args);
+            string importDirectory = GetMainFileName(args);
+            if (!Directory.Exists(importDirectory))
+            {
+                Console.WriteLine("Directory does not exist!");
+                return;
+            }
+
             HashSet<string> flags = GetFlags(args);
-            HashSet<string> files = GetAllFilesFromBatchFile(mainFileName);
-            foreach (string file in files)
+            foreach (string file in Directory.EnumerateFiles(importDirectory))
             {
                 string decompFile = $"{file}.decomp";
 
@@ -197,6 +184,13 @@ namespace UABEAvalonia
                     Console.WriteLine($"File {file} does not exist!");
                     return;
                 }
+
+                DetectedFileType fileType = AssetBundleDetector.DetectFileType(file);
+                if (fileType != DetectedFileType.BundleFile)
+                {
+                    continue;
+                }
+
                 Console.WriteLine($"Decompressing {file} to {decompFile}...");
                 AssetBundleFile bun = DecompressBundle(file, decompFile);
 
@@ -250,6 +244,16 @@ namespace UABEAvalonia
             }
         }
 
+        private static void BatchExportAsset(string[] args)
+        {
+
+        }
+
+        private static void BatchImportAsset(string[] args)
+        {
+
+        }
+        
         private static void ApplyEmip(string[] args)
         {
             HashSet<string> flags = GetFlags(args);
@@ -371,13 +375,21 @@ namespace UABEAvalonia
             
             string command = args[0];
 
-            if (command == "batchexport")
+            if (command == "batchexportbundle")
             {
-                BatchExport(args);
+                BatchExportBundle(args);
             }
-            else if (command == "batchimport")
+            else if (command == "batchimportbundle")
             {
-                BatchImport(args);
+                BatchImportBundle(args);
+            }
+            else if (command == "batchexportasset")
+            {
+                BatchExportAsset(args);
+            }
+            else if (command == "batchimportasset")
+            {
+                BatchImportAsset(args);
             }
             else if (command == "applyemip")
             {

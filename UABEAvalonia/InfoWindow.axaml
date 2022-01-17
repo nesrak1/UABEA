@@ -25,6 +25,7 @@
         <MenuItem Header="Go to asset" Name="menuGoToAsset" />
         <MenuItem Header="Dependencies" Name="menuDependencies" />
         <MenuItem Header="Containters" Name="menuContainers" />
+        <MenuItem Header="Scene Hierarchy" Name="menuHierarchy" />
       </MenuItem>
     </Menu>
     <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="Assets" />

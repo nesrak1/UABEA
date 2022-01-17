@@ -35,6 +35,7 @@ namespace UABEAvalonia
         private MenuItem menuGoToAsset;
         private MenuItem menuDependencies;
         private MenuItem menuContainers;
+        private MenuItem menuHierarchy;
         private Button btnViewData;
         private Button btnExportRaw;
         private Button btnExportDump;
@@ -88,6 +89,7 @@ namespace UABEAvalonia
             menuGoToAsset = this.FindControl<MenuItem>("menuGoToAsset");
             menuDependencies = this.FindControl<MenuItem>("menuDependencies");
             menuContainers = this.FindControl<MenuItem>("menuContainers");
+            menuHierarchy = this.FindControl<MenuItem>("menuHierarchy");
             btnViewData = this.FindControl<Button>("btnViewData");
             btnExportRaw = this.FindControl<Button>("btnExportRaw");
             btnExportDump = this.FindControl<Button>("btnExportDump");
@@ -110,6 +112,7 @@ namespace UABEAvalonia
             menuContinueSearch.Click += MenuContinueSearch_Click;
             menuGoToAsset.Click += MenuGoToAsset_Click;
             menuDependencies.Click += MenuDependencies_Click;
+            menuHierarchy.Click += MenuHierarchy_Click;
             btnViewData.Click += BtnViewData_Click;
             btnExportRaw.Click += BtnExportRaw_Click;
             btnExportDump.Click += BtnExportDump_Click;
@@ -221,6 +224,12 @@ namespace UABEAvalonia
         private void MenuDependencies_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             DependenciesWindow dialog = new DependenciesWindow(Workspace);
+            dialog.Show(this);
+        }
+
+        private void MenuHierarchy_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            GameObjectViewWindow dialog = new GameObjectViewWindow(Workspace);
             dialog.Show(this);
         }
 

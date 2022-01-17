@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:uabea="clr-namespace:UABEAvalonia"
+        mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="450"
+        Width="700" Height="450"
+        x:Class="UABEAvalonia.GameObjectViewWindow"
+        Title="GameObject Viewer">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="26" />
+    </Grid.RowDefinitions>
+    <Grid Grid.Row="0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="5" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <TreeView Grid.Column="0" Name="gameObjectTreeView" />
+      <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+      <uabea:AssetDataTreeView Grid.Column="2" Name="componentTreeView" />
+    </Grid>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="48" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Label Grid.Column="0" Content="File: " />
+      <ComboBox Grid.Column="1" Height="26" HorizontalAlignment="Left" Width="300" Name="cbxFiles" />
+    </Grid>
+  </Grid>
+</Window>
