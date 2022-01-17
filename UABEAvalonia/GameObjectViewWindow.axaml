@@ -5,6 +5,7 @@
         xmlns:uabea="clr-namespace:UABEAvalonia"
         mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="450"
         Width="700" Height="450"
+        Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.GameObjectViewWindow"
         Title="GameObject Viewer">
   <Grid>
