@@ -34,7 +34,18 @@ namespace UABEAvalonia
                 return;
 
             AssetTypeValueField baseField = workspace.GetBaseField(container);
-            TreeViewItem baseItem = CreateTreeItem($"{baseField.GetFieldType()} {baseField.GetName()}");
+
+            string baseItemString = $"{baseField.GetFieldType()} {baseField.GetName()}";
+            if (container.ClassId == (uint)AssetClassID.MonoBehaviour)
+            {
+                string monoName = Extensions.GetMonoBehaviourNameFast(workspace, container);
+                if (monoName != null)
+                {
+                    baseItemString += $" ({monoName})";
+                }
+            }
+
+            TreeViewItem baseItem = CreateTreeItem(baseItemString);
 
             TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
             baseItem.Items = new AvaloniaList<TreeViewItem>() { arrayIndexTreeItem };

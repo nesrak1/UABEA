@@ -44,10 +44,14 @@ namespace UABEAvalonia
 
         private void GameObjectTreeView_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (gameObjectTreeView.SelectedItem == null)
+            if (e.AddedItems.Count == 0)
                 return;
 
-            TreeViewItem selectedItem = (TreeViewItem)gameObjectTreeView.SelectedItem;
+            object? selectedItemObj = e.AddedItems[0];
+            if (selectedItemObj == null)
+                return;
+
+            TreeViewItem selectedItem = (TreeViewItem)selectedItemObj;
             if (selectedItem.Tag == null)
                 return;
 
