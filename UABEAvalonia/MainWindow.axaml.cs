@@ -532,9 +532,23 @@ namespace UABEAvalonia
                 //using your currently opened one, so that may be the workaround
                 if (changesMade)
                 {
+                    string messageBoxTest;
+                    if (changesUnsaved)
+                    {
+                        messageBoxTest =
+                            "You've modified this file, but you still haven't saved this bundle file to disk yet. If you want \n" +
+                            "to compress the file with changes, please save this bundle now and open that file instead. \n" +
+                            "Click Ok to compress the file without changes.";
+                    }
+                    else
+                    {
+                        messageBoxTest =
+                            "You've modified this file, but only the old file before you made changes is open. If you want to compress the file with \n" +
+                            "changes, please close this bundle and open the file you saved. Click Ok to compress the file without changes.";
+                    }
+
                     ButtonResult continueWithChanges = await MessageBoxUtil.ShowDialog(
-                        this, "Note", "You've modified this file, but only file before changes is loaded. If you want to compress the file with " +
-                                      "changes, please close this bundle and open the new file. Click Ok to compress the file without changes.",
+                        this, "Note", messageBoxTest,
                         ButtonEnum.OkCancel);
 
                     if (continueWithChanges == ButtonResult.Cancel)
