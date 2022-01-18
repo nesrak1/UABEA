@@ -55,6 +55,38 @@ namespace UABEAvalonia
             baseItem.IsExpanded = true;
         }
 
+        public void ExpandAllChildren(TreeViewItem treeItem)
+        {
+            if (treeItem.Header is string header)
+            {
+                if (header != "[view asset]")
+                {
+                    treeItem.IsExpanded = true;
+
+                    foreach (TreeViewItem treeItemChild in treeItem.Items)
+                    {
+                        ExpandAllChildren(treeItemChild);
+                    }
+                }
+            }
+        }
+
+        public void CollapseAllChildren(TreeViewItem treeItem)
+        {
+            if (treeItem.Header is string header)
+            {
+                if (header != "[view asset]")
+                {
+                    foreach (TreeViewItem treeItemChild in treeItem.Items)
+                    {
+                        CollapseAllChildren(treeItemChild);
+                    }
+
+                    treeItem.IsExpanded = false;
+                }
+            }
+        }
+
         private TreeViewItem CreateTreeItem(string text)
         {
             return new TreeViewItem() { Header = text };
@@ -95,13 +127,13 @@ namespace UABEAvalonia
                         TreeViewItem baseItem = CreateTreeItem($"{baseField.GetFieldType()} {baseField.GetName()}");
 
                         TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
-                        baseItem.Items = new List<TreeViewItem>() { arrayIndexTreeItem };
-                        item.Items = new List<TreeViewItem>() { baseItem };
+                        baseItem.Items = new AvaloniaList<TreeViewItem>() { arrayIndexTreeItem };
+                        item.Items = new AvaloniaList<TreeViewItem>() { baseItem };
                         SetTreeItemEvents(baseItem, cont.FileInstance, fromPathId, baseField);
                     }
                     else
                     {
-                        item.Items = new List<TreeViewItem>() { CreateTreeItem("[null asset]") };
+                        item.Items = new AvaloniaList<TreeViewItem>() { CreateTreeItem("[null asset]") };
                     }
                 }
             });
@@ -112,7 +144,7 @@ namespace UABEAvalonia
             if (assetField.childrenCount == 0) return;
 
             int arrayIdx = 0;
-            List<TreeViewItem> items = new List<TreeViewItem>(assetField.childrenCount + 1);
+            AvaloniaList<TreeViewItem> items = new AvaloniaList<TreeViewItem>(assetField.childrenCount + 1);
 
             AssetTypeTemplateField assetFieldTemplate = assetField.GetTemplateField();
             bool isArray = assetFieldTemplate.isArray;
@@ -151,12 +183,12 @@ namespace UABEAvalonia
                     items.Add(arrayIndexTreeItem);
 
                     TreeViewItem childTreeItem = CreateTreeItem($"{childField.GetFieldType()} {childField.GetName()}{value}");
-                    arrayIndexTreeItem.Items = new List<TreeViewItem>() { childTreeItem };
+                    arrayIndexTreeItem.Items = new AvaloniaList<TreeViewItem>() { childTreeItem };
 
                     if (childField.childrenCount > 0)
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
-                        childTreeItem.Items = new List<TreeViewItem>() { dummyItem };
+                        childTreeItem.Items = new AvaloniaList<TreeViewItem>() { dummyItem };
                         SetTreeItemEvents(childTreeItem, fromFile, fromPathId, childField);
                     }
 
@@ -170,7 +202,7 @@ namespace UABEAvalonia
                     if (childField.childrenCount > 0)
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
-                        childTreeItem.Items = new List<TreeViewItem>() { dummyItem };
+                        childTreeItem.Items = new AvaloniaList<TreeViewItem>() { dummyItem };
                         SetTreeItemEvents(childTreeItem, fromFile, fromPathId, childField);
                     }
                 }
@@ -188,13 +220,13 @@ namespace UABEAvalonia
                     int fileId = fileIdField.GetValue().AsInt();
                     long pathId = pathIdField.GetValue().AsInt64();
 
-                    AssetContainer cont = workspace.GetAssetContainer(fromFile, fileId, pathId, false);
+                    AssetContainer cont = workspace.GetAssetContainer(fromFile, fileId, pathId, true);
 
-                    TreeViewItem childTreeItem = CreateTreeItem($"[view asset]");
+                    TreeViewItem childTreeItem = CreateTreeItem("[view asset]");
                     items.Add(childTreeItem);
 
                     TreeViewItem dummyItem = CreateTreeItem("Loading...");
-                    childTreeItem.Items = new List<TreeViewItem>() { dummyItem };
+                    childTreeItem.Items = new AvaloniaList<TreeViewItem>() { dummyItem };
                     SetPPtrEvents(childTreeItem, fromFile, pathId, cont);
                 }
             }

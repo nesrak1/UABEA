@@ -15,6 +15,8 @@ namespace UABEAvalonia
         private TreeView gameObjectTreeView;
         private AssetDataTreeView componentTreeView;
         private ComboBox cbxFiles;
+        private Button btnExpand;
+        private Button btnCollapse;
 
         private AssetWorkspace workspace;
 
@@ -28,9 +30,13 @@ namespace UABEAvalonia
             gameObjectTreeView = this.FindControl<TreeView>("gameObjectTreeView");
             componentTreeView = this.FindControl<AssetDataTreeView>("componentTreeView");
             cbxFiles = this.FindControl<ComboBox>("cbxFiles");
+            btnExpand = this.FindControl<Button>("btnExpand");
+            btnCollapse = this.FindControl<Button>("btnCollapse");
             //generated events
             gameObjectTreeView.SelectionChanged += GameObjectTreeView_SelectionChanged;
             cbxFiles.SelectionChanged += CbxFiles_SelectionChanged;
+            btnExpand.Click += BtnExpand_Click;
+            btnCollapse.Click += BtnCollapse_Click;
         }
 
         public GameObjectViewWindow(AssetWorkspace workspace) : this()
@@ -72,6 +78,22 @@ namespace UABEAvalonia
         private void CbxFiles_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             PopulateHierarchyTreeView();
+        }
+
+        private void BtnExpand_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (componentTreeView.SelectedItem != null && componentTreeView.SelectedItem is TreeViewItem treeItem)
+            {
+                componentTreeView.ExpandAllChildren(treeItem);
+            }
+        }
+
+        private void BtnCollapse_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (componentTreeView.SelectedItem != null && componentTreeView.SelectedItem is TreeViewItem treeItem)
+            {
+                componentTreeView.CollapseAllChildren(treeItem);
+            }
         }
 
         private void PopulateFilesComboBox()
@@ -126,6 +148,10 @@ namespace UABEAvalonia
 
             AssetTypeValueField gameObjectRef = transformBf.Get("m_GameObject");
             AssetContainer gameObjectCont = workspace.GetAssetContainer(transformCont.FileInstance, gameObjectRef, false);
+
+            if (gameObjectCont == null)
+                return;
+
             AssetTypeValueField gameObjectBf = workspace.GetBaseField(gameObjectCont);
             string name = gameObjectBf.Get("m_Name").GetValue().AsString();
 

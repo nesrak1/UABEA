@@ -10,26 +10,39 @@
         Title="GameObject Viewer">
   <Grid>
     <Grid.RowDefinitions>
+      <RowDefinition Height="26" />
       <RowDefinition Height="*" />
       <RowDefinition Height="26" />
     </Grid.RowDefinitions>
-    <Grid Grid.Row="0">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="5" />
-        <ColumnDefinition Width="*" />
-      </Grid.ColumnDefinitions>
-      <TreeView Grid.Column="0" Name="gameObjectTreeView" />
-      <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
-      <uabea:AssetDataTreeView Grid.Column="2" Name="componentTreeView" />
-    </Grid>
-    <Grid Grid.Row="1">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" />
+      <ColumnDefinition Width="5" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+    
+    <Label Grid.Row="0" Grid.Column="0" Content="Scene Hierarchy" />
+    <Label Grid.Row="0" Grid.Column="2" Content="Components" />
+    
+    <TreeView Grid.Row="1" Grid.Column="0" Name="gameObjectTreeView" />
+    <GridSplitter Grid.Row="1" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+    <uabea:AssetDataTreeView Grid.Row="1" Grid.Column="2" Name="componentTreeView" />
+    
+    <Grid Grid.Row="2" Grid.Column="0">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="48" />
         <ColumnDefinition Width="*" />
       </Grid.ColumnDefinitions>
       <Label Grid.Column="0" Content="File: " />
-      <ComboBox Grid.Column="1" Height="26" HorizontalAlignment="Left" Width="300" Name="cbxFiles" />
+      <ComboBox Grid.Column="1" Height="26" HorizontalAlignment="Stretch" Name="cbxFiles" />
+    </Grid>
+    
+    <Grid Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="120" />
+        <ColumnDefinition Width="120" />
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" Content="Expand Selection" Name="btnExpand" />
+      <Button Grid.Column="1" Content="Collapse Selection" Name="btnCollapse" />
     </Grid>
   </Grid>
 </Window>
