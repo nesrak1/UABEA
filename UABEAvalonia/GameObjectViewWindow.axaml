@@ -25,7 +25,13 @@
     
     <TreeView Grid.Row="1" Grid.Column="0" Name="gameObjectTreeView" />
     <GridSplitter Grid.Row="1" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
-    <uabea:AssetDataTreeView Grid.Row="1" Grid.Column="2" Name="componentTreeView" />
+    <uabea:AssetDataTreeView Grid.Row="1" Grid.Column="2" Name="componentTreeView">
+      <TreeView.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="Visit Asset" Name="menuVisitAsset"/>
+        </ContextMenu>
+      </TreeView.ContextMenu>
+    </uabea:AssetDataTreeView>
     
     <Grid Grid.Row="2" Grid.Column="0">
       <Grid.ColumnDefinitions>

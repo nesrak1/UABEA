@@ -229,7 +229,7 @@ namespace UABEAvalonia
 
         private void MenuHierarchy_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            GameObjectViewWindow dialog = new GameObjectViewWindow(Workspace);
+            GameObjectViewWindow dialog = new GameObjectViewWindow(this, Workspace);
             dialog.Show(this);
         }
 

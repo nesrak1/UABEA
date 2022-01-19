@@ -14,10 +14,12 @@ namespace UABEAvalonia
         //controls
         private TreeView gameObjectTreeView;
         private AssetDataTreeView componentTreeView;
+        private MenuItem menuVisitAsset;
         private ComboBox cbxFiles;
         private Button btnExpand;
         private Button btnCollapse;
 
+        private InfoWindow win;
         private AssetWorkspace workspace;
 
         public GameObjectViewWindow()
@@ -29,18 +31,21 @@ namespace UABEAvalonia
             //generated controls
             gameObjectTreeView = this.FindControl<TreeView>("gameObjectTreeView");
             componentTreeView = this.FindControl<AssetDataTreeView>("componentTreeView");
+            menuVisitAsset = this.FindControl<MenuItem>("menuVisitAsset");
             cbxFiles = this.FindControl<ComboBox>("cbxFiles");
             btnExpand = this.FindControl<Button>("btnExpand");
             btnCollapse = this.FindControl<Button>("btnCollapse");
             //generated events
             gameObjectTreeView.SelectionChanged += GameObjectTreeView_SelectionChanged;
+            menuVisitAsset.Click += MenuVisitAsset_Click;
             cbxFiles.SelectionChanged += CbxFiles_SelectionChanged;
             btnExpand.Click += BtnExpand_Click;
             btnCollapse.Click += BtnCollapse_Click;
         }
 
-        public GameObjectViewWindow(AssetWorkspace workspace) : this()
+        public GameObjectViewWindow(InfoWindow win, AssetWorkspace workspace) : this()
         {
+            this.win = win;
             this.workspace = workspace;
 
             componentTreeView.Init(workspace);
@@ -72,6 +77,16 @@ namespace UABEAvalonia
                 AssetTypeValueField component = data.Get("component");
                 AssetContainer componentCont = workspace.GetAssetContainer(gameObjectCont.FileInstance, component, false);
                 componentTreeView.LoadComponent(componentCont);
+            }
+        }
+
+        private void MenuVisitAsset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            TreeViewItem item = (TreeViewItem)componentTreeView.SelectedItem;
+            if (item != null && item.Tag != null)
+            {
+                AssetDataTreeViewItem info = (AssetDataTreeViewItem)item.Tag;
+                win.SelectAsset(info.fromFile, info.fromPathId);
             }
         }
 
