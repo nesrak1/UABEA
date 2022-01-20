@@ -234,7 +234,7 @@ namespace UABEAvalonia
 
                 string file = await sfd.ShowAsync(this);
 
-                if (file == null || !File.Exists(file))
+                if (file == null)
                     return;
 
                 using FileStream fileStream = File.OpenWrite(file);
