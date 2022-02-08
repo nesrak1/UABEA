@@ -6,7 +6,7 @@
         Width="700" Height="350"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.ImportBatch"
-        Title="Batch import textures">
+        Title="Batch import">
   <Grid Margin="10,10,10,10">
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="0.6*"></ColumnDefinition>
