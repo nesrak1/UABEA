@@ -140,28 +140,35 @@ namespace UABEAvalonia
         //not very fast but w/e at least it's stable
         public static string GetMonoBehaviourNameFast(AssetWorkspace workspace, AssetContainer cont)
         {
-            if (cont.ClassId != (uint)AssetClassID.MonoBehaviour)
-                return string.Empty;
-
-            AssetTypeValueField monoBf;
-            if (cont.HasInstance)
+            try
             {
-                monoBf = cont.TypeInstance.GetBaseField();
+                if (cont.ClassId != (uint)AssetClassID.MonoBehaviour)
+                    return string.Empty;
+
+                AssetTypeValueField monoBf;
+                if (cont.HasInstance)
+                {
+                    monoBf = cont.TypeInstance.GetBaseField();
+                }
+                else
+                {
+                    AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont, false);
+                    monoBf = new AssetTypeInstance(monoTemp, cont.FileReader, cont.FilePosition).GetBaseField();
+                }
+
+                AssetContainer monoScriptCont = workspace.GetAssetContainer(cont.FileInstance, monoBf.Get("m_Script"), false);
+                if (monoScriptCont == null)
+                    return string.Empty;
+
+                AssetTypeValueField scriptBaseField = monoScriptCont.TypeInstance.GetBaseField();
+                string scriptClassName = scriptBaseField.Get("m_ClassName").GetValue().AsString();
+
+                return scriptClassName;
             }
-            else
+            catch
             {
-                AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont, false);
-                monoBf = new AssetTypeInstance(monoTemp, cont.FileReader, cont.FilePosition).GetBaseField();
-            }
-
-            AssetContainer monoScriptCont = workspace.GetAssetContainer(cont.FileInstance, monoBf.Get("m_Script"), false);
-            if (monoScriptCont == null)
                 return string.Empty;
-
-            AssetTypeValueField scriptBaseField = monoScriptCont.TypeInstance.GetBaseField();
-            string scriptClassName = scriptBaseField.Get("m_ClassName").GetValue().AsString();
-
-            return scriptClassName;
+            }
         }
 
         //https://stackoverflow.com/a/23182807
