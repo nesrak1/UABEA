@@ -51,7 +51,8 @@ namespace UABEAvalonia
             //mainly to handle enum fields not having the int type name
             if (template.valueType != EnumValueTypes.None &&
                 template.valueType != EnumValueTypes.Array &&
-                template.valueType != EnumValueTypes.ByteArray)
+                template.valueType != EnumValueTypes.ByteArray &&
+                !isArray)
             {
                 typeName = CorrectTypeName(template.valueType);
             }
@@ -63,7 +64,7 @@ namespace UABEAvalonia
                 string sizeTypeName = sizeTemplate.type;
                 string sizeFieldName = sizeTemplate.name;
 
-                if (template.valueType == EnumValueTypes.Array)
+                if (template.valueType != EnumValueTypes.ByteArray)
                 {
                     int size = field.GetValue().AsArray().size;
                     sw.WriteLine($"{new string(' ', depth)}{align} {typeName} {fieldName} ({size} items)");
@@ -74,7 +75,7 @@ namespace UABEAvalonia
                         RecurseTextDump(field.children[i], depth + 2);
                     }
                 }
-                else if (template.valueType == EnumValueTypes.ByteArray)
+                else
                 {
                     AssetTypeByteArray byteArray = field.GetValue().AsByteArray();
                     byte[] data = byteArray.data;
@@ -136,14 +137,14 @@ namespace UABEAvalonia
             {
                 JArray jArray = new JArray();
 
-                if (template.valueType == EnumValueTypes.Array)
+                if (template.valueType != EnumValueTypes.ByteArray)
                 {
                     for (int i = 0; i < field.childrenCount; i++)
                     {
                         jArray.Add(RecurseJsonDump(field.children[i], uabeFlavor));
                     }
                 }
-                else if (template.valueType == EnumValueTypes.ByteArray)
+                else
                 {
                     byte[] byteArrayData = field.GetValue().AsByteArray().data;
                     for (int i = 0; i < byteArrayData.Length; i++)
