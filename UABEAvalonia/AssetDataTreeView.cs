@@ -170,10 +170,13 @@ namespace UABEAvalonia
                     {
                         value = $" = {quote}{childField.GetValue().AsString()}{quote}";
                     }
-                    if (evt == EnumValueTypes.Array ||
-                        evt == EnumValueTypes.ByteArray)
+                    if (evt == EnumValueTypes.Array)
                     {
                         value = $" (size {childField.childrenCount})";
+                    }
+                    else if (evt == EnumValueTypes.ByteArray)
+                    {
+                        value = $" (size {childField.GetValue().AsByteArray().size})";
                     }
                 }
 

@@ -62,13 +62,31 @@ namespace UABEAvalonia
                 string sizeAlign = sizeTemplate.align ? "1" : "0";
                 string sizeTypeName = sizeTemplate.type;
                 string sizeFieldName = sizeTemplate.name;
-                int size = field.GetValue().AsArray().size;
-                sw.WriteLine($"{new string(' ', depth)}{align} {typeName} {fieldName} ({size} items)");
-                sw.WriteLine($"{new string(' ', depth+1)}{sizeAlign} {sizeTypeName} {sizeFieldName} = {size}");
-                for (int i = 0; i < field.childrenCount; i++)
+
+                if (template.valueType == EnumValueTypes.Array)
                 {
-                    sw.WriteLine($"{new string(' ', depth+1)}[{i}]");
-                    RecurseTextDump(field.children[i], depth + 2);
+                    int size = field.GetValue().AsArray().size;
+                    sw.WriteLine($"{new string(' ', depth)}{align} {typeName} {fieldName} ({size} items)");
+                    sw.WriteLine($"{new string(' ', depth + 1)}{sizeAlign} {sizeTypeName} {sizeFieldName} = {size}");
+                    for (int i = 0; i < field.childrenCount; i++)
+                    {
+                        sw.WriteLine($"{new string(' ', depth + 1)}[{i}]");
+                        RecurseTextDump(field.children[i], depth + 2);
+                    }
+                }
+                else if (template.valueType == EnumValueTypes.ByteArray)
+                {
+                    AssetTypeByteArray byteArray = field.GetValue().AsByteArray();
+                    byte[] data = byteArray.data;
+                    int size = (int)byteArray.size;
+
+                    sw.WriteLine($"{new string(' ', depth)}{align} {typeName} {fieldName} ({size} items)");
+                    sw.WriteLine($"{new string(' ', depth + 1)}{sizeAlign} {sizeTypeName} {sizeFieldName} = {size}");
+                    for (int i = 0; i < size; i++)
+                    {
+                        sw.WriteLine($"{new string(' ', depth + 1)}[{i}]");
+                        sw.WriteLine($"{new string(' ', depth + 2)}0 UInt8 data = {data[i]}");
+                    }
                 }
             }
             else
@@ -118,9 +136,20 @@ namespace UABEAvalonia
             {
                 JArray jArray = new JArray();
 
-                for (int i = 0; i < field.childrenCount; i++)
+                if (template.valueType == EnumValueTypes.Array)
                 {
-                    jArray.Add(RecurseJsonDump(field.children[i], uabeFlavor));
+                    for (int i = 0; i < field.childrenCount; i++)
+                    {
+                        jArray.Add(RecurseJsonDump(field.children[i], uabeFlavor));
+                    }
+                }
+                else if (template.valueType == EnumValueTypes.ByteArray)
+                {
+                    byte[] byteArrayData = field.GetValue().AsByteArray().data;
+                    for (int i = 0; i < byteArrayData.Length; i++)
+                    {
+                        jArray.Add(byteArrayData[i]);
+                    }
                 }
 
                 return jArray;
@@ -406,7 +435,12 @@ namespace UABEAvalonia
                     }
                     case EnumValueTypes.ByteArray:
                     {
-                        byte[] byteArrayData = ((byte[]?)token) ?? Array.Empty<byte>();
+                        JArray byteArrayJArray = ((JArray?)token) ?? new JArray();
+                        byte[] byteArrayData = new byte[byteArrayJArray.Count];
+                        for (int i = 0; i < byteArrayJArray.Count; i++)
+                        {
+                            byteArrayData[i] = (byte)byteArrayJArray[i];
+                        }
                         aw.Write(byteArrayData.Length);
                         aw.Write(byteArrayData);
                         break;
