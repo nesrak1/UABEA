@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="240" d:DesignHeight="100"
+        Width="240" Height="100"
+        Icon="/Assets/uabeavalonia16.ico"
+        x:Class="UABEAvalonia.ExportBatchChooseType"
+        Title="Batch Export"
+        CanResize="False">
+  <Grid>
+    <ComboBox Margin="10,10,10,0" VerticalAlignment="Top" Height="26" SelectedIndex="0" Name="comboFileType">
+      <ComboBoxItem>PNG</ComboBoxItem>
+      <ComboBoxItem>TGA</ComboBoxItem>
+    </ComboBox>
+    <Grid Margin="10,10,10,10" VerticalAlignment="Bottom">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnOk">Ok</Button>
+      <Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnCancel">Cancel</Button>
+    </Grid>
+  </Grid>
+</Window>

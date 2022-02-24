@@ -56,7 +56,7 @@ namespace TexturePlugin
     {
         public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
         {
-            name = "Batch import .png";
+            name = "Batch import textures";
 
             if (action != UABEAPluginAction.Import)
                 return false;
@@ -91,7 +91,7 @@ namespace TexturePlugin
                 AssetTypeValueField baseField = cont.TypeInstance.GetBaseField();
                 TextureFormat fmt = (TextureFormat)baseField.Get("m_TextureFormat").GetValue().AsInt();
 
-                byte[] encImageBytes = TextureImportExport.ImportPng(selectedFilePath, fmt, out int width, out int height);
+                byte[] encImageBytes = TextureImportExport.Import(selectedFilePath, fmt, out int width, out int height);
 
                 if (encImageBytes == null)
                 {
@@ -148,7 +148,7 @@ namespace TexturePlugin
 
             if (dir != null && dir != string.Empty)
             {
-                List<string> extensions = new List<string>() { "png" };
+                List<string> extensions = new List<string>() { "png", "tga" };
                 ImportBatch dialog = new ImportBatch(workspace, selection, dir, extensions);
                 List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
                 bool success = await ImportTextures(win, batchInfos);
@@ -181,9 +181,9 @@ namespace TexturePlugin
         public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
         {
             if (selection.Count > 1)
-                name = "Batch export .png";
+                name = "Batch export textures";
             else
-                name = "Export .png";
+                name = "Export texture";
 
             if (action != UABEAPluginAction.Export)
                 return false;
@@ -250,63 +250,70 @@ namespace TexturePlugin
                 selection[i] = new AssetContainer(selection[i], TextureHelper.GetByteArrayTexture(workspace, selection[i]));
             }
 
-            OpenFolderDialog ofd = new OpenFolderDialog();
-            ofd.Title = "Select export directory";
+            ExportBatchChooseType dialog = new ExportBatchChooseType();
+            string fileType = await dialog.ShowDialog<string>(win);
 
-            string dir = await ofd.ShowAsync(win);
-
-            if (dir != null && dir != string.Empty)
+            if (fileType != null && fileType != string.Empty)
             {
-                StringBuilder errorBuilder = new StringBuilder();
+                OpenFolderDialog ofd = new OpenFolderDialog();
+                ofd.Title = "Select export directory";
 
-                foreach (AssetContainer cont in selection)
+                string dir = await ofd.ShowAsync(win);
+
+                if (dir != null && dir != string.Empty)
                 {
-                    string errorAssetName = $"{Path.GetFileName(cont.FileInstance.path)}/{cont.PathId}";
+                    StringBuilder errorBuilder = new StringBuilder();
 
-                    AssetTypeValueField texBaseField = cont.TypeInstance.GetBaseField();
-                    TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
-
-                    //0x0 texture, usually called like Font Texture or smth
-                    if (texFile.m_Width == 0 && texFile.m_Height == 0)
-                        continue;
-
-                    string assetName = Extensions.ReplaceInvalidPathChars(texFile.m_Name);
-                    string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png");
-
-                    //bundle resS
-                    if (!GetResSTexture(texFile, cont))
+                    foreach (AssetContainer cont in selection)
                     {
-                        string resSName = Path.GetFileName(texFile.m_StreamData.path);
-                        errorBuilder.AppendLine($"[{errorAssetName}]: resS was detected but {resSName} was not found in bundle");
-                        continue;
+                        string errorAssetName = $"{Path.GetFileName(cont.FileInstance.path)}/{cont.PathId}";
+
+                        AssetTypeValueField texBaseField = cont.TypeInstance.GetBaseField();
+                        TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
+
+                        //0x0 texture, usually called like Font Texture or smth
+                        if (texFile.m_Width == 0 && texFile.m_Height == 0)
+                            continue;
+
+                        string assetName = Extensions.ReplaceInvalidPathChars(texFile.m_Name);
+                        string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{fileType.ToLower()}");
+
+                        //bundle resS
+                        if (!GetResSTexture(texFile, cont))
+                        {
+                            string resSName = Path.GetFileName(texFile.m_StreamData.path);
+                            errorBuilder.AppendLine($"[{errorAssetName}]: resS was detected but {resSName} was not found in bundle");
+                            continue;
+                        }
+
+                        byte[] data = TextureHelper.GetRawTextureBytes(texFile, cont.FileInstance);
+
+                        if (data == null)
+                        {
+                            string resSName = Path.GetFileName(texFile.m_StreamData.path);
+                            errorBuilder.AppendLine($"[{errorAssetName}]: resS was detected but {resSName} was not found on disk");
+                            continue;
+                        }
+
+                        bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
+                        if (!success)
+                        {
+                            string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
+                            errorBuilder.AppendLine($"[{errorAssetName}]: Failed to decode texture format {texFormat}");
+                            continue;
+                        }
                     }
 
-                    byte[] data = TextureHelper.GetRawTextureBytes(texFile, cont.FileInstance);
-
-                    if (data == null)
+                    if (errorBuilder.Length > 0)
                     {
-                        string resSName = Path.GetFileName(texFile.m_StreamData.path);
-                        errorBuilder.AppendLine($"[{errorAssetName}]: resS was detected but {resSName} was not found on disk");
-                        continue;
+                        string[] firstLines = errorBuilder.ToString().Split('\n').Take(20).ToArray();
+                        string firstLinesStr = string.Join('\n', firstLines);
+                        await MessageBoxUtil.ShowDialog(win, "Some errors occurred while exporting", firstLinesStr);
                     }
 
-                    bool success = TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
-                    if (!success)
-                    {
-                        string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
-                        errorBuilder.AppendLine($"[{errorAssetName}]: Failed to decode texture format {texFormat}");
-                        continue;
-                    }
+                    return true;
                 }
-
-                if (errorBuilder.Length > 0)
-                {
-                    string[] firstLines = errorBuilder.ToString().Split('\n').Take(20).ToArray();
-                    string firstLinesStr = string.Join('\n', firstLines);
-                    await MessageBoxUtil.ShowDialog(win, "Some errors occurred while exporting", firstLinesStr);
-                }
-
-                return true;
+                return false;
             }
             return false;
         }
@@ -322,9 +329,10 @@ namespace TexturePlugin
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Title = "Save texture";
             sfd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "PNG file", Extensions = new List<string>() { "png" } }
+                new FileDialogFilter() { Name = "PNG file", Extensions = new List<string>() { "png" } },
+                new FileDialogFilter() { Name = "TGA file", Extensions = new List<string>() { "tga" } }
             };
-            sfd.InitialFileName = $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png";
+            sfd.InitialFileName = $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}";
 
             string file = await sfd.ShowAsync(win);
 
@@ -349,7 +357,7 @@ namespace TexturePlugin
                     return false;
                 }
 
-                bool success = TextureImportExport.ExportPng(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
+                bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
                 if (!success)
                 {
                     string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();

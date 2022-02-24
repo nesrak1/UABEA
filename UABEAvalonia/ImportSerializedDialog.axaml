@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="240" d:DesignHeight="100"
+        Width="240" Height="100"
+        Icon="/Assets/uabeavalonia16.ico"
+        x:Class="UABEAvalonia.ImportSerializedDialog"
+        Title="Import"
+        CanResize="False">
+  <Grid>
+    <TextBlock Margin="10,20,10,0" VerticalAlignment="Top" Text="Is this asset serialized ?" TextAlignment="Center" FontWeight="Bold" FontSize="14" />
+    <Grid Margin="10,10,10,10" VerticalAlignment="Bottom">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnYes">Yes</Button>
+      <Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Name="btnNo">No</Button>
+    </Grid>
+  </Grid>
+</Window>

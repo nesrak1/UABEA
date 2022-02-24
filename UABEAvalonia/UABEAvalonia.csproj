@@ -30,6 +30,9 @@
     <Compile Update="LoadModPackageDialog.axaml.cs">
       <DependentUpon>LoadModPackageDialog.axaml</DependentUpon>
     </Compile>
+    <Compile Update="ImportSerializedDialog.axaml.cs">
+      <DependentUpon>ImportSerializedDialog.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   
   <Target Name="UABEAAfterBuild" AfterTargets="AfterBuild" Condition="'$(SolutionDir)' != '*Undefined*'">
