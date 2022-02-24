@@ -2,6 +2,7 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Tga;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -48,7 +49,9 @@ namespace TexturePlugin
                     image.SaveAsPng(file);
                     break;
                 case ".tga":
-                    image.SaveAsTga(file);
+                    var encoder = new TgaEncoder();
+                    encoder.BitsPerPixel = TgaBitsPerPixel.Pixel32;
+                    image.SaveAsTga(file, encoder);
                     break;
             }
 
