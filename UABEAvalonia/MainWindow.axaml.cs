@@ -262,13 +262,16 @@ namespace UABEAvalonia
                 if (file == null)
                     return;
 
+                ImportSerializedDialog dialog = new ImportSerializedDialog();
+                bool isSerialized = await dialog.ShowDialog<bool>(this);
+
                 //todo replacer from stream rather than bytes
                 //also need to handle closing them somewhere
                 //and replacers don't support closing
                 byte[] fileBytes = File.ReadAllBytes(file);
                 string fileName = Path.GetFileName(file);
 
-                newFiles[fileName] = AssetImportExport.CreateBundleReplacer(fileName, true, fileBytes);
+                newFiles[fileName] = AssetImportExport.CreateBundleReplacer(fileName, isSerialized, fileBytes);
 
                 //check for existing combobox item
                 ComboBoxItem? comboBoxItem = comboItems.FirstOrDefault(i => (string)i.Content == fileName);

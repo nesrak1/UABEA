@@ -96,7 +96,7 @@ namespace TexturePlugin
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Title = "Open texture";
             ofd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "PNG file", Extensions = new List<string>() { "png" } }
+                new FileDialogFilter() { Name = "Texture file", Extensions = new List<string>() { "png", "tga" } }
             };
 
             string[] fileList = await ofd.ShowAsync(this);
