@@ -293,6 +293,7 @@ namespace UABEAvalonia
                     comboBox.SelectedIndex = comboItems.Count - 1;
                 }
 
+                SetBundleControlsEnabled(true, true); // since it's an import it's always going to have assets in the combobox at this point so we force all the buttons to enable in case there were some that were still disabled
                 changesUnsaved = true;
                 changesMade = true;
             }
@@ -324,6 +325,7 @@ namespace UABEAvalonia
                     comboBox.SelectedIndex = 0;
                 }
 
+                SetBundleControlsEnabled(true, comboItems.Count > 0);
                 changesUnsaved = true;
                 changesMade = true;
             }
@@ -762,8 +764,6 @@ namespace UABEAvalonia
 
         private void LoadBundle(BundleFileInstance bundleInst)
         {
-            SetBundleControlsEnabled(true);
-
             var infos = bundleInst.file.bundleInf6.dirInf;
             comboItems = new ObservableCollection<ComboBoxItem>();
             for (int i = 0; i < infos.Length; i++)
@@ -779,6 +779,8 @@ namespace UABEAvalonia
             comboBox.SelectedIndex = 0;
 
             lblFileName.Text = bundleInst.name;
+
+            SetBundleControlsEnabled(true, comboItems.Count > 0);
         }
 
         private void SaveBundle(BundleFileInstance bundleInst, string path)
@@ -819,13 +821,17 @@ namespace UABEAvalonia
             lblFileName.Text = "No file opened.";
         }
 
-        private void SetBundleControlsEnabled(bool enabled)
+        private void SetBundleControlsEnabled(bool enabled, bool hasAssets = false)
         {
+            // buttons that i want to enable only if i have assets they can interact with, always disable when it's time to disable every button
+            btnExport.IsEnabled = (enabled ? hasAssets : false);
+            btnRemove.IsEnabled = (enabled ? hasAssets : false);
+            btnInfo.IsEnabled = (enabled ? hasAssets : false);
+            btnExportAll.IsEnabled = (enabled ? hasAssets : false);
+
+            // always enable / disable no matter if there's assets or not
             comboBox.IsEnabled = enabled;
-            btnExport.IsEnabled = enabled;
             btnImport.IsEnabled = enabled;
-            btnInfo.IsEnabled = enabled;
-            btnExportAll.IsEnabled = enabled;
             btnImportAll.IsEnabled = enabled;
         }
 
