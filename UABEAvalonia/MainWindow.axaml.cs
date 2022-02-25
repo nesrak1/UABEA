@@ -32,6 +32,7 @@ namespace UABEAvalonia
         private ComboBox comboBox;
         private Button btnExport;
         private Button btnImport;
+        private Button btnRemove;
         private Button btnInfo;
         private Button btnExportAll;
         private Button btnImportAll;
@@ -71,6 +72,7 @@ namespace UABEAvalonia
             comboBox = this.FindControl<ComboBox>("comboBox");
             btnExport = this.FindControl<Button>("btnExport");
             btnImport = this.FindControl<Button>("btnImport");
+            btnRemove = this.FindControl<Button>("btnRemove");
             btnInfo = this.FindControl<Button>("btnInfo");
             btnExportAll = this.FindControl<Button>("btnExportAll");
             btnImportAll = this.FindControl<Button>("btnImportAll");
@@ -85,6 +87,7 @@ namespace UABEAvalonia
             menuAbout.Click += MenuAbout_Click;
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
+            btnRemove.Click += BtnRemove_Click;
             btnInfo.Click += BtnInfo_Click;
             btnExportAll.Click += BtnExportAll_Click;
             Closing += MainWindow_Closing;
@@ -288,6 +291,37 @@ namespace UABEAvalonia
                         Tag = comboItems.Count
                     });
                     comboBox.SelectedIndex = comboItems.Count - 1;
+                }
+
+                changesUnsaved = true;
+                changesMade = true;
+            }
+        }
+
+        private async void BtnRemove_Click(object? sender, RoutedEventArgs e)
+        {
+            if (bundleInst != null && comboBox.SelectedItem != null)
+            {
+                int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
+
+                if (index < bundleInst.file.bundleInf6.dirInf.Length) // Pre-existing asset when bundle was opened
+                {
+                    string bunAssetName = bundleInst.file.bundleInf6.dirInf[index].name;
+                    newFiles.Add(bunAssetName, AssetImportExport.CreateBundleRemover(bunAssetName, true));
+                }
+                else // this asset was most likely imported after the bundle was opened and hasn't been saved yet
+                {
+                    string bunAssetName = (string)((ComboBoxItem)comboBox.SelectedItem).Content;
+                    if (newFiles.ContainsKey(bunAssetName))
+                    {
+                        newFiles.Remove(bunAssetName);
+                    }
+                }
+
+                comboItems.Remove((ComboBoxItem)comboBox.SelectedItem);
+                if (comboItems.Count > 0)
+                {
+                    comboBox.SelectedIndex = 0;
                 }
 
                 changesUnsaved = true;

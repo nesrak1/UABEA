@@ -558,5 +558,10 @@ namespace UABEAvalonia
         {
             return new BundleReplacerFromStream(name, name, isSerialized, stream, start, size);
         }
+
+        public static BundleReplacer CreateBundleRemover(string name, bool isSerialized, int bundleListIndex = -1)
+        {
+            return new BundleRemover(name, isSerialized, bundleListIndex);
+        }
     }
 }
