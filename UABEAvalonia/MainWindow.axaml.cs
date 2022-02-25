@@ -32,6 +32,7 @@ namespace UABEAvalonia
         private ComboBox comboBox;
         private Button btnExport;
         private Button btnImport;
+        private Button btnRemove;
         private Button btnInfo;
         private Button btnExportAll;
         private Button btnImportAll;
@@ -71,6 +72,7 @@ namespace UABEAvalonia
             comboBox = this.FindControl<ComboBox>("comboBox");
             btnExport = this.FindControl<Button>("btnExport");
             btnImport = this.FindControl<Button>("btnImport");
+            btnRemove = this.FindControl<Button>("btnRemove");
             btnInfo = this.FindControl<Button>("btnInfo");
             btnExportAll = this.FindControl<Button>("btnExportAll");
             btnImportAll = this.FindControl<Button>("btnImportAll");
@@ -85,6 +87,7 @@ namespace UABEAvalonia
             menuAbout.Click += MenuAbout_Click;
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
+            btnRemove.Click += BtnRemove_Click;
             btnInfo.Click += BtnInfo_Click;
             btnExportAll.Click += BtnExportAll_Click;
             Closing += MainWindow_Closing;
@@ -290,6 +293,39 @@ namespace UABEAvalonia
                     comboBox.SelectedIndex = comboItems.Count - 1;
                 }
 
+                SetBundleControlsEnabled(true, true); // since it's an import it's always going to have assets in the combobox at this point so we force all the buttons to enable in case there were some that were still disabled
+                changesUnsaved = true;
+                changesMade = true;
+            }
+        }
+
+        private async void BtnRemove_Click(object? sender, RoutedEventArgs e)
+        {
+            if (bundleInst != null && comboBox.SelectedItem != null)
+            {
+                int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
+
+                if (index < bundleInst.file.bundleInf6.dirInf.Length) // Pre-existing asset when bundle was opened
+                {
+                    string bunAssetName = bundleInst.file.bundleInf6.dirInf[index].name;
+                    newFiles.Add(bunAssetName, AssetImportExport.CreateBundleRemover(bunAssetName, true));
+                }
+                else // this asset was most likely imported after the bundle was opened and hasn't been saved yet
+                {
+                    string bunAssetName = (string)((ComboBoxItem)comboBox.SelectedItem).Content;
+                    if (newFiles.ContainsKey(bunAssetName))
+                    {
+                        newFiles.Remove(bunAssetName);
+                    }
+                }
+
+                comboItems.Remove((ComboBoxItem)comboBox.SelectedItem);
+                if (comboItems.Count > 0)
+                {
+                    comboBox.SelectedIndex = 0;
+                }
+
+                SetBundleControlsEnabled(true, comboItems.Count > 0);
                 changesUnsaved = true;
                 changesMade = true;
             }
@@ -728,8 +764,6 @@ namespace UABEAvalonia
 
         private void LoadBundle(BundleFileInstance bundleInst)
         {
-            SetBundleControlsEnabled(true);
-
             var infos = bundleInst.file.bundleInf6.dirInf;
             comboItems = new ObservableCollection<ComboBoxItem>();
             for (int i = 0; i < infos.Length; i++)
@@ -745,6 +779,8 @@ namespace UABEAvalonia
             comboBox.SelectedIndex = 0;
 
             lblFileName.Text = bundleInst.name;
+
+            SetBundleControlsEnabled(true, comboItems.Count > 0);
         }
 
         private void SaveBundle(BundleFileInstance bundleInst, string path)
@@ -785,13 +821,17 @@ namespace UABEAvalonia
             lblFileName.Text = "No file opened.";
         }
 
-        private void SetBundleControlsEnabled(bool enabled)
+        private void SetBundleControlsEnabled(bool enabled, bool hasAssets = false)
         {
+            // buttons that i want to enable only if i have assets they can interact with, always disable when it's time to disable every button
+            btnExport.IsEnabled = (enabled ? hasAssets : false);
+            btnRemove.IsEnabled = (enabled ? hasAssets : false);
+            btnInfo.IsEnabled = (enabled ? hasAssets : false);
+            btnExportAll.IsEnabled = (enabled ? hasAssets : false);
+
+            // always enable / disable no matter if there's assets or not
             comboBox.IsEnabled = enabled;
-            btnExport.IsEnabled = enabled;
             btnImport.IsEnabled = enabled;
-            btnInfo.IsEnabled = enabled;
-            btnExportAll.IsEnabled = enabled;
             btnImportAll.IsEnabled = enabled;
         }
 
