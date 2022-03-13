@@ -27,7 +27,8 @@ namespace UABEAvalonia
                 possibleBundleHeader = r.ReadStringLength(7);
                 r.Position = 0x08;
                 possibleFormat = r.ReadInt32();
-                r.Position = 0x14;
+
+                r.Position = possibleFormat >= 0x16 ? 0x30 : 0x14;
 
                 string possibleVersion = "";
                 char curChar;
