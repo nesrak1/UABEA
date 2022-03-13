@@ -35,7 +35,7 @@ namespace UABEAvalonia
                 while (r.Position < r.BaseStream.Length && (curChar = (char)r.ReadByte()) != 0x00)
                 {
                     possibleVersion += curChar;
-                    if (possibleVersion.Length < 0xFF)
+                    if (possibleVersion.Length > 0xFF)
                     {
                         break;
                     }
