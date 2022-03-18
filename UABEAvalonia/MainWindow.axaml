@@ -8,7 +8,7 @@
         x:Class="UABEAvalonia.MainWindow"
         Title="UABEA">
   <Grid>
-    <Menu Height="22" VerticalAlignment="Top">
+    <Menu Height="22" VerticalAlignment="Top" Name="menuMain">
       <MenuItem Header="File">
         <MenuItem Header="Open" Name="menuOpen" />
         <MenuItem Header="Load Package File" Name="menuLoadPackageFile" />
@@ -25,6 +25,7 @@
       <MenuItem Header="Options">
         <MenuItem Header="Edit Type Database" Name="menuEditTypeDatabase" />
         <MenuItem Header="Edit Type Package" Name="menuEditTypePackage" />
+		<MenuItem Header="Toggle Dark Theme" Name="menuToggleDarkTheme" />
       </MenuItem>
       <MenuItem Header="Help">
         <MenuItem Header="About..." Name="menuAbout" />

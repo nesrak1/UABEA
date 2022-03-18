@@ -17,6 +17,7 @@ namespace UABEAvalonia
     public class MainWindow : Window
     {
         //controls
+        private Menu menuMain;
         private MenuItem menuOpen;
         private MenuItem menuLoadPackageFile;
         private MenuItem menuClose;
@@ -27,6 +28,7 @@ namespace UABEAvalonia
         private MenuItem menuExit;
         private MenuItem menuEditTypeDatabase;
         private MenuItem menuEditTypePackage;
+        private MenuItem menuToggleDarkTheme;
         private MenuItem menuAbout;
         private TextBlock lblFileName;
         private ComboBox comboBox;
@@ -57,6 +59,7 @@ namespace UABEAvalonia
             this.AttachDevTools();
 #endif
             //generated items
+            menuMain = this.FindControl<Menu>("menuMain");
             menuOpen = this.FindControl<MenuItem>("menuOpen");
             menuLoadPackageFile = this.FindControl<MenuItem>("menuLoadPackageFile");
             menuClose = this.FindControl<MenuItem>("menuClose");
@@ -67,6 +70,7 @@ namespace UABEAvalonia
             menuExit = this.FindControl<MenuItem>("menuExit");
             menuEditTypeDatabase = this.FindControl<MenuItem>("menuEditTypeDatabase");
             menuEditTypePackage = this.FindControl<MenuItem>("menuEditTypePackage");
+            menuToggleDarkTheme = this.FindControl<MenuItem>("menuToggleDarkTheme");
             menuAbout = this.FindControl<MenuItem>("menuAbout");
             lblFileName = this.FindControl<TextBlock>("lblFileName");
             comboBox = this.FindControl<ComboBox>("comboBox");
@@ -84,6 +88,7 @@ namespace UABEAvalonia
             menuCompress.Click += MenuCompress_Click;
             menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
             menuExit.Click += MenuExit_Click;
+            menuToggleDarkTheme.Click += MenuToggleDarkTheme_Click;
             menuAbout.Click += MenuAbout_Click;
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
@@ -96,6 +101,8 @@ namespace UABEAvalonia
             changesUnsaved = false;
             changesMade = false;
             ignoreCloseEvent = false;
+
+            ThemeHandler.UseDarkTheme = ConfigurationManager.Settings.UseDarkTheme;
         }
 
         private async void MainWindow_Initialized(object? sender, EventArgs e)
@@ -434,6 +441,15 @@ namespace UABEAvalonia
         private void MenuExit_Click(object? sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private async void MenuToggleDarkTheme_Click(object? sender, RoutedEventArgs e)
+        {
+            ConfigurationManager.Settings.UseDarkTheme = !ConfigurationManager.Settings.UseDarkTheme;
+
+            // thanks avalonia
+            await MessageBoxUtil.ShowDialog(this, "Note",
+                "Themes will be updated when you restart.");
         }
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
