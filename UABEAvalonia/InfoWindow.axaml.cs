@@ -252,12 +252,11 @@ namespace UABEAvalonia
                 var bigFileBox = MessageBoxManager
                     .GetMessageBoxCustomWindow(new MessageBoxCustomParams
                     {
-                        Style = Style.Windows,
                         ContentHeader = "Warning",
                         ContentMessage = "The asset you are about to open is very big and may take a lot of time and memory.",
                         ButtonDefinitions = new[] {
-                            new ButtonDefinition {Name = "Continue anyway", Type = ButtonType.Colored},
-                            new ButtonDefinition {Name = "Cancel", Type = ButtonType.Default}
+                            new ButtonDefinition {Name = "Continue anyway"},
+                            new ButtonDefinition {Name = "Cancel", IsDefault = true}
                         }
                     });
                 string result = await bigFileBox.Show();

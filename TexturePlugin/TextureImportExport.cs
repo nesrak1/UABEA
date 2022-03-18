@@ -21,14 +21,9 @@ namespace TexturePlugin
                 height = image.Height;
 
                 image.Mutate(i => i.Flip(FlipMode.Vertical));
-                if (image.TryGetSinglePixelSpan(out var pixelSpan))
-                {
-                    decData = MemoryMarshal.AsBytes(pixelSpan).ToArray();
-                }
-                else
-                {
-                    return null; //rip
-                }
+
+                decData = new byte[width * height * 4];
+                image.CopyPixelDataTo(decData);
             }
 
             byte[] encData = TextureEncoderDecoder.Encode(decData, width, height, format);

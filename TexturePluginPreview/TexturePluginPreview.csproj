@@ -6,9 +6,9 @@
     <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="0.10.8" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.10.8" />
-    <PackageReference Include="Avalonia.Diagnostics" Version="0.10.8" />
+    <PackageReference Include="Avalonia" Version="0.10.13" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.10.13" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="0.10.13" />
    </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TexturePlugin\TexturePlugin.csproj" />

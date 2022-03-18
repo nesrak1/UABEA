@@ -210,14 +210,9 @@ namespace TexturePlugin
                 tex.m_Height = image.Height;
 
                 image.Mutate(i => i.Flip(FlipMode.Vertical));
-                if (image.TryGetSinglePixelSpan(out var pixelSpan))
-                {
-                    modImageBytes = MemoryMarshal.AsBytes(pixelSpan).ToArray();
-                }
-                else
-                {
-                    modImageBytes = null; //rip
-                }
+
+                modImageBytes = new byte[tex.m_Width * tex.m_Height * 4];
+                image.CopyPixelDataTo(modImageBytes);
             }
         }
 

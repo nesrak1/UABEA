@@ -23,7 +23,6 @@ namespace UABEAvalonia
             return await MessageBoxManager.GetMessageBoxStandardWindow(new MessageBoxStandardParams
             {
                 ButtonDefinitions = buttons,
-                Style = Style.Windows,
                 ContentHeader = header,
                 ContentMessage = message
             }).ShowDialog(window);
@@ -34,12 +33,11 @@ namespace UABEAvalonia
             ButtonDefinition[] definitions = new ButtonDefinition[buttons.Length];
             for (int i = 0; i < buttons.Length; i++)
             {
-                definitions[i] = new ButtonDefinition { Name = buttons[i], Type = ButtonType.Default };
+                definitions[i] = new ButtonDefinition { Name = buttons[i], IsDefault = true };
             }
 
             return await MessageBoxManager.GetMessageBoxCustomWindow(new MessageBoxCustomParams
             {
-                Style = Style.Windows,
                 ContentHeader = header,
                 ContentMessage = message,
                 ButtonDefinitions = definitions
