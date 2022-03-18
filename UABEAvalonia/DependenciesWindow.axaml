@@ -8,7 +8,7 @@
         x:Class="UABEAvalonia.DependenciesWindow"
         Title="Dependencies">
   <Grid>
-    <ListBox Margin="10,10,10,75" Name="boxDependenciesList">
+    <ListBox Margin="10,10,10,114" Name="boxDependenciesList">
       <ListBox.Items>
         <ListBoxItem>Test</ListBoxItem>
         <ListBoxItem>Stuff</ListBoxItem>
@@ -19,11 +19,36 @@
     <Grid Margin="10,10,10,10" VerticalAlignment="Bottom">
       <Grid.RowDefinitions>
         <RowDefinition></RowDefinition>
-        <RowDefinition Height="8"></RowDefinition>
+        <RowDefinition></RowDefinition>
+        <RowDefinition></RowDefinition>
         <RowDefinition></RowDefinition>
       </Grid.RowDefinitions>
       <ComboBox Grid.Row="0" Height="26" Name="cbxFiles" />
-      <Button Grid.Row="2" Name="btnOk">Ok</Button>
+      <Grid Grid.Row="1">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Button Grid.Column="0" Name="btnAdd">Add</Button>
+        <Button Grid.Column="1" Name="btnRemove">Remove</Button>
+      </Grid>
+      <Grid Grid.Row="2">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Button Grid.Column="0" Name="btnMoveUp">Move Up</Button>
+        <Button Grid.Column="1" Name="btnMoveDown">Move Down</Button>
+      </Grid>
+      <Grid Grid.Row="3">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Button Grid.Column="0" Name="btnCancel">Cancel</Button>
+        <Button Grid.Column="1" Name="btnOk">Ok</Button>
+      </Grid>
     </Grid>
   </Grid>
 </Window>
+

@@ -25,6 +25,13 @@ namespace UABEAvalonia
         public Dictionary<AssetID, Stream> NewAssetDatas { get; } //for preview in info window
         public HashSet<AssetID> RemovedAssets { get; }
 
+        // we have to do this because we want to be able to tell
+        // if all changes we've made have been removed so that
+        // we can know not to save it. for example, if we removed
+        // all replacers, we still need to save it if there were
+        // changes to dependencies.
+        public Dictionary<AssetsFileInstance, AssetsFileChangeTypes> OtherAssetChanges { get; }
+
         public bool Modified { get; set; }
 
         public delegate void AssetWorkspaceItemUpdateEvent(AssetsFileInstance file, AssetID assetId);
@@ -44,6 +51,8 @@ namespace UABEAvalonia
             NewAssets = new Dictionary<AssetID, AssetsReplacer>();
             NewAssetDatas = new Dictionary<AssetID, Stream>();
             RemovedAssets = new HashSet<AssetID>();
+
+            OtherAssetChanges = new Dictionary<AssetsFileInstance, AssetsFileChangeTypes>();
 
             Modified = false;
         }
@@ -109,8 +118,61 @@ namespace UABEAvalonia
             if (ItemUpdated != null)
                 ItemUpdated(forFile, assetId);
 
-            if (NewAssets.Count == 0)
+            if (NewAssets.Count == 0 && !AnyOtherAssetChanges())
                 Modified = false;
+        }
+
+        // todo: not very fast and this loop happens twice since it iterates again during write
+        public HashSet<AssetsFileInstance> GetChangedFiles()
+        {
+            HashSet<AssetsFileInstance> changedFiles = new HashSet<AssetsFileInstance>();
+            foreach (var newAsset in NewAssets)
+            {
+                AssetID assetId = newAsset.Key;
+                string fileName = assetId.fileName;
+
+                if (LoadedFileLookup.TryGetValue(fileName.ToLower(), out AssetsFileInstance? file))
+                {
+                    changedFiles.Add(file);
+                }
+            }
+
+            foreach (var assetChangePair in OtherAssetChanges)
+            {
+                if (assetChangePair.Value != 0)
+                    changedFiles.Add(assetChangePair.Key);
+            }
+
+            return changedFiles;
+        }
+
+        public void SetOtherAssetChangeFlag(AssetsFileInstance fileInst, AssetsFileChangeTypes changeTypes)
+        {
+            if (!OtherAssetChanges.ContainsKey(fileInst))
+                OtherAssetChanges[fileInst] = AssetsFileChangeTypes.None;
+
+            OtherAssetChanges[fileInst] |= changeTypes;
+        }
+
+        public void UnsetOtherAssetChangeFlag(AssetsFileInstance fileInst, AssetsFileChangeTypes changeTypes)
+        {
+            if (!OtherAssetChanges.ContainsKey(fileInst))
+                OtherAssetChanges[fileInst] = AssetsFileChangeTypes.None;
+
+            OtherAssetChanges[fileInst] &= ~changeTypes;
+
+            if (OtherAssetChanges[fileInst] == AssetsFileChangeTypes.None)
+                OtherAssetChanges.Remove(fileInst);
+        }
+
+        private bool AnyOtherAssetChanges()
+        {
+            foreach (var assetChangePair in OtherAssetChanges)
+            {
+                if (assetChangePair.Value != 0)
+                    return true;
+            }
+            return false;
         }
 
         public void GenerateAssetsFileLookup()

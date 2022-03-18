@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="160"
+        Width="350" Height="160"
+        Icon="/Assets/uabeavalonia16.ico"
+        x:Class="UABEAvalonia.AddDependencyWindow"
+        Title="Add dependency">
+	<Grid Margin="10,10,10,10">
+		<Grid VerticalAlignment="Top">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="110"></ColumnDefinition>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+			</Grid.ColumnDefinitions>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="Auto" />
+			</Grid.RowDefinitions>
+			<Label Grid.Column="0" Grid.Row="0">File name</Label>
+			<TextBox Grid.Column="1" Grid.Row="0" Name="boxFileName"></TextBox>
+			<Label Grid.Column="0" Grid.Row="1">Original file name</Label>
+			<TextBox Grid.Column="1" Grid.Row="1" IsEnabled="False" Name="boxOrigFileName"></TextBox>
+			<Label Grid.Column="0" Grid.Row="2">Dependency type</Label>
+			<ComboBox Grid.Column="1" Grid.Row="2" SelectedIndex="0" Name="ddDepType">
+				<ComboBoxItem>Normal</ComboBoxItem>
+				<ComboBoxItem>Cached</ComboBoxItem>
+				<ComboBoxItem>Serialized</ComboBoxItem>
+				<ComboBoxItem>Meta</ComboBoxItem>
+			</ComboBox>
+			<Label Grid.Column="0" Grid.Row="3">GUID</Label>
+			<TextBox Grid.Column="1" Grid.Row="3" IsEnabled="False" Name="boxGuid">00000000000000000000000000000000</TextBox>
+		</Grid>
+		<Grid VerticalAlignment="Bottom">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+			</Grid.ColumnDefinitions>
+			<Button Grid.Column="0" Name="btnOk">Ok</Button>
+			<Button Grid.Column="1" Name="btnCancel">Cancel</Button>
+		</Grid>
+	</Grid>
+</Window>

@@ -221,10 +221,18 @@ namespace UABEAvalonia
             }
         }
 
-        private void MenuDependencies_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private async void MenuDependencies_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             DependenciesWindow dialog = new DependenciesWindow(Workspace);
-            dialog.Show(this);
+            HashSet<AssetsFileInstance> changedFiles = await dialog.ShowDialog<HashSet<AssetsFileInstance>>(this);
+            if (changedFiles != null && changedFiles.Count > 0)
+            {
+                Workspace.Modified = true;
+                foreach (AssetsFileInstance changedFile in changedFiles)
+                {
+                    Workspace.SetOtherAssetChangeFlag(changedFile, AssetsFileChangeTypes.Dependencies);
+                }
+            }
         }
 
         private void MenuHierarchy_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -385,6 +393,7 @@ namespace UABEAvalonia
         private async Task SaveFile()
         {
             var fileToReplacer = new Dictionary<AssetsFileInstance, List<AssetsReplacer>>();
+            var changedFiles = Workspace.GetChangedFiles();
 
             foreach (var newAsset in Workspace.NewAssets)
             {
@@ -404,10 +413,13 @@ namespace UABEAvalonia
             if (Workspace.fromBundle)
             {
                 ChangedAssetsDatas.Clear();
-                foreach (var kvp in fileToReplacer)
+                foreach (var file in changedFiles)
                 {
-                    AssetsFileInstance file = kvp.Key;
-                    List<AssetsReplacer> replacers = kvp.Value;
+                    List<AssetsReplacer> replacers;
+                    if (fileToReplacer.ContainsKey(file))
+                        replacers = fileToReplacer[file];
+                    else
+                        replacers = new List<AssetsReplacer>(0);
 
                     using (MemoryStream ms = new MemoryStream())
                     using (AssetsFileWriter w = new AssetsFileWriter(ms))
@@ -419,10 +431,13 @@ namespace UABEAvalonia
             }
             else
             {
-                foreach (var kvp in fileToReplacer)
+                foreach (var file in changedFiles)
                 {
-                    AssetsFileInstance file = kvp.Key;
-                    List<AssetsReplacer> replacers = kvp.Value;
+                    List<AssetsReplacer> replacers;
+                    if (fileToReplacer.ContainsKey(file))
+                        replacers = fileToReplacer[file];
+                    else
+                        replacers = new List<AssetsReplacer>(0);
 
                     SaveFileDialog sfd = new SaveFileDialog();
                     sfd.Title = "Save as...";
