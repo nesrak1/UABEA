@@ -16,8 +16,6 @@ namespace UABEAvalonia
             Console.WriteLine("Use at your own risk");
             Console.WriteLine("  UABEAvalonia batchexportbundle <directory>");
             Console.WriteLine("  UABEAvalonia batchimportbundle <directory>");
-            Console.WriteLine("  UABEAvalonia batchexportasset <directory> <dump-type> [<asset-types>]");
-            Console.WriteLine("  UABEAvalonia batchimportasset <directory> <dump-type> [<asset-types>]");
             Console.WriteLine("  UABEAvalonia applyemip <emip file> <directory>");
             Console.WriteLine("Bundle import/export arguments:");
             Console.WriteLine("  -keepnames writes out to the exact file name in the bundle.");
@@ -243,16 +241,6 @@ namespace UABEAvalonia
                 Console.WriteLine("Done.");
             }
         }
-
-        private static void BatchExportAsset(string[] args)
-        {
-
-        }
-
-        private static void BatchImportAsset(string[] args)
-        {
-
-        }
         
         private static void ApplyEmip(string[] args)
         {
@@ -382,14 +370,6 @@ namespace UABEAvalonia
             else if (command == "batchimportbundle")
             {
                 BatchImportBundle(args);
-            }
-            else if (command == "batchexportasset")
-            {
-                BatchExportAsset(args);
-            }
-            else if (command == "batchimportasset")
-            {
-                BatchImportAsset(args);
             }
             else if (command == "applyemip")
             {
