@@ -28,13 +28,6 @@ namespace UABEAvalonia
             Console.WriteLine("  -fd overwrite old .decomp files.");
             Console.WriteLine("  -md decompress into memory. Doesn't write .decomp files.");
             Console.WriteLine("      -kd and -fd won't do anything with this flag set.");
-            Console.WriteLine("Asset import/export arguments:");
-            Console.WriteLine("  dump-type");
-            Console.WriteLine("      Can be either txt or json.");
-            Console.WriteLine("  asset-types");
-            Console.WriteLine("      Optionally list asset type names separated by commas.");
-            Console.WriteLine("      If left empty, this includes all asset types.");
-            Console.WriteLine("      Example: GameObject,TextAsset,MonoBehaviour");
         }
 
         private static string GetMainFileName(string[] args)
