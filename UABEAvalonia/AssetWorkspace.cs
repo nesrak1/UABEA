@@ -338,7 +338,7 @@ namespace UABEAvalonia
                 asmDef = LoadedAssemblies[assemblyName];
 
                 MonoDeserializer mc = new MonoDeserializer();
-                mc.Read(scriptClassName, asmDef, file.header.format);
+                mc.Read(scriptClassName, asmDef, new UnityVersion(file.typeTree.unityVersion));
                 List<AssetTypeTemplateField> monoTemplateFields = mc.children;
 
                 AssetTypeTemplateField[] templateField = baseTemp.children.Concat(monoTemplateFields).ToArray();
