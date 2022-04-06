@@ -86,7 +86,7 @@ namespace TexturePlugin
             };
 
             string[] fileList = await ofd.ShowAsync(win);
-            if (fileList.Length == 0)
+            if (fileList == null || fileList.Length == 0)
                 return false;
 
             string file = fileList[0];
