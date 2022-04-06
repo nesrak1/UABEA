@@ -264,7 +264,7 @@ namespace UABEAvalonia
 
                 string[] files = await ofd.ShowAsync(this);
 
-                if (fileList == null || files.Length == 0)
+                if (files == null || files.Length == 0)
                     return;
 
                 string file = files[0];
