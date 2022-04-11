@@ -27,114 +27,122 @@ namespace UABEAvalonia
         //codeflow needs work but should be fine for now
         public static void GetUABENameFast(AssetWorkspace workspace, AssetContainer cont, bool usePrefix, out string assetName, out string typeName)
         {
-            ClassDatabaseFile cldb = workspace.am.classFile;
-            AssetsFile file = cont.FileInstance.file;
-            AssetsFileReader reader = cont.FileReader;
-            long filePosition = cont.FilePosition;
-            uint classId = cont.ClassId;
-            ushort monoId = cont.MonoId;
+            assetName = "Unnamed asset";
+            typeName = "Unknown type";
 
-            ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, classId);
-
-            if (file.typeTree.hasTypeTree)
+            try
             {
-                Type_0D ttType;
-                if (classId == 0x72)
-                    ttType = AssetHelper.FindTypeTreeTypeByScriptIndex(file.typeTree, monoId);
-                else
-                    ttType = AssetHelper.FindTypeTreeTypeByID(file.typeTree, classId);
+                ClassDatabaseFile cldb = workspace.am.classFile;
+                AssetsFile file = cont.FileInstance.file;
+                AssetsFileReader reader = cont.FileReader;
+                long filePosition = cont.FilePosition;
+                uint classId = cont.ClassId;
+                ushort monoId = cont.MonoId;
 
-                if (ttType != null && ttType.typeFieldsEx.Length != 0)
+                ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, classId);
+
+                if (file.typeTree.hasTypeTree)
                 {
-                    typeName = ttType.typeFieldsEx[0].GetTypeString(ttType.stringTable);
-                    if (ttType.typeFieldsEx.Length > 1 && ttType.typeFieldsEx[1].GetNameString(ttType.stringTable) == "m_Name")
+                    Type_0D ttType;
+                    if (classId == 0x72)
+                        ttType = AssetHelper.FindTypeTreeTypeByScriptIndex(file.typeTree, monoId);
+                    else
+                        ttType = AssetHelper.FindTypeTreeTypeByID(file.typeTree, classId);
+
+                    if (ttType != null && ttType.typeFieldsEx.Length != 0)
                     {
-                        reader.Position = filePosition;
-                        assetName = reader.ReadCountStringInt32();
-                        if (assetName == "")
-                            assetName = "Unnamed asset";
-                        return;
-                    }
-                    else if (typeName == "GameObject")
-                    {
-                        reader.Position = filePosition;
-                        int size = reader.ReadInt32();
-                        int componentSize = file.header.format > 0x10 ? 0x0c : 0x10;
-                        reader.Position += size * componentSize;
-                        reader.Position += 0x04;
-                        assetName = reader.ReadCountStringInt32();
-                        if (usePrefix)
-                            assetName = $"GameObject {assetName}";
-                        return;
-                    }
-                    else if (typeName == "MonoBehaviour")
-                    {
-                        reader.Position = filePosition;
-                        reader.Position += 0x1c;
-                        assetName = reader.ReadCountStringInt32();
-                        if (assetName == "")
+                        typeName = ttType.typeFieldsEx[0].GetTypeString(ttType.stringTable);
+                        if (ttType.typeFieldsEx.Length > 1 && ttType.typeFieldsEx[1].GetNameString(ttType.stringTable) == "m_Name")
                         {
-                            assetName = GetMonoBehaviourNameFast(workspace, cont);
+                            reader.Position = filePosition;
+                            assetName = reader.ReadCountStringInt32();
                             if (assetName == "")
                                 assetName = "Unnamed asset";
+                            return;
                         }
+                        else if (typeName == "GameObject")
+                        {
+                            reader.Position = filePosition;
+                            int size = reader.ReadInt32();
+                            int componentSize = file.header.format > 0x10 ? 0x0c : 0x10;
+                            reader.Position += size * componentSize;
+                            reader.Position += 0x04;
+                            assetName = reader.ReadCountStringInt32();
+                            if (usePrefix)
+                                assetName = $"GameObject {assetName}";
+                            return;
+                        }
+                        else if (typeName == "MonoBehaviour")
+                        {
+                            reader.Position = filePosition;
+                            reader.Position += 0x1c;
+                            assetName = reader.ReadCountStringInt32();
+                            if (assetName == "")
+                            {
+                                assetName = GetMonoBehaviourNameFast(workspace, cont);
+                                if (assetName == "")
+                                    assetName = "Unnamed asset";
+                            }
+                            return;
+                        }
+                        assetName = "Unnamed asset";
                         return;
                     }
+                }
+
+                if (type == null)
+                {
+                    typeName = $"0x{classId:X8}";
                     assetName = "Unnamed asset";
                     return;
                 }
-            }
 
-            if (type == null)
-            {
-                typeName = $"0x{classId:X8}";
-                assetName = "Unnamed asset";
-                return;
-            }
+                typeName = type.name.GetString(cldb);
 
-            typeName = type.name.GetString(cldb);
-
-            if (type.fields.Count == 0)
-            {
-                assetName = "Unnamed asset";
-                return;
-            }
-
-            if (type.fields.Count > 1 && type.fields[1].fieldName.GetString(cldb) == "m_Name")
-            {
-                reader.Position = filePosition;
-                assetName = reader.ReadCountStringInt32();
-                if (assetName == "")
-                    assetName = "Unnamed asset";
-                return;
-            }
-            else if (typeName == "GameObject")
-            {
-                reader.Position = filePosition;
-                int size = reader.ReadInt32();
-                int componentSize = file.header.format > 0x10 ? 0x0c : 0x10;
-                reader.Position += size * componentSize;
-                reader.Position += 0x04;
-                assetName = reader.ReadCountStringInt32();
-                if (usePrefix)
-                    assetName = $"GameObject {assetName}";
-                return;
-            }
-            else if (typeName == "MonoBehaviour")
-            {
-                reader.Position = filePosition;
-                reader.Position += 0x1c;
-                assetName = reader.ReadCountStringInt32();
-                if (assetName == "")
+                if (type.fields.Count == 0)
                 {
-                    assetName = GetMonoBehaviourNameFast(workspace, cont);
+                    assetName = "Unnamed asset";
+                    return;
+                }
+
+                if (type.fields.Count > 1 && type.fields[1].fieldName.GetString(cldb) == "m_Name")
+                {
+                    reader.Position = filePosition;
+                    assetName = reader.ReadCountStringInt32();
                     if (assetName == "")
                         assetName = "Unnamed asset";
+                    return;
                 }
-                return;
+                else if (typeName == "GameObject")
+                {
+                    reader.Position = filePosition;
+                    int size = reader.ReadInt32();
+                    int componentSize = file.header.format > 0x10 ? 0x0c : 0x10;
+                    reader.Position += size * componentSize;
+                    reader.Position += 0x04;
+                    assetName = reader.ReadCountStringInt32();
+                    if (usePrefix)
+                        assetName = $"GameObject {assetName}";
+                    return;
+                }
+                else if (typeName == "MonoBehaviour")
+                {
+                    reader.Position = filePosition;
+                    reader.Position += 0x1c;
+                    assetName = reader.ReadCountStringInt32();
+                    if (assetName == "")
+                    {
+                        assetName = GetMonoBehaviourNameFast(workspace, cont);
+                        if (assetName == "")
+                            assetName = "Unnamed asset";
+                    }
+                    return;
+                }
+                assetName = "Unnamed asset";
             }
-            assetName = "Unnamed asset";
-            return;
+            catch
+            {
+            }
         }
 
         //not very fast but w/e at least it's stable
