@@ -29,11 +29,12 @@ namespace UABEAvalonia
             {
                 return DetectedFileType.Unknown;
             }
+            r.Position = startAddress;
             possibleBundleHeader = r.ReadStringLength(7);
             r.Position = startAddress + 0x08;
             possibleFormat = r.ReadInt32();
 
-            r.Position = startAddress + possibleFormat >= 0x16 ? 0x30 : 0x14;
+            r.Position = startAddress + (possibleFormat >= 0x16 ? 0x30 : 0x14);
 
             string possibleVersion = "";
             char curChar;
