@@ -929,6 +929,9 @@ namespace UABEAvalonia
 
         private void RecurseGetAllAssets(AssetsFileInstance fromFile, Dictionary<AssetID, AssetContainer> conts, List<AssetsFileInstance> files, HashSet<string> fileNames)
         {
+            if (files.Contains(fromFile))
+                return;
+
             fromFile.table.GenerateQuickLookupTree();
 
             files.Add(fromFile);
