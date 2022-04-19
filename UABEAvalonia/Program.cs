@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
@@ -36,6 +37,9 @@ namespace UABEAvalonia
                 usesConsole = true;
             }
 
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            currentDomain.UnhandledException += new UnhandledExceptionEventHandler(UABEAExceptionHandler);
+
             if (args.Length > 0)
             {
                 CommandLineHandler.CLHMain(args);
@@ -45,6 +49,14 @@ namespace UABEAvalonia
                 if (usesConsole)
                     CommandLineHandler.PrintHelp();
                 BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            }
+        }
+
+        public static void UABEAExceptionHandler(object sender, UnhandledExceptionEventArgs args)
+        {
+            if (args.ExceptionObject is Exception ex)
+            {
+                File.WriteAllText("uabeacrash.log", ex.ToString());
             }
         }
 
