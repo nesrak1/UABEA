@@ -1,12 +1,14 @@
 <p align="center"><img src="UABEAvalonia/Assets/logo.png" /></p>
 
-## [Latest Nightly Build](https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip) | [Latest Release](https://github.com/nesrak1/UABEA/releases)
+## [UABE has been updated! Go use that instead!](https://github.com/DerPopo/UABE)
+
+[Latest Nightly Build](https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip) | [Latest Release](https://github.com/nesrak1/UABEA/releases)
 
 [![GitHub issues](https://img.shields.io/github/issues/nesrak1/UABEA?logo=GitHub&style=flat-square)](https://github.com/nesrak1/UABEA/issues) [![discord](https://img.shields.io/discord/862035581491478558?label=discord&logo=discord&logoColor=FFFFFF&style=flat-square)](https://discord.gg/hd9VdswwZs)
 
 ## Why UABEAvalonia
 
-[UABE](https://github.com/DerPopo/UABE) has currently not been updated in a while and does not support newer Unity versions. The goal of UABEA is to remake UABE to keep it up to date. All of the UI has been kept the same for those familiar with UABE. At the moment, implementing base features of UABE is still in progress. Also, it is built with Avalonia so it (should be) cross platform, no Wine needed.
+[UABE](https://github.com/DerPopo/UABE) had not been updated in a while, and at the time, had not been open source. So UABEA was designed as a replacement while UABE did not support newer versions. Now that UABE is open source and updated, UABEA development will most likely be stopped as it can do everything UABEA can do and more with less bugs.
 
 ## New features
 
@@ -26,22 +28,23 @@ Many newer Unity games (especially non-pc games) are compiled with il2cpp which 
 
 ## Differences between UABE and UABEA
 
-|                                     | UABE           | UABEA                                 |
-| ----------------------------------- | -------------- | ------------------------------------- |
-| Supported versions                  | Unity 4-2019.3 | Unity 5-2020.3                        |
-| Class data editor                   | Yes            | No                                    |
-| Standalone .exe creator             | Yes            | No                                    |
-| Package creator                     | Yes            | Yes, but bundles aren't supported yet |
-| Bundle > compress to memory         | No             | Yes                                   |
-| Assets info > Dependencies          | Yes            | No                                    |
-| Assets info > Containers            | Yes            | No                                    |
-| Plugins > AudioClip                 | Yes            | No                                    |
-| Plugins > Mesh                      | Yes            | No                                    |
-| Plugins > MovieTexture              | Yes            | No                                    |
-| Plugins > SubstanceArchive          | Yes            | No                                    |
-| Plugins > TerrainData               | Yes            | No                                    |
-| Plugins > UMAMesh                   | Yes            | No                                    |
-| And more I probably forgot about... |                |                                       |
+|                                         | UABE             | UABEA                                 |
+| --------------------------------------- | ---------------- | ------------------------------------- |
+| Supported versions                      | Unity 3.4-2021.3 | Unity 5-2021.2                        |
+| Class data editor                       | Yes              | No                                    |
+| Standalone .exe creator                 | Yes              | No                                    |
+| Package creator                         | Yes              | Yes, but bundles aren't supported yet |
+| Bundle > compress to memory             | No               | Yes                                   |
+| Scene Hierarchy view                    | No               | Yes                                   |
+| Assets info > Dependencies              | Yes              | No                                    |
+| Assets info > Containers                | Yes              | No                                    |
+| Plugins > AudioClip                     | Yes              | No                                    |
+| Plugins > Mesh                          | Yes              | No                                    |
+| Plugins > MovieTexture                  | Yes              | No                                    |
+| Plugins > SubstanceArchive              | Yes              | No                                    |
+| Plugins > TerrainData                   | Yes              | No                                    |
+| Plugins > UMAMesh                       | Yes              | No                                    |
+| And more I probably forgot about...     |                  |                                       |
 
 ## Libraries
 
