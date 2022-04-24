@@ -898,6 +898,11 @@ namespace UABEAvalonia
 
             Extensions.GetUABENameFast(Workspace, cont, true, out name, out type);
 
+            if (name.Length > 100)
+                name = name[..100];
+            if (type.Length > 100)
+                type = type[..100];
+
             var item = new AssetInfoDataGridItem
             {
                 Name = name,
