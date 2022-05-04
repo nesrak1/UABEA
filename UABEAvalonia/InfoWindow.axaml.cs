@@ -617,7 +617,7 @@ namespace UABEAvalonia
 
             if (dir != null && dir != string.Empty)
             {
-                List<string> extensions = new List<string>() { ".dat" };
+                List<string> extensions = new List<string>() { "dat" };
 
                 ImportBatch dialog = new ImportBatch(Workspace, selection, dir, extensions);
                 List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(this);
