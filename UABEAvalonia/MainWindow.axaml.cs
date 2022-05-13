@@ -2,6 +2,7 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using MessageBox.Avalonia.Enums;
@@ -102,6 +103,8 @@ namespace UABEAvalonia
             changesMade = false;
             ignoreCloseEvent = false;
 
+            AddHandler(DragDrop.DropEvent, Drop);
+
             ThemeHandler.UseDarkTheme = ConfigurationManager.Settings.UseDarkTheme;
         }
 
@@ -121,17 +124,8 @@ namespace UABEAvalonia
             }
         }
 
-        private async void MenuOpen_Click(object? sender, RoutedEventArgs e)
+        async void OpenFiles(string[] files)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Title = "Open assets or bundle file";
-            ofd.Filters = new List<FileDialogFilter>() { new FileDialogFilter() { Name = "All files", Extensions = new List<string>() { "*" } } };
-            ofd.AllowMultiple = true;
-            string[]? files = await ofd.ShowAsync(this);
-
-            if (files == null || files.Length == 0)
-                return;
-
             string selectedFile = files[0];
 
             DetectedFileType fileType = AssetBundleDetector.DetectFileType(selectedFile);
@@ -200,6 +194,30 @@ namespace UABEAvalonia
             {
                 await MessageBoxUtil.ShowDialog(this, "Error", "This doesn't seem to be an assets file or bundle.");
             }
+        }
+
+        void Drop(object sender, DragEventArgs e)
+        {
+            string[] files = e.Data.GetFileNames().ToArray();
+
+            if (files == null || files.Length == 0)
+                return;
+
+            OpenFiles(files);
+        }
+
+        private async void MenuOpen_Click(object? sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Title = "Open assets or bundle file";
+            ofd.Filters = new List<FileDialogFilter>() { new FileDialogFilter() { Name = "All files", Extensions = new List<string>() { "*" } } };
+            ofd.AllowMultiple = true;
+            string[]? files = await ofd.ShowAsync(this);
+
+            if (files == null || files.Length == 0)
+                return;
+
+            OpenFiles(files);
         }
 
         private async void MenuLoadPackageFile_Click(object? sender, RoutedEventArgs e)
