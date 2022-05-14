@@ -6,7 +6,8 @@
         Width="400" Height="150"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.MainWindow"
-        Title="UABEA">
+        Title="UABEA"
+        DragDrop.AllowDrop="True">
   <Grid>
     <Menu Height="22" VerticalAlignment="Top" Name="menuMain">
       <MenuItem Header="File">
