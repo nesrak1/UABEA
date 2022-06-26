@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="asset-unknown.svg"
+   width="512"
+   height="512"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     id="namedview6"
+     showgrid="false"
+     inkscape:zoom="1.4453125"
+     inkscape:cx="160"
+     inkscape:cy="256"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. -->
+  <path
+     d="M 300.3,32.01 H 192 c -52.94,0 -96,43.06 -96,96 0,17.67 14.31,31.1 32,31.1 17.69,0 32,-14.32 32,-31.1 0,-17.64 14.34,-32 32,-32 h 108.3 c 28.5,0 51.7,23.19 51.7,51.79 0,19.72 -10.97,37.47 -30.5,47.33 L 223.8,252.4 C 213.1,258.2 208,268.7 208,280 v 40 c 0,17.67 14.31,31.99 32,31.99 17.69,0 32,-14.32 32,-31.99 v -21.7 l 80,-47 C 391.47,231.55 416,191.88 416,147.8 416,83.95 364.1,32.01 300.3,32.01 Z M 240,400 c -22.09,0 -40,17.91 -40,40 0,22.09 17.91,39.1 40,39.1 22.09,0 40,-17.9 40,-39.1 0,-21.2 -17.9,-40 -40,-40 z"
+     id="path2"
+     style="fill:#616161;fill-opacity:1" />
+</svg>

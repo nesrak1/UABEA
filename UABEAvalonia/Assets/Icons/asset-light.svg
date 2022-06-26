@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="asset-light.svg"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   width="512"
+   height="512">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     id="namedview6"
+     showgrid="false"
+     inkscape:zoom="1.4453125"
+     inkscape:cx="192"
+     inkscape:cy="256"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4"
+     inkscape:document-rotation="0" />
+  <!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. -->
+  <path
+     d="m 176.1,454.3 c 0,6.297 1.816,12.44 5.284,17.69 l 17.14,25.69 c 5.25,7.875 17.17,14.28 26.64,14.28 h 61.67 c 9.438,0 21.36,-6.401 26.61,-14.28 L 330.524,472 c 2.938,-4.438 5.348,-12.37 5.348,-17.7 L 336,415.1 H 176 Z M 255.4,0.0132 C 153.44,0.3257 80,82.97 80,175.1 c 0,44.38 16.44,84.84 43.56,115.8 16.53,18.84 42.34,58.23 52.22,91.45 0.0313,0.25 0.0938,0.5166 0.125,0.7823 h 160.2 c 0.0313,-0.2656 0.0938,-0.5166 0.125,-0.7823 9.875,-33.22 35.69,-72.61 52.22,-91.45 C 415.6,260.8 432,220.4 432,175.1 432,78.61 352.9,-0.2837 255.4,0.0132 Z M 256,96.01 c -44.13,0 -80,35.89 -80,79.1 0,9.69 -7.2,16.89 -16,16.89 -8.8,0 -16,-7.2 -16,-16 0,-61.76 50.25,-111.1 112,-111.1 8.844,0 16,7.159 16,16 0,8.841 -7.2,15.11 -16,15.11 z"
+     id="path2"
+     style="fill:#ffab00;fill-opacity:1" />
+</svg>

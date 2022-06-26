@@ -1,0 +1,24 @@
+animation: 00B8D4 (A700)
+animationcontroller: 0097A7 (700)
+
+sound: FFD600 (A700)
+
+display: 0091EA (A700)
+displaycontroller: 0277BD (800)
+
+collis: 00C853 (A700)
+
+canvas: 616161 (700)
+canvasrenderer: BDBDBD (400)
+
+computeshader: 0277BD (800)
+monobehaviour: 00BFA5 (A700)
+monoscript: 00796B (700)
+
+light: FFAB00 (A700)
+lightlayer: FF8F00 (800)
+
+navmesh: DD2C00 (A700)
+
+sprite: 6200EA (A700)
+spriterenderer: 4527A0 (800)

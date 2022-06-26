@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="asset-reflection-probe-NM.svg"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     id="namedview6"
+     showgrid="false"
+     inkscape:zoom="2.0439805"
+     inkscape:cx="285.60067"
+     inkscape:cy="270.12301"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. -->
+  <path
+     d="M 256,0 C 397.4,0 512,114.6 512,256 512,397.4 397.4,512 256,512 114.6,512 0,397.4 0,256 0,114.6 114.6,0 256,0 Z M 64,256 c 0,0 114.30546,39.43784 192,39.43784 C 333.69454,295.43784 448,256 448,256 448,150 362,64 256,64 149.1,64 64,150 64,256 Z"
+     id="path2"
+     sodipodi:nodetypes="ssssscscsc"
+     style="fill:#616161;fill-opacity:1" />
+  <path
+     id="path837"
+     style="fill:#0091ea;fill-opacity:1;stroke-width:8"
+     d="M 256,64.000003 C 149.1,64.000003 64,150 64,256 c 0,0 114.30546,39.4375 192,39.4375 C 333.69454,295.4375 448,256 448,256 448,150 362,64.000003 256,64.000003 Z" />
+</svg>

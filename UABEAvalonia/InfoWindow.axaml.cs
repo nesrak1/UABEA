@@ -363,6 +363,9 @@ namespace UABEAvalonia
 
         private async void InfoWindow_Closing(object? sender, CancelEventArgs e)
         {
+            if (Workspace == null)
+                return;
+
             if (!Workspace.Modified || ignoreCloseEvent)
             {
                 e.Cancel = false;
@@ -905,6 +908,7 @@ namespace UABEAvalonia
 
             var item = new AssetInfoDataGridItem
             {
+                TypeClass = (AssetClassID)cont.ClassId,
                 Name = name,
                 Container = container,
                 Type = type,
@@ -1090,6 +1094,7 @@ namespace UABEAvalonia
 
     public class AssetInfoDataGridItem : INotifyPropertyChanged
     {
+        public AssetClassID TypeClass { get; set; }
         public string Name { get; set; }
         public string Container { get; set; }
         public string Type { get; set; }

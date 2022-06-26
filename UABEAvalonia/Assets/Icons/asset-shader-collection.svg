@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="asset-shader-collection.svg"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   width="512"
+   height="512">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs8">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient839">
+      <stop
+         style="stop-color:#ff2924;stop-opacity:1"
+         offset="0"
+         id="stop835" />
+      <stop
+         style="stop-color:#fe9906;stop-opacity:1"
+         offset="0.2"
+         id="stop850" />
+      <stop
+         style="stop-color:#e6e632;stop-opacity:1"
+         offset="0.40000001"
+         id="stop854" />
+      <stop
+         style="stop-color:#6dd46d;stop-opacity:1"
+         offset="0.60000002"
+         id="stop848" />
+      <stop
+         style="stop-color:#79aab9;stop-opacity:1"
+         offset="0.80000001"
+         id="stop852" />
+      <stop
+         style="stop-color:#b573b1;stop-opacity:1"
+         offset="1"
+         id="stop837" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient839"
+       id="linearGradient841"
+       x1="109.31892"
+       y1="10.378379"
+       x2="109.31892"
+       y2="481.36005"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.87259337,0,0,0.87259337,58.46207,62.616098)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient839"
+       id="linearGradient850"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.87259337,0,0,0.87259337,118.46207,2.616098)"
+       x1="109.31892"
+       y1="10.378379"
+       x2="109.31892"
+       y2="481.36005" />
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     id="namedview6"
+     showgrid="false"
+     inkscape:zoom="0.51099515"
+     inkscape:cx="270.41257"
+     inkscape:cy="357.77352"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4"
+     inkscape:document-rotation="0"
+     inkscape:object-paths="false"
+     inkscape:snap-intersection-paths="true"
+     inkscape:snap-smooth-nodes="false"
+     inkscape:snap-midpoints="true"
+     inkscape:object-nodes="false"
+     inkscape:snap-nodes="true" />
+  <path
+     d="m 118.46207,58.462072 c 0,-30.846174 24.9998,-55.845974 55.84598,-55.845974 H 313.92299 V 114.30804 c 0,15.44491 12.47808,27.92299 27.92298,27.92299 h 111.69196 v 251.30689 c 0,30.80255 -25.04343,55.84598 -55.84598,55.84598 h -223.3839 c -30.84618,0 -55.84598,-25.04343 -55.84598,-55.84598 z m 223.3839,55.845968 V 2.616098 L 453.53793,114.30804 Z"
+     id="path848"
+     style="fill:url(#linearGradient850);fill-opacity:1;stroke-width:0.872593" />
+  <!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. -->
+  <path
+     d="m 58.46207,118.46207 c 0,-30.846172 24.9998,-55.845972 55.84598,-55.845972 H 253.92299 V 174.30804 c 0,15.44491 12.47808,27.92299 27.92298,27.92299 h 111.69196 v 251.30689 c 0,30.80255 -25.04343,55.84598 -55.84598,55.84598 h -223.3839 c -30.84618,0 -55.84598,-25.04343 -55.84598,-55.84598 z m 223.3839,55.84597 V 62.616098 L 393.53793,174.30804 Z"
+     id="path2"
+     style="fill:url(#linearGradient841);fill-opacity:1;stroke-width:0.872593" />
+  <text
+     xml:space="preserve"
+     style="font-size:253.333px;line-height:1.25;font-family:'Deep Script 2';-inkscape-font-specification:'Deep Script 2, ';fill:#ffffff;stroke-width:0.872593"
+     x="153.34767"
+     y="428.42642"
+     id="text837"><tspan
+       sodipodi:role="line"
+       id="tspan835"
+       x="153.34767"
+       y="428.42642"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:253.333px;font-family:'Segoe UI';-inkscape-font-specification:'Segoe UI Bold';fill:#ffffff;stroke-width:0.872593">S</tspan></text>
+</svg>

@@ -7,7 +7,10 @@
         Width="800" Height="500"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.InfoWindow"
-        Title="Assets Info">  
+        Title="Assets Info">
+  <Window.Resources>
+  	<local:AssetTypeIconConverter x:Key="AssetTypeIconConverter" />
+  </Window.Resources>
   <Grid>
     <Menu Height="22" VerticalAlignment="Top">
       <MenuItem Header="File">
@@ -30,7 +33,23 @@
     </Menu>
     <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="Assets" />
     <Border Margin="10,53,200,10" BorderBrush="Black" BorderThickness="1">
-      <DataGrid AutoGenerateColumns="True" CanUserResizeColumns="True" IsReadOnly="True" Name="dataGrid" />
+	  <DataGrid AutoGenerateColumns="False" CanUserResizeColumns="True" IsReadOnly="True" Name="dataGrid">
+		  <DataGrid.Columns>
+			  <DataGridTemplateColumn Header=" ">
+				  <DataGridTemplateColumn.CellTemplate>
+					  <DataTemplate>
+				            <Image Source="{Binding TypeClass, Converter={StaticResource AssetTypeIconConverter}}" Width="16" Height="16" />
+					  </DataTemplate>
+				  </DataGridTemplateColumn.CellTemplate>
+		      </DataGridTemplateColumn>
+			  <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
+			  <DataGridTextColumn Header="Type" Binding="{Binding Type}"/>
+			  <DataGridTextColumn Header="File ID" Binding="{Binding FileID}"/>
+			  <DataGridTextColumn Header="Path ID" Binding="{Binding PathID}"/>
+			  <DataGridTextColumn Header="Size" Binding="{Binding Size}"/>
+			  <DataGridTextColumn Header="Modified" Binding="{Binding Modified}"/>
+		  </DataGrid.Columns>
+	  </DataGrid>
     </Border>
     <StackPanel Margin="0,53,10,10" HorizontalAlignment="Right" Width="185">
       <Label Content="Name"/>
