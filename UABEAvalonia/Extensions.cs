@@ -106,7 +106,7 @@ namespace UABEAvalonia
                     return;
                 }
 
-                if (cldbNodes.Count > 1 && cldb.GetString(cldbNodes[1].FieldName) == "m_Name")
+                if (cldbNodes.Count > 1 && cldb.GetString(cldbNodes[0].FieldName) == "m_Name")
                 {
                     reader.Position = filePosition;
                     assetName = reader.ReadCountStringInt32();
