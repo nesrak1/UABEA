@@ -68,7 +68,7 @@ namespace UABEAvalonia
 
             AssetContainer gameObjectCont = (AssetContainer)selectedItem.Tag;
             AssetTypeValueField gameObjectBf = workspace.GetBaseField(gameObjectCont);
-            AssetTypeValueField components = gameObjectBf["m_Component/Array"];
+            AssetTypeValueField components = gameObjectBf["m_Component"]["Array"];
 
             componentTreeView.Reset();
 
@@ -173,7 +173,7 @@ namespace UABEAvalonia
             treeItem.Header = name;
             treeItem.Tag = gameObjectCont;
 
-            AssetTypeValueField children = transformBf["m_Children/Array"];
+            AssetTypeValueField children = transformBf["m_Children"]["Array"];
             foreach (AssetTypeValueField child in children)
             {
                 AssetContainer childTransformCont = workspace.GetAssetContainer(transformCont.FileInstance, child, false);

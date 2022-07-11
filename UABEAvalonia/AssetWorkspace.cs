@@ -330,8 +330,7 @@ namespace UABEAvalonia
                 if (!File.Exists(assemblyPath))
                     return baseTemp;
 
-                MonoCecilTempGenerator mc = new MonoCecilTempGenerator(assemblyPath);
-
+                MonoCecilTempGenerator mc = new MonoCecilTempGenerator(managedPath);
                 baseTemp = mc.GetTemplateField(baseTemp, assemblyName, scriptNamespace, scriptClassName, new UnityVersion(file.Metadata.UnityVersion));
             }
             return baseTemp;
