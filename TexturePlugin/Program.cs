@@ -15,15 +15,16 @@ namespace TexturePlugin
 {
     public static class TextureHelper
     {
-        public static AssetTypeInstance GetByteArrayTexture(AssetWorkspace workspace, AssetContainer tex)
+        public static AssetTypeValueField GetByteArrayTexture(AssetWorkspace workspace, AssetContainer tex)
         {
             AssetTypeTemplateField textureTemp = workspace.GetTemplateField(tex, false);
-            AssetTypeTemplateField image_data = textureTemp.children.FirstOrDefault(f => f.name == "image data");
+            AssetTypeTemplateField image_data = textureTemp.Children.FirstOrDefault(f => f.Name == "image data");
             if (image_data == null)
                 return null;
-            image_data.valueType = EnumValueTypes.ByteArray;
-            AssetTypeInstance textureTypeInstance = new AssetTypeInstance(new[] { textureTemp }, tex.FileReader, tex.FilePosition);
-            return textureTypeInstance;
+            image_data.ValueType = AssetValueType.ByteArray;
+
+            AssetTypeValueField baseField = textureTemp.MakeValue(tex.FileReader, tex.FilePosition);
+            return baseField;
         }
 
         public static byte[] GetRawTextureBytes(TextureFile texFile, AssetsFileInstance inst)
@@ -64,7 +65,7 @@ namespace TexturePlugin
             if (selection.Count <= 1)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
+            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "Texture2D").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -85,11 +86,11 @@ namespace TexturePlugin
                 string errorAssetName = $"{Path.GetFileName(cont.FileInstance.path)}/{cont.PathId}";
                 string selectedFilePath = batchInfo.importFile;
 
-                if (!cont.HasInstance)
+                if (!cont.HasValueField)
                     continue;
 
-                AssetTypeValueField baseField = cont.TypeInstance.GetBaseField();
-                TextureFormat fmt = (TextureFormat)baseField.Get("m_TextureFormat").GetValue().AsInt();
+                AssetTypeValueField baseField = cont.BaseValueField;
+                TextureFormat fmt = (TextureFormat)baseField["m_TextureFormat"].AsInt;
 
                 byte[] encImageBytes = TextureImportExport.Import(selectedFilePath, fmt, out int width, out int height);
 
@@ -99,29 +100,24 @@ namespace TexturePlugin
                     continue;
                 }
 
-                AssetTypeValueField m_StreamData = baseField.Get("m_StreamData");
-                m_StreamData.Get("offset").GetValue().Set(0);
-                m_StreamData.Get("size").GetValue().Set(0);
-                m_StreamData.Get("path").GetValue().Set("");
+                AssetTypeValueField m_StreamData = baseField["m_StreamData"];
+                m_StreamData["offset"].AsInt = 0;
+                m_StreamData["size"].AsInt = 0;
+                m_StreamData["path"].AsString = "";
 
-                if (!baseField.Get("m_MipCount").IsDummy())
-                    baseField.Get("m_MipCount").GetValue().Set(1);
+                if (!baseField["m_MipCount"].IsDummy)
+                    baseField["m_MipCount"].AsInt = 1;
 
-                baseField.Get("m_TextureFormat").GetValue().Set((int)fmt);
-                baseField.Get("m_CompleteImageSize").GetValue().Set(encImageBytes.Length);
+                baseField["m_TextureFormat"].AsInt = (int)fmt;
+                baseField["m_CompleteImageSize"].AsInt = encImageBytes.Length;
 
-                baseField.Get("m_Width").GetValue().Set(width);
-                baseField.Get("m_Height").GetValue().Set(height);
+                baseField["m_Width"].AsInt = width;
+                baseField["m_Height"].AsInt = height;
 
-                AssetTypeValueField image_data = baseField.Get("image data");
-                image_data.GetValue().type = EnumValueTypes.ByteArray;
-                image_data.templateField.valueType = EnumValueTypes.ByteArray;
-                AssetTypeByteArray byteArray = new AssetTypeByteArray()
-                {
-                    size = (uint)encImageBytes.Length,
-                    data = encImageBytes
-                };
-                image_data.GetValue().Set(byteArray);
+                AssetTypeValueField image_data = baseField["image data"];
+                image_data.Value.ValueType = AssetValueType.ByteArray;
+                image_data.TemplateField.ValueType = AssetValueType.ByteArray;
+                image_data.AsByteArray = encImageBytes;
             }
 
             if (errorBuilder.Length > 0)
@@ -158,7 +154,7 @@ namespace TexturePlugin
                     //uabe still makes replacers for those anyway
                     foreach (AssetContainer cont in selection)
                     {
-                        byte[] savedAsset = cont.TypeInstance.WriteToByteArray();
+                        byte[] savedAsset = cont.BaseValueField.WriteToByteArray();
 
                         var replacer = new AssetsReplacerFromMemory(
                             0, cont.PathId, (int)cont.ClassId, cont.MonoId, savedAsset);
@@ -188,7 +184,7 @@ namespace TexturePlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
+            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "Texture2D").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -220,14 +216,14 @@ namespace TexturePlugin
 
                 AssetBundleFile bundle = cont.FileInstance.parentBundle.file;
 
-                AssetsFileReader reader = bundle.reader;
-                AssetBundleDirectoryInfo06[] dirInf = bundle.bundleInf6.dirInf;
+                AssetsFileReader reader = bundle.Reader;
+                AssetBundleDirectoryInfo[] dirInf = bundle.BlockAndDirInfo.DirectoryInfos;
                 for (int i = 0; i < dirInf.Length; i++)
                 {
-                    AssetBundleDirectoryInfo06 info = dirInf[i];
-                    if (info.name == searchPath)
+                    AssetBundleDirectoryInfo info = dirInf[i];
+                    if (info.Name == searchPath)
                     {
-                        reader.Position = bundle.bundleHeader6.GetFileDataOffset() + info.offset + (long)streamInfo.offset;
+                        reader.Position = bundle.Header.GetFileDataOffset() + info.Offset + (long)streamInfo.offset;
                         texFile.pictureData = reader.ReadBytes((int)streamInfo.size);
                         texFile.m_StreamData.offset = 0;
                         texFile.m_StreamData.size = 0;
@@ -268,7 +264,7 @@ namespace TexturePlugin
                     {
                         string errorAssetName = $"{Path.GetFileName(cont.FileInstance.path)}/{cont.PathId}";
 
-                        AssetTypeValueField texBaseField = cont.TypeInstance.GetBaseField();
+                        AssetTypeValueField texBaseField = cont.BaseValueField;
                         TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
 
                         //0x0 texture, usually called like Font Texture or smth
@@ -321,7 +317,7 @@ namespace TexturePlugin
         {
             AssetContainer cont = selection[0];
 
-            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, cont).GetBaseField();
+            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, cont);
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
 
             string assetName = Extensions.ReplaceInvalidPathChars(texFile.m_Name);
@@ -381,7 +377,7 @@ namespace TexturePlugin
             if (selection.Count != 1)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classFile, "Texture2D").classId;
+            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "Texture2D").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -395,7 +391,7 @@ namespace TexturePlugin
         {
             AssetContainer cont = selection[0];
 
-            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, cont).GetBaseField();
+            AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, cont);
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
             EditDialog dialog = new EditDialog(texFile.m_Name, texFile, texBaseField);
             bool saved = await dialog.ShowDialog<bool>(win);

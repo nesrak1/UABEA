@@ -19,7 +19,6 @@ namespace UABEAvalonia
         public Dictionary<AssetID, AssetContainer> LoadedAssets { get; }
 
         public Dictionary<string, AssetsFileInstance> LoadedFileLookup { get; }
-        public Dictionary<string, AssemblyDefinition> LoadedAssemblies { get; }
 
         public Dictionary<AssetID, AssetsReplacer> NewAssets { get; }
         public Dictionary<AssetID, Stream> NewAssetDatas { get; } //for preview in info window
@@ -46,7 +45,6 @@ namespace UABEAvalonia
             LoadedAssets = new Dictionary<AssetID, AssetContainer>();
 
             LoadedFileLookup = new Dictionary<string, AssetsFileInstance>();
-            LoadedAssemblies = new Dictionary<string, AssemblyDefinition>();
 
             NewAssets = new Dictionary<AssetID, AssetsReplacer>();
             NewAssetDatas = new Dictionary<AssetID, Stream>();
@@ -82,7 +80,7 @@ namespace UABEAvalonia
             {
                 AssetsFileReader reader = new AssetsFileReader(previewStream);
                 AssetContainer cont = new AssetContainer(
-                    reader, 0, replacer.GetPathID(), (uint)replacer.GetClassID(),
+                    reader, 0, replacer.GetPathID(), replacer.GetClassID(),
                     replacer.GetMonoScriptID(), (uint)previewStream.Length, forFile);
 
                 LoadedAssets[assetId] = cont;
@@ -187,30 +185,29 @@ namespace UABEAvalonia
         {
             AssetsFileInstance fileInst = cont.FileInstance;
             AssetsFile file = fileInst.file;
-            uint type = cont.ClassId;
+            int type = cont.ClassId;
             ushort scriptIndex = cont.MonoId;
 
-            uint fixedId = AssetHelper.FixAudioID(type);
-            bool hasTypeTree = file.typeTree.hasTypeTree;
+            int fixedId = AssetHelper.FixAudioID(type);
+            bool hasTypeTree = file.Metadata.TypeTreeEnabled;
 
             AssetTypeTemplateField baseField = new AssetTypeTemplateField();
             if (hasTypeTree)
             {
-                Type_0D type0d = AssetHelper.FindTypeTreeTypeByID(file.typeTree, fixedId, scriptIndex);
+                TypeTreeType typeTreeType = AssetHelper.FindTypeTreeTypeByID(file.Metadata, fixedId, scriptIndex);
 
-                if (type0d != null && type0d.typeFieldsExCount > 0)
-                    baseField.From0D(type0d, 0);
+                if (typeTreeType != null && typeTreeType.Nodes.Count > 0)
+                    baseField.FromTypeTree(typeTreeType);
                 else //fallback to cldb
-                    baseField.FromClassDatabase(am.classFile, AssetHelper.FindAssetClassByID(am.classFile, fixedId), 0);
+                    baseField.FromClassDatabase(am.classDatabase, AssetHelper.FindAssetClassByID(am.classDatabase, fixedId));
             }
             else
             {
-
                 if (type == (uint)AssetClassID.MonoBehaviour && deserializeMono)
                 {
-                    TypeTree tt = cont.FileInstance.file.typeTree;
+                    AssetsFileMetadata meta = cont.FileInstance.file.Metadata;
                     //check if typetree data exists already
-                    if (!tt.hasTypeTree || AssetHelper.FindTypeTreeTypeByScriptIndex(tt, cont.MonoId) == null)
+                    if (!meta.TypeTreeEnabled || AssetHelper.FindTypeTreeTypeByScriptIndex(meta, cont.MonoId) == null)
                     {
                         //deserialize from dll (todo: ask user if dll isn't in normal location)
                         string filePath;
@@ -228,7 +225,7 @@ namespace UABEAvalonia
                     }
                 }
 
-                baseField.FromClassDatabase(am.classFile, AssetHelper.FindAssetClassByID(am.classFile, fixedId), 0);
+                baseField.FromClassDatabase(am.classDatabase, AssetHelper.FindAssetClassByID(am.classDatabase, fixedId));
             }
 
             return baseField;
@@ -246,11 +243,11 @@ namespace UABEAvalonia
                 AssetID assetId = new AssetID(fileInst.path, pathId);
                 if (LoadedAssets.TryGetValue(assetId, out AssetContainer? cont))
                 {
-                    if (!onlyInfo && !cont.HasInstance)
+                    if (!onlyInfo && !cont.HasValueField)
                     {
                         AssetTypeTemplateField tempField = GetTemplateField(cont);
-                        AssetTypeInstance typeInst = new AssetTypeInstance(tempField, cont.FileReader, cont.FilePosition);
-                        cont = new AssetContainer(cont, typeInst);
+                        AssetTypeValueField baseField = tempField.MakeValue(cont.FileReader, cont.FilePosition);
+                        cont = new AssetContainer(cont, baseField);
                     }
                     return cont;
                 }
@@ -260,24 +257,24 @@ namespace UABEAvalonia
 
         public AssetContainer GetAssetContainer(AssetsFileInstance fileInst, AssetTypeValueField pptrField, bool onlyInfo = true)
         {
-            int fileId = pptrField.Get("m_FileID").GetValue().AsInt();
-            long pathId = pptrField.Get("m_PathID").GetValue().AsInt64();
+            int fileId = pptrField["m_FileID"].AsInt;
+            long pathId = pptrField["m_PathID"].AsLong;
             return GetAssetContainer(fileInst, fileId, pathId, onlyInfo);
         }
 
-        public AssetTypeValueField GetBaseField(AssetContainer cont)
+        public AssetTypeValueField? GetBaseField(AssetContainer cont)
         {
-            if (cont.HasInstance)
-                return cont.TypeInstance.GetBaseField();
+            if (cont.HasValueField)
+                return cont.BaseValueField;
 
             cont = GetAssetContainer(cont.FileInstance, 0, cont.PathId, false);
             if (cont != null)
-                return cont.TypeInstance.GetBaseField();
+                return cont.BaseValueField;
             else
                 return null;
         }
 
-        public AssetTypeValueField GetBaseField(AssetsFileInstance fileInst, int fileId, long pathId)
+        public AssetTypeValueField? GetBaseField(AssetsFileInstance fileInst, int fileId, long pathId)
         {
             AssetContainer? cont = GetAssetContainer(fileInst, fileId, pathId, false);
             if (cont != null)
@@ -286,10 +283,11 @@ namespace UABEAvalonia
                 return null;
         }
 
-        public AssetTypeValueField GetBaseField(AssetsFileInstance fileInst, AssetTypeValueField pptrField)
+        public AssetTypeValueField? GetBaseField(AssetsFileInstance fileInst, AssetTypeValueField pptrField)
         {
-            int fileId = pptrField.Get("m_FileID").GetValue().AsInt();
-            long pathId = pptrField.Get("m_PathID").GetValue().AsInt64();
+            int fileId = pptrField["m_FileID"].AsInt;
+            long pathId = pptrField["m_PathID"].AsLong;
+
             AssetContainer? cont = GetAssetContainer(fileInst, fileId, pathId, false);
             if (cont != null)
                 return GetBaseField(cont);
@@ -300,7 +298,7 @@ namespace UABEAvalonia
         public AssetTypeValueField GetConcatMonoBaseField(AssetContainer cont, string managedPath)
         {
             AssetTypeTemplateField baseTemp = GetConcatMonoTemplateField(cont, managedPath);
-            return new AssetTypeInstance(baseTemp, cont.FileReader, cont.FilePosition).GetBaseField();
+            return baseTemp.MakeValue(cont.FileReader, cont.FilePosition);
         }
 
         public AssetTypeTemplateField GetConcatMonoTemplateField(AssetContainer cont, string managedPath)
@@ -311,16 +309,19 @@ namespace UABEAvalonia
             ushort scriptIndex = cont.MonoId;
             if (scriptIndex != 0xFFFF)
             {
-                AssetTypeValueField baseField = new AssetTypeInstance(baseTemp, cont.FileReader, cont.FilePosition).GetBaseField();
+                AssetTypeValueField baseField = baseTemp.MakeValue(cont.FileReader, cont.FilePosition);
 
-                AssetContainer monoScriptCont = GetAssetContainer(cont.FileInstance, baseField.Get("m_Script"), false);
+                AssetContainer monoScriptCont = GetAssetContainer(cont.FileInstance, baseField["m_Script"], false);
                 if (monoScriptCont == null)
                     return baseTemp;
 
-                AssetTypeValueField scriptBaseField = monoScriptCont.TypeInstance.GetBaseField();
-                string scriptClassName = scriptBaseField.Get("m_ClassName").GetValue().AsString();
-                string scriptNamespace = scriptBaseField.Get("m_Namespace").GetValue().AsString();
-                string assemblyName = scriptBaseField.Get("m_AssemblyName").GetValue().AsString();
+                AssetTypeValueField scriptBaseField = monoScriptCont.BaseValueField;
+                if (scriptBaseField == null)
+                    return baseTemp;
+
+                string scriptClassName = scriptBaseField["m_ClassName"].AsString;
+                string scriptNamespace = scriptBaseField["m_Namespace"].AsString;
+                string assemblyName = scriptBaseField["m_AssemblyName"].AsString;
                 string assemblyPath = Path.Combine(managedPath, assemblyName);
 
                 if (scriptNamespace != string.Empty)
@@ -329,21 +330,9 @@ namespace UABEAvalonia
                 if (!File.Exists(assemblyPath))
                     return baseTemp;
 
-                AssemblyDefinition asmDef;
+                MonoCecilTempGenerator mc = new MonoCecilTempGenerator(assemblyPath);
 
-                if (!LoadedAssemblies.ContainsKey(assemblyName))
-                {
-                    LoadedAssemblies.Add(assemblyName, MonoDeserializer.GetAssemblyWithDependencies(assemblyPath));
-                }
-                asmDef = LoadedAssemblies[assemblyName];
-
-                MonoDeserializer mc = new MonoDeserializer();
-                mc.Read(scriptClassName, asmDef, new UnityVersion(file.typeTree.unityVersion));
-                List<AssetTypeTemplateField> monoTemplateFields = mc.children;
-
-                AssetTypeTemplateField[] templateField = baseTemp.children.Concat(monoTemplateFields).ToArray();
-                baseTemp.children = templateField;
-                baseTemp.childrenCount = baseTemp.children.Length;
+                baseTemp = mc.GetTemplateField(baseTemp, assemblyName, scriptNamespace, scriptClassName, new UnityVersion(file.Metadata.UnityVersion));
             }
             return baseTemp;
         }

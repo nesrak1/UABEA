@@ -25,7 +25,7 @@ namespace UABEAvalonia
 		
         private AssetWorkspace workspace;
 
-        private Dictionary<AssetsFileInstance, List<AssetsFileDependency>> dependencyMap;
+        private Dictionary<AssetsFileInstance, List<AssetsFileExternal>> dependencyMap;
         private HashSet<AssetsFileInstance> dependenciesModified;
         
         private bool askedAboutMoving;
@@ -54,7 +54,7 @@ namespace UABEAvalonia
             btnOk.Click += BtnOk_Click;
             cbxFiles.SelectionChanged += CbxFiles_SelectionChanged;
 
-            dependencyMap = new Dictionary<AssetsFileInstance, List<AssetsFileDependency>>();
+            dependencyMap = new Dictionary<AssetsFileInstance, List<AssetsFileExternal>>();
             dependenciesModified = new HashSet<AssetsFileInstance>();
 
             askedAboutMoving = false;
@@ -73,10 +73,10 @@ namespace UABEAvalonia
                 AssetsFileInstance file = workspace.LoadedFiles[i];
                 comboBoxFiles.Add(new DependencyComboBoxItem(file.name, file));
                 
-                List<AssetsFileDependency> dependencies = new List<AssetsFileDependency>();
-                for (int j = 0; j < file.file.dependencies.dependencies.Count; j++)
+                List<AssetsFileExternal> dependencies = new List<AssetsFileExternal>();
+                for (int j = 0; j < file.file.Metadata.Externals.Count; j++)
                 {
-                    dependencies.Add(file.file.dependencies.dependencies[j]);
+                    dependencies.Add(file.file.Metadata.Externals[j]);
                 }
 
                 dependencyMap[file] = dependencies;
@@ -110,7 +110,7 @@ namespace UABEAvalonia
             }
             else
             {
-                List<AssetsFileDependency> deps = dependencyMap[selectedFile];
+                List<AssetsFileExternal> deps = dependencyMap[selectedFile];
 
                 List<DependencyListBoxItem> lbDeps = new List<DependencyListBoxItem>();
                 lbDeps.Add(new DependencyListBoxItem(0, selectedFile));
@@ -137,7 +137,7 @@ namespace UABEAvalonia
             }
 
             AddDependencyWindow window = new AddDependencyWindow();
-            AssetsFileDependency? dependency = await window.ShowDialog<AssetsFileDependency?>(this);
+            AssetsFileExternal? dependency = await window.ShowDialog<AssetsFileExternal?>(this);
             if (dependency == null)
             {
                 return;
@@ -177,7 +177,7 @@ namespace UABEAvalonia
                 return;
             }
 
-            int originalDependencyCount = selectedFile.file.dependencies.dependencyCount;
+            int originalDependencyCount = selectedFile.file.Metadata.Externals.Count;
             if (!askedAboutMoving && boxDependenciesList.SelectedIndex <= originalDependencyCount)
             {
                 bool shouldContinue = await ShowMoveConfirmationDialog();
@@ -231,7 +231,7 @@ namespace UABEAvalonia
                 return;
             }
 
-            List<AssetsFileDependency> deps = dependencyMap[selectedFile];
+            List<AssetsFileExternal> deps = dependencyMap[selectedFile];
 
             if (!moveUp && boxDependenciesList.SelectedIndex == deps.Count)
             {
@@ -241,7 +241,7 @@ namespace UABEAvalonia
                 return;
             }
 
-            int originalDependencyCount = selectedFile.file.dependencies.dependencyCount;
+            int originalDependencyCount = selectedFile.file.Metadata.Externals.Count;
             int moveUpCheckOffset = moveUp ? 1 : 0; // if moving up, don't allow moving the next item either
             if (!askedAboutMoving && boxDependenciesList.SelectedIndex <= originalDependencyCount + moveUpCheckOffset)
             {
@@ -252,7 +252,7 @@ namespace UABEAvalonia
                 askedAboutMoving = true;
             }
 
-            AssetsFileDependency dep = dependency.dependency!;
+            AssetsFileExternal dep = dependency.dependency!;
             int depIndex = deps.IndexOf(dep);
             int moveUpOffset = moveUp ? -1 : 1;
 
@@ -272,9 +272,8 @@ namespace UABEAvalonia
         {
             foreach (AssetsFileInstance file in dependenciesModified)
             {
-                List<AssetsFileDependency> deps = dependencyMap[file];
-                file.file.dependencies.dependencies = deps;
-                file.file.dependencies.dependencyCount = deps.Count;
+                List<AssetsFileExternal> deps = dependencyMap[file];
+                file.file.Metadata.Externals = deps;
             }
 
             Close(dependenciesModified);
@@ -341,7 +340,7 @@ namespace UABEAvalonia
         {
             public int index;
             public AssetsFileInstance? file;
-            public AssetsFileDependency? dependency;
+            public AssetsFileExternal? dependency;
             public bool isDependency;
 
             public DependencyListBoxItem(int index, AssetsFileInstance? file)
@@ -351,7 +350,7 @@ namespace UABEAvalonia
                 isDependency = false;
             }
 
-            public DependencyListBoxItem(int index, AssetsFileDependency? dependency)
+            public DependencyListBoxItem(int index, AssetsFileExternal? dependency)
             {
                 this.index = index;
                 this.dependency = dependency;
@@ -362,10 +361,10 @@ namespace UABEAvalonia
             {
                 if (isDependency && dependency != null)
                 {
-                    if (dependency.assetPath != string.Empty)
-                        return $"{index} - {dependency.assetPath}";
+                    if (dependency.PathName != string.Empty)
+                        return $"{index} - {dependency.PathName}";
                     else
-                        return $"{index} - {dependency.guid.mostSignificant:x16}{dependency.guid.leastSignificant:x16}";
+                        return $"{index} - {dependency.Guid.mostSignificant:x16}{dependency.Guid.leastSignificant:x16}";
                 }
                 else if (!isDependency && file != null)
                     return $"{index} - {file.name}";

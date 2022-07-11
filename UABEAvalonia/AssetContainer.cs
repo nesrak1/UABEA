@@ -4,17 +4,17 @@ using System.IO;
 
 namespace UABEAvalonia
 {
-    //improvement over AssetExternal to handle dynamic changes
-    //not to be confused with containers which are just
-    //uabe's way of showing what export an asset is connected to
+    // improvement over AssetExternal to handle dynamic changes
+    // not to be confused with unity containers which are just
+    // unity's way of showing what export an asset is connected to
     public class AssetContainer
     {
         public long PathId { get; }
-        public uint ClassId { get; }
+        public int ClassId { get; }
         public ushort MonoId { get; }
         public uint Size { get; }
         public AssetsFileInstance FileInstance { get; }
-        public AssetTypeInstance? TypeInstance { get; }
+        public AssetTypeValueField? BaseValueField { get; }
 
         public long FilePosition { get; }
         public AssetsFileReader FileReader { get; }
@@ -22,28 +22,28 @@ namespace UABEAvalonia
         {
             get => new AssetID(FileInstance.path, PathId);
         }
-        public bool HasInstance
+        public bool HasValueField
         {
-            get => TypeInstance != null;
+            get => BaseValueField != null;
         }
 
-        //existing assets
-        public AssetContainer(AssetFileInfoEx info, AssetsFileInstance fileInst, AssetTypeInstance? typeInst = null)
+        // existing assets
+        public AssetContainer(AssetFileInfo info, AssetsFileInstance fileInst, AssetTypeValueField? baseField = null)
         {
-            FilePosition = info.absoluteFilePos;
-            FileReader = fileInst.file.reader;
+            FilePosition = info.AbsoluteByteStart;
+            FileReader = fileInst.file.Reader;
 
-            PathId = info.index;
-            ClassId = info.curFileType;
-            MonoId = AssetHelper.GetScriptIndex(fileInst.file, info);
-            Size = info.curFileSize;
+            PathId = info.PathId;
+            ClassId = info.TypeId;
+            MonoId = fileInst.file.GetScriptIndex(info);
+            Size = info.ByteSize;
             FileInstance = fileInst;
-            TypeInstance = typeInst;
+            BaseValueField = baseField;
         }
 
-        //newly created assets
-        public AssetContainer(AssetsFileReader fileReader, long assetPosition, long pathId, uint classId, ushort monoId, uint size,
-                              AssetsFileInstance fileInst, AssetTypeInstance? typeInst = null)
+        // newly created assets
+        public AssetContainer(AssetsFileReader fileReader, long assetPosition, long pathId, int classId, ushort monoId, uint size,
+                              AssetsFileInstance fileInst, AssetTypeValueField? baseField = null)
         {
             FilePosition = assetPosition;
             FileReader = fileReader;
@@ -53,10 +53,10 @@ namespace UABEAvalonia
             MonoId = monoId;
             Size = size;
             FileInstance = fileInst;
-            TypeInstance = typeInst;
+            BaseValueField = baseField;
         }
 
-        //modified assets
+        // modified assets
         public AssetContainer(AssetContainer container, AssetsFileReader fileReader, long assetPosition, uint size)
         {
             FilePosition = assetPosition;
@@ -67,10 +67,10 @@ namespace UABEAvalonia
             MonoId = container.MonoId;
             Size = size;
             FileInstance = container.FileInstance;
-            TypeInstance = container.TypeInstance;
+            BaseValueField = container.BaseValueField;
         }
 
-        public AssetContainer(AssetContainer container, AssetTypeInstance typeInst)
+        public AssetContainer(AssetContainer container, AssetTypeValueField baseField)
         {
             FilePosition = container.FilePosition;
             FileReader = container.FileReader;
@@ -80,7 +80,7 @@ namespace UABEAvalonia
             MonoId = container.MonoId;
             Size = container.Size;
             FileInstance = container.FileInstance;
-            TypeInstance = typeInst;
+            BaseValueField = baseField;
         }
     }
 }

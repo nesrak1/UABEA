@@ -185,7 +185,7 @@ namespace UABEAvalonia
                 }
                 else
                 {
-                    if ((bundleInst.file.bundleHeader6.flags & 0x3F) != 0) //header is compressed (most likely)
+                    if (bundleInst.file.Header.GetCompressionType() != 0) //header is compressed (most likely)
                         bundleInst.file.UnpackInfoOnly();
                     LoadBundle(bundleInst);
                 }
@@ -273,9 +273,9 @@ namespace UABEAvalonia
             {
                 int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
 
-                AssetBundleDirectoryInfo06 dirInf = bundleInst.file.bundleInf6.dirInf[index];
+                AssetBundleDirectoryInfo dirInf = bundleInst.file.BlockAndDirInfo.DirectoryInfos[index];
 
-                string bunAssetName = dirInf.name;
+                string bunAssetName = dirInf.Name;
 
                 SaveFileDialog sfd = new SaveFileDialog();
                 sfd.Title = "Save as...";
@@ -288,9 +288,9 @@ namespace UABEAvalonia
 
                 using FileStream fileStream = File.OpenWrite(file);
 
-                AssetsFileReader bundleReader = bundleInst.file.reader;
-                bundleReader.Position = bundleInst.file.bundleHeader6.GetFileDataOffset() + dirInf.offset;
-                bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.decompressedSize);
+                AssetsFileReader bundleReader = bundleInst.file.Reader;
+                bundleReader.Position = bundleInst.file.Header.GetFileDataOffset() + dirInf.Offset;
+                bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.DecompressedSize);
             }
         }
 
@@ -351,9 +351,9 @@ namespace UABEAvalonia
             {
                 int index = (int)((ComboBoxItem)comboBox.SelectedItem).Tag;
 
-                if (index < bundleInst.file.bundleInf6.dirInf.Length) // Pre-existing asset when bundle was opened
+                if (index < bundleInst.file.BlockAndDirInfo.DirectoryInfos.Length) // Pre-existing asset when bundle was opened
                 {
-                    string bunAssetName = bundleInst.file.bundleInf6.dirInf[index].name;
+                    string bunAssetName = bundleInst.file.BlockAndDirInfo.DirectoryInfos[index].Name;
                     newFiles.Add(bunAssetName, AssetImportExport.CreateBundleRemover(bunAssetName, true));
                 }
                 else // this asset was most likely imported after the bundle was opened and hasn't been saved yet
@@ -390,7 +390,7 @@ namespace UABEAvalonia
 
             AssetBundleFile bundleFile = bundleInst.file;
 
-            string bunAssetName = bundleFile.bundleInf6.dirInf[index].name;
+            string bunAssetName = bundleFile.BlockAndDirInfo.DirectoryInfos[index].Name;
 
             //when we make a modification to an assets file in the bundle,
             //we replace the assets file in the manager. this way, all we
@@ -411,8 +411,8 @@ namespace UABEAvalonia
             //warning: does not update if you import an assets file onto
             //a file that wasn't originally an assets file
             var fileInf = BundleHelper.GetDirInfo(bundleFile, index);
-            long bundleEntryOffset = bundleFile.bundleHeader6.GetFileDataOffset() + fileInf.offset;
-            DetectedFileType fileType = AssetBundleDetector.DetectFileType(bundleFile.reader, bundleEntryOffset);
+            long bundleEntryOffset = bundleFile.Header.GetFileDataOffset() + fileInf.Offset;
+            DetectedFileType fileType = AssetBundleDetector.DetectFileType(bundleFile.Reader, bundleEntryOffset);
 
             if (fileType == DetectedFileType.AssetsFile)
             {
@@ -451,11 +451,11 @@ namespace UABEAvalonia
             if (dir == null || dir == string.Empty)
                 return;
 
-            for (int i = 0; i < bundleInst.file.bundleInf6.directoryCount; i++)
+            for (int i = 0; i < bundleInst.file.BlockAndDirInfo.DirectoryInfos.Length; i++)
             {
-                AssetBundleDirectoryInfo06 dirInf = bundleInst.file.bundleInf6.dirInf[i];
+                AssetBundleDirectoryInfo dirInf = bundleInst.file.BlockAndDirInfo.DirectoryInfos[i];
 
-                string bunAssetName = dirInf.name;
+                string bunAssetName = dirInf.Name;
                 string bunAssetPath = Path.Combine(dir, bunAssetName);
 
                 //create dirs if bundle contains / in path
@@ -470,9 +470,9 @@ namespace UABEAvalonia
 
                 using FileStream fileStream = File.OpenWrite(bunAssetPath);
 
-                AssetsFileReader bundleReader = bundleInst.file.reader;
-                bundleReader.Position = bundleInst.file.bundleHeader6.GetFileDataOffset() + dirInf.offset;
-                bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.decompressedSize);
+                AssetsFileReader bundleReader = bundleInst.file.Reader;
+                bundleReader.Position = bundleInst.file.Header.GetFileDataOffset() + dirInf.Offset;
+                bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.DecompressedSize);
             }
         }
 
@@ -574,16 +574,17 @@ namespace UABEAvalonia
 
         private async Task<bool> LoadOrAskTypeData(AssetsFileInstance fileInst)
         {
-            string uVer = fileInst.file.typeTree.unityVersion;
-            if (am.LoadClassDatabaseFromPackage(uVer) == null)
-            {
-                VersionWindow version = new VersionWindow(uVer, am.classPackage);
-                var newFile = await version.ShowDialog<ClassDatabaseFile>(this);
-                if (newFile == null)
-                    return false;
-
-                am.classFile = newFile;
-            }
+            string uVer = fileInst.file.Metadata.UnityVersion;
+            am.LoadClassDatabaseFromPackage(uVer);
+            //if (am.LoadClassDatabaseFromPackage(uVer) == null)
+            //{
+            //    VersionWindow version = new VersionWindow(uVer, am.classPackage);
+            //    var newFile = await version.ShowDialog<ClassDatabaseFile>(this);
+            //    if (newFile == null)
+            //        return false;
+            //
+            //    am.classFile = newFile;
+            //}
             return true;
         }
 
@@ -677,10 +678,10 @@ namespace UABEAvalonia
                 {
                     lz4Option => AssetBundleCompressionType.LZ4,
                     lzmaOption => AssetBundleCompressionType.LZMA,
-                    _ => AssetBundleCompressionType.NONE
+                    _ => AssetBundleCompressionType.None
                 };
 
-                if (compType != AssetBundleCompressionType.NONE)
+                if (compType != AssetBundleCompressionType.None)
                 {
                     CompressBundle(bundleInst, file, compType);
                 }
@@ -793,14 +794,14 @@ namespace UABEAvalonia
             AssetBundleFile bundle = bundleInst.file;
 
             FileStream bundleStream = File.Open(savePath, FileMode.Create);
-            bundle.Unpack(bundle.reader, new AssetsFileWriter(bundleStream));
+            bundle.Unpack(new AssetsFileWriter(bundleStream));
 
             bundleStream.Position = 0;
 
             AssetBundleFile newBundle = new AssetBundleFile();
-            newBundle.Read(new AssetsFileReader(bundleStream), false);
+            newBundle.Read(new AssetsFileReader(bundleStream));
 
-            bundle.reader.Close();
+            bundle.Close();
             bundleInst.file = newBundle;
         }
 
@@ -809,27 +810,27 @@ namespace UABEAvalonia
             AssetBundleFile bundle = bundleInst.file;
 
             MemoryStream bundleStream = new MemoryStream();
-            bundle.Unpack(bundle.reader, new AssetsFileWriter(bundleStream));
+            bundle.Unpack(new AssetsFileWriter(bundleStream));
 
             bundleStream.Position = 0;
 
             AssetBundleFile newBundle = new AssetBundleFile();
-            newBundle.Read(new AssetsFileReader(bundleStream), false);
+            newBundle.Read(new AssetsFileReader(bundleStream));
 
-            bundle.reader.Close();
+            bundle.Close();
             bundleInst.file = newBundle;
         }
 
         private void LoadBundle(BundleFileInstance bundleInst)
         {
-            var infos = bundleInst.file.bundleInf6.dirInf;
+            var infos = bundleInst.file.BlockAndDirInfo.DirectoryInfos;
             comboItems = new ObservableCollection<ComboBoxItem>();
             for (int i = 0; i < infos.Length; i++)
             {
                 var info = infos[i];
                 comboItems.Add(new ComboBoxItem()
                 {
-                    Content = info.name,
+                    Content = info.Name,
                     Tag = i
                 });
             }
@@ -856,7 +857,7 @@ namespace UABEAvalonia
             using (FileStream fs = File.OpenWrite(path))
             using (AssetsFileWriter w = new AssetsFileWriter(fs))
             {
-                bundleInst.file.Pack(bundleInst.file.reader, w, compType);
+                bundleInst.file.Pack(bundleInst.file.Reader, w, compType);
             }
         }
 
@@ -896,9 +897,9 @@ namespace UABEAvalonia
         private long GetBundleDataDecompressedSize(AssetBundleFile bundleFile)
         {
             long totalSize = 0;
-            foreach (AssetBundleDirectoryInfo06 dirInf in bundleFile.bundleInf6.dirInf)
+            foreach (AssetBundleDirectoryInfo dirInf in bundleFile.BlockAndDirInfo.DirectoryInfos)
             {
-                totalSize += dirInf.decompressedSize;
+                totalSize += dirInf.DecompressedSize;
             }
             return totalSize;
         }

@@ -5,7 +5,6 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using System.Globalization;
-using static AssetsTools.NET.AssetsFileDependency;
 
 namespace UABEAvalonia
 {
@@ -60,8 +59,8 @@ namespace UABEAvalonia
 
             GUID128 guid = new GUID128
             {
-                mostSignificant = (long)mostSignificant,
-                leastSignificant = (long)leastSignificant,
+                mostSignificant = mostSignificant,
+                leastSignificant = leastSignificant,
             };
 
             return guid;
@@ -98,13 +97,13 @@ namespace UABEAvalonia
 
         private void AddDependency()
         {
-            AssetsFileDependency dependency = new AssetsFileDependency
+            AssetsFileExternal dependency = new AssetsFileExternal
             {
-                bufferedPath = string.Empty,
-                assetPath = boxFileName.Text ?? string.Empty, // thanks avalonia
-                originalAssetPath = boxOrigFileName.Text != string.Empty ? boxOrigFileName.Text : boxFileName.Text,
-                type = ddDepType.SelectedIndex,
-                guid = GetGuid()
+                VirtualAssetPathName = string.Empty,
+                PathName = boxFileName.Text ?? string.Empty, // thanks avalonia
+                OriginalPathName = boxOrigFileName.Text != string.Empty ? boxOrigFileName.Text : boxFileName.Text,
+                Type = ddDepType.SelectedIndex,
+                Guid = GetGuid()
             };
 
             Close(dependency);

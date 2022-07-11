@@ -32,27 +32,27 @@ namespace UABEAvalonia
 
             try
             {
-                ClassDatabaseFile cldb = workspace.am.classFile;
+                ClassDatabaseFile cldb = workspace.am.classDatabase;
                 AssetsFile file = cont.FileInstance.file;
                 AssetsFileReader reader = cont.FileReader;
                 long filePosition = cont.FilePosition;
-                uint classId = cont.ClassId;
+                int classId = cont.ClassId;
                 ushort monoId = cont.MonoId;
 
                 ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, classId);
 
-                if (file.typeTree.hasTypeTree)
+                if (file.Metadata.TypeTreeEnabled)
                 {
-                    Type_0D ttType;
+                    TypeTreeType ttType;
                     if (classId == 0x72)
-                        ttType = AssetHelper.FindTypeTreeTypeByScriptIndex(file.typeTree, monoId);
+                        ttType = AssetHelper.FindTypeTreeTypeByScriptIndex(file.Metadata, monoId);
                     else
-                        ttType = AssetHelper.FindTypeTreeTypeByID(file.typeTree, classId);
+                        ttType = AssetHelper.FindTypeTreeTypeByID(file.Metadata, classId);
 
-                    if (ttType != null && ttType.typeFieldsEx.Length != 0)
+                    if (ttType != null && ttType.Nodes.Count > 0)
                     {
-                        typeName = ttType.typeFieldsEx[0].GetTypeString(ttType.stringTable);
-                        if (ttType.typeFieldsEx.Length > 1 && ttType.typeFieldsEx[1].GetNameString(ttType.stringTable) == "m_Name")
+                        typeName = ttType.Nodes[0].GetTypeString(ttType.StringBuffer);
+                        if (ttType.Nodes.Count > 1 && ttType.Nodes[1].GetNameString(ttType.StringBuffer) == "m_Name")
                         {
                             reader.Position = filePosition;
                             assetName = reader.ReadCountStringInt32();
@@ -64,7 +64,7 @@ namespace UABEAvalonia
                         {
                             reader.Position = filePosition;
                             int size = reader.ReadInt32();
-                            int componentSize = file.header.format > 0x10 ? 0x0c : 0x10;
+                            int componentSize = file.Header.Version > 0x10 ? 0x0c : 0x10;
                             reader.Position += size * componentSize;
                             reader.Position += 0x04;
                             assetName = reader.ReadCountStringInt32();
@@ -97,15 +97,16 @@ namespace UABEAvalonia
                     return;
                 }
 
-                typeName = type.name.GetString(cldb);
+                typeName = cldb.GetString(type.Name);
+                List<ClassDatabaseTypeNode> cldbNodes = type.GetPreferredNode(false).Children;
 
-                if (type.fields.Count == 0)
+                if (cldbNodes.Count == 0)
                 {
                     assetName = "Unnamed asset";
                     return;
                 }
 
-                if (type.fields.Count > 1 && type.fields[1].fieldName.GetString(cldb) == "m_Name")
+                if (cldbNodes.Count > 1 && cldb.GetString(cldbNodes[1].FieldName) == "m_Name")
                 {
                     reader.Position = filePosition;
                     assetName = reader.ReadCountStringInt32();
@@ -117,7 +118,7 @@ namespace UABEAvalonia
                 {
                     reader.Position = filePosition;
                     int size = reader.ReadInt32();
-                    int componentSize = file.header.format > 0x10 ? 0x0c : 0x10;
+                    int componentSize = file.Header.Version > 0x10 ? 0x0c : 0x10;
                     reader.Position += size * componentSize;
                     reader.Position += 0x04;
                     assetName = reader.ReadCountStringInt32();
@@ -154,22 +155,22 @@ namespace UABEAvalonia
                     return string.Empty;
 
                 AssetTypeValueField monoBf;
-                if (cont.HasInstance)
+                if (cont.HasValueField)
                 {
-                    monoBf = cont.TypeInstance.GetBaseField();
+                    monoBf = cont.BaseValueField;
                 }
                 else
                 {
                     AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont, false);
-                    monoBf = new AssetTypeInstance(monoTemp, cont.FileReader, cont.FilePosition).GetBaseField();
+                    monoBf = monoTemp.MakeValue(cont.FileReader, cont.FilePosition);
                 }
 
-                AssetContainer monoScriptCont = workspace.GetAssetContainer(cont.FileInstance, monoBf.Get("m_Script"), false);
+                AssetContainer monoScriptCont = workspace.GetAssetContainer(cont.FileInstance, monoBf["m_Script"], false);
                 if (monoScriptCont == null)
                     return string.Empty;
 
-                AssetTypeValueField scriptBaseField = monoScriptCont.TypeInstance.GetBaseField();
-                string scriptClassName = scriptBaseField.Get("m_ClassName").GetValue().AsString();
+                AssetTypeValueField scriptBaseField = monoScriptCont.BaseValueField;
+                string scriptClassName = scriptBaseField["m_ClassName"].AsString;
 
                 return scriptClassName;
             }

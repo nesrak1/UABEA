@@ -214,8 +214,8 @@ namespace UABEAvalonia
             AssetPPtr res = await dialog.ShowDialog<AssetPPtr>(this);
             if (res != null)
             {
-                AssetsFileInstance targetFile = Workspace.LoadedFiles[res.fileID];
-                long targetPathId = res.pathID;
+                AssetsFileInstance targetFile = Workspace.LoadedFiles[res.FileId];
+                long targetPathId = res.PathId;
 
                 IdSearch(targetFile, targetPathId);
             }
@@ -426,7 +426,7 @@ namespace UABEAvalonia
                     using (MemoryStream ms = new MemoryStream())
                     using (AssetsFileWriter w = new AssetsFileWriter(ms))
                     {
-                        file.file.Write(w, 0, replacers, 0);
+                        file.file.Write(w, 0, replacers);
                         ChangedAssetsDatas.Add(new Tuple<AssetsFileInstance, byte[]>(file, ms.ToArray()));
                     }
                 }
@@ -471,7 +471,7 @@ namespace UABEAvalonia
                         using (FileStream fs = File.OpenWrite(filePath))
                         using (AssetsFileWriter w = new AssetsFileWriter(fs))
                         {
-                            file.file.Write(w, 0, replacers, 0);
+                            file.file.Write(w, 0, replacers);
                         }
                     }
                     catch (Exception ex)
@@ -941,18 +941,18 @@ namespace UABEAvalonia
             if (files.Contains(fromFile))
                 return;
 
-            fromFile.table.GenerateQuickLookupTree();
+            fromFile.file.GenerateQuickLookupTree();
 
             files.Add(fromFile);
             fileNames.Add(fromFile.path.ToLower());
 
-            foreach (AssetFileInfoEx info in fromFile.table.assetFileInfo)
+            foreach (AssetFileInfo info in fromFile.file.AssetInfos)
             {
                 AssetContainer cont = new AssetContainer(info, fromFile);
                 conts.Add(cont.AssetId, cont);
             }
 
-            for (int i = 0; i < fromFile.dependencies.Count; i++)
+            for (int i = 0; i < fromFile.file.Metadata.Externals.Count; i++)
             {
                 AssetsFileInstance dep = fromFile.GetDependency(am, i);
                 if (dep == null)
@@ -1098,7 +1098,7 @@ namespace UABEAvalonia
         public string Name { get; set; }
         public string Container { get; set; }
         public string Type { get; set; }
-        public uint TypeID { get; set; }
+        public int TypeID { get; set; }
         public int FileID { get; set; }
         public long PathID { get; set; }
         public int Size { get; set; }
