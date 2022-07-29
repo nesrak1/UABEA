@@ -324,9 +324,6 @@ namespace UABEAvalonia
                 string assemblyName = scriptBaseField["m_AssemblyName"].AsString;
                 string assemblyPath = Path.Combine(managedPath, assemblyName);
 
-                if (scriptNamespace != string.Empty)
-                    scriptClassName = scriptNamespace + "." + scriptClassName;
-
                 if (!File.Exists(assemblyPath))
                     return baseTemp;
 
