@@ -2,7 +2,7 @@ name: Build UABEA Windows
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, at3 ]
   pull_request:
     branches: [ master ]
 
