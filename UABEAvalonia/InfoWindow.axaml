@@ -28,6 +28,7 @@
         <MenuItem Header="Go to asset" Name="menuGoToAsset" />
         <MenuItem Header="Dependencies" Name="menuDependencies" />
         <MenuItem Header="Containters" Name="menuContainers" />
+        <MenuItem Header="Scripts" Name="menuScripts" />
         <MenuItem Header="Scene Hierarchy" Name="menuHierarchy" />
       </MenuItem>
     </Menu>

@@ -35,6 +35,7 @@ namespace UABEAvalonia
         private MenuItem menuGoToAsset;
         private MenuItem menuDependencies;
         private MenuItem menuContainers;
+        private MenuItem menuScripts;
         private MenuItem menuHierarchy;
         private Button btnViewData;
         private Button btnExportRaw;
@@ -89,6 +90,7 @@ namespace UABEAvalonia
             menuGoToAsset = this.FindControl<MenuItem>("menuGoToAsset");
             menuDependencies = this.FindControl<MenuItem>("menuDependencies");
             menuContainers = this.FindControl<MenuItem>("menuContainers");
+            menuScripts = this.FindControl<MenuItem>("menuScripts");
             menuHierarchy = this.FindControl<MenuItem>("menuHierarchy");
             btnViewData = this.FindControl<Button>("btnViewData");
             btnExportRaw = this.FindControl<Button>("btnExportRaw");
@@ -112,6 +114,7 @@ namespace UABEAvalonia
             menuContinueSearch.Click += MenuContinueSearch_Click;
             menuGoToAsset.Click += MenuGoToAsset_Click;
             menuDependencies.Click += MenuDependencies_Click;
+            menuScripts.Click += MenuScripts_Click;
             menuHierarchy.Click += MenuHierarchy_Click;
             btnViewData.Click += BtnViewData_Click;
             btnExportRaw.Click += BtnExportRaw_Click;
@@ -233,6 +236,12 @@ namespace UABEAvalonia
                     Workspace.SetOtherAssetChangeFlag(changedFile, AssetsFileChangeTypes.Dependencies);
                 }
             }
+        }
+
+        private void MenuScripts_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            ScriptsWindow dialog = new ScriptsWindow(Workspace);
+            dialog.Show(this);
         }
 
         private void MenuHierarchy_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
