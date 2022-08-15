@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Platforms>AnyCPU;x64;x86</Platforms>
+        <!-- this includes like everything important in the build folder, apparently necessary to get the nuget assemblies -->
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+
+    <!-- there seems to be no flag for checking if building  -->
+    <!-- or publishing, so we just have two separate targets -->
+    <!-- build event -->
+    <Target Name="CopyLibrariesBuild" AfterTargets="AfterBuild" Condition="'$(SolutionDir)' != '*Undefined*'">
+        <PropertyGroup>
+            <UABEABinDir>$(SolutionDir)UABEAvalonia\$(OutputPath)</UABEABinDir>
+        </PropertyGroup>
+
+        <Copy SourceFiles="$(OutputPath)AudioClipPlugin.dll;$(OutputPath)Fmod5Sharp.dll;$(OutputPath)IndexRange.dll;$(OutputPath)NAudio.Core.dll;$(OutputPath)OggVorbisEncoder.dll;$(OutputPath)System.Text.Json.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
+    </Target>
+    <!-- publish event -->
+    <Target Name="CopyLibrariesPublish" AfterTargets="Publish" Condition="'$(SolutionDir)' != '*Undefined*'">
+        <PropertyGroup>
+            <UABEABinDir>$(SolutionDir)UABEAvalonia\$(PublishDir)</UABEABinDir>
+        </PropertyGroup>
+
+        <Copy SourceFiles="$(OutputPath)AudioClipPlugin.dll;$(OutputPath)Fmod5Sharp.dll;$(OutputPath)IndexRange.dll;$(OutputPath)NAudio.Core.dll;$(OutputPath)OggVorbisEncoder.dll;$(OutputPath)System.Text.Json.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
+    </Target>
+
+    <ItemGroup>
+        <Reference Include="AssetsTools.NET">
+            <HintPath>..\Libs\AssetsTools.NET.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\UABEAvalonia\UABEAvalonia.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="0.10.13" />
+        <PackageReference Include="Avalonia.Desktop" Version="0.10.13" />
+        <PackageReference Include="Avalonia.Diagnostics" Version="0.10.13" />
+        <PackageReference Include="Fmod5Sharp" Version="3.0.1" />
+        <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+    </ItemGroup>
+</Project>
