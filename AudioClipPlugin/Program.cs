@@ -135,6 +135,41 @@ namespace AudioPlugin
                 }
                 List<FmodSample> samples = bank.Samples;
                 samples[0].RebuildAsStandardFileFormat(out byte[] sampleData, out string sampleExtension);
+
+                if (sampleExtension.ToLower() == "wav")
+                {
+                    // since fmod5sharp gives us malformed wav data, we have to correct it
+
+                    int origLength = sampleData.Length;
+                    // remove ExtraParamSize field from fmt subchunk
+                    for (int i = 36; i < origLength - 2; i++)
+                    {
+                        sampleData[i] = sampleData[i + 2];
+                    }
+                    Array.Resize(ref sampleData, origLength - 2);
+                    // write ChunkSize to RIFF chunk
+                    byte[] riffHeaderChunkSize = BitConverter.GetBytes(sampleData.Length - 8);
+                    if (!BitConverter.IsLittleEndian)
+                    {
+                        Array.Reverse(riffHeaderChunkSize);
+                    }
+                    riffHeaderChunkSize.CopyTo(sampleData, 4);
+                    // write ChunkSize to fmt chunk
+                    byte[] fmtHeaderChunkSize = BitConverter.GetBytes(16); // it is always 16 for pcm data, which this always
+                    if (!BitConverter.IsLittleEndian)
+                    {
+                        Array.Reverse(fmtHeaderChunkSize);
+                    }
+                    fmtHeaderChunkSize.CopyTo(sampleData, 16);
+                    // write ChunkSize to data chunk
+                    byte[] dataHeaderChunkSize = BitConverter.GetBytes(sampleData.Length - 44);
+                    if (!BitConverter.IsLittleEndian)
+                    {
+                        Array.Reverse(dataHeaderChunkSize);
+                    }
+                    dataHeaderChunkSize.CopyTo(sampleData, 40);
+                }
+                
                 File.WriteAllBytes(file, sampleData);
 
                 return true;
