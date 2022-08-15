@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using UABEAvalonia;
 using UABEAvalonia.Plugins;
@@ -25,7 +26,7 @@ namespace AudioPlugin
         GCADPCM,
         ATRAC9
     }
-    
+
     public class ExportAudioClipOption : UABEAPluginOption
     {
         public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
@@ -71,18 +72,19 @@ namespace AudioPlugin
                     
                     CompressionFormat compressionFormat = (CompressionFormat) baseField.Get("m_CompressionFormat").GetValue().AsInt();
                     string extension = GetExtension(compressionFormat);
-                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}");
+                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.");
 
                     string ResourceSource = baseField.Get("m_Resource").Get("m_Source").GetValue().AsString();
                     ulong ResourceOffset = baseField.Get("m_Resource").Get("m_Offset").GetValue().AsUInt64();
                     ulong ResourceSize = baseField.Get("m_Resource").Get("m_Size").GetValue().AsUInt64();
 
-                    byte[] resourceData = File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(cont.FileInstance.path), ResourceSource));
-                    byte[] resourceCroppedData = new byte[ResourceSize];
-                
-                    Buffer.BlockCopy(resourceData, (int) ResourceOffset, resourceCroppedData, 0, (int) ResourceSize);
-                
-                    if (!FsbLoader.TryLoadFsbFromByteArray(resourceCroppedData, out FmodSoundBank bank))
+                    byte[] resourceData;
+                    if (!GetAudioBytes(cont, ResourceSource, ResourceOffset, ResourceSize, out resourceData))
+                    {
+                        continue;
+                    }
+
+                    if (!FsbLoader.TryLoadFsbFromByteArray(resourceData, out FmodSoundBank bank))
                     {
                         continue;
                     }
@@ -121,12 +123,13 @@ namespace AudioPlugin
                 ulong ResourceOffset = baseField.Get("m_Resource").Get("m_Offset").GetValue().AsUInt64();
                 ulong ResourceSize = baseField.Get("m_Resource").Get("m_Size").GetValue().AsUInt64();
 
-                byte[] resourceData = File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(cont.FileInstance.path), ResourceSource));
-                byte[] resourceCroppedData = new byte[ResourceSize];
+                byte[] resourceData;
+                if (!GetAudioBytes(cont, ResourceSource, ResourceOffset, ResourceSize, out resourceData))
+                {
+                    return false;
+                }
                 
-                Buffer.BlockCopy(resourceData, (int) ResourceOffset, resourceCroppedData, 0, (int) ResourceSize);
-                
-                if (!FsbLoader.TryLoadFsbFromByteArray(resourceCroppedData, out FmodSoundBank bank))
+                if (!FsbLoader.TryLoadFsbFromByteArray(resourceData, out FmodSoundBank bank))
                 {
                     return false;
                 }
@@ -145,11 +148,53 @@ namespace AudioPlugin
             {
                 CompressionFormat.PCM => "wav",
                 CompressionFormat.Vorbis => "ogg",
+                CompressionFormat.ADPCM => "wav",
                 CompressionFormat.MP3 => "mp3",
+                CompressionFormat.VAG => "dat", // proprietary
+                CompressionFormat.HEVAG => "dat", // proprietary
+                CompressionFormat.XMA => "dat", // proprietary
                 CompressionFormat.AAC => "aac",
+                CompressionFormat.GCADPCM => "wav", // nintendo adpcm
+                CompressionFormat.ATRAC9 => "dat", // proprietary
                 _ => ""
             };
         }
+        
+        private bool GetAudioBytes(AssetContainer cont, string filepath, ulong offset, ulong size, out byte[] audioData)
+        {
+            if (!string.IsNullOrEmpty(filepath) && cont.FileInstance.parentBundle != null)
+            {
+                //some versions apparently don't use archive:/
+                string searchPath = filepath;
+                if (searchPath.StartsWith("archive:/"))
+                    searchPath = searchPath.Substring(9);
+
+                searchPath = Path.GetFileName(searchPath);
+
+                AssetBundleFile bundle = cont.FileInstance.parentBundle.file;
+
+                AssetsFileReader reader = bundle.reader;
+                AssetBundleDirectoryInfo06[] dirInf = bundle.bundleInf6.dirInf;
+                for (int i = 0; i < dirInf.Length; i++)
+                {
+                    AssetBundleDirectoryInfo06 info = dirInf[i];
+                    if (info.name == searchPath)
+                    {
+                        reader.Position = bundle.bundleHeader6.GetFileDataOffset() + info.offset + (long) offset;
+                        audioData = reader.ReadBytes((int)size);
+                        return true;
+                    }
+                }
+                audioData = Array.Empty<byte>();
+                return false;
+            }
+            else
+            {
+                audioData = Array.Empty<byte>();
+                return true;
+            }
+        }
+
     }
 
     public class TextAssetPlugin : UABEAPlugin
