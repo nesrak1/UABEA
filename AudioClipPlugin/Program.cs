@@ -164,6 +164,7 @@ namespace AudioPlugin
         {
             if (!string.IsNullOrEmpty(filepath) && cont.FileInstance.parentBundle != null)
             {
+                // read from parent bundle archive
                 //some versions apparently don't use archive:/
                 string searchPath = filepath;
                 if (searchPath.StartsWith("archive:/"))
@@ -188,11 +189,16 @@ namespace AudioPlugin
                 audioData = Array.Empty<byte>();
                 return false;
             }
-            else
+            else if (cont.FileInstance.parentBundle == null)
             {
-                audioData = Array.Empty<byte>();
+                // read from file
+                AssetsFileReader reader = new AssetsFileReader(Path.Combine(Path.GetDirectoryName(cont.FileInstance.path), filepath));
+                reader.Position = (long) offset;
+                audioData = reader.ReadBytes((int)size);
                 return true;
             }
+            audioData = Array.Empty<byte>();
+            return false;
         }
 
     }
