@@ -72,7 +72,7 @@ namespace AudioPlugin
                     
                     CompressionFormat compressionFormat = (CompressionFormat) baseField.Get("m_CompressionFormat").GetValue().AsInt();
                     string extension = GetExtension(compressionFormat);
-                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.");
+                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}");
 
                     string ResourceSource = baseField.Get("m_Resource").Get("m_Source").GetValue().AsString();
                     ulong ResourceOffset = baseField.Get("m_Resource").Get("m_Offset").GetValue().AsUInt64();
@@ -90,6 +90,13 @@ namespace AudioPlugin
                     }
                     List<FmodSample> samples = bank.Samples;
                     samples[0].RebuildAsStandardFileFormat(out byte[] sampleData, out string sampleExtension);
+
+                    if (sampleExtension.ToLower() == "wav")
+                    {
+                        // since fmod5sharp gives us malformed wav data, we have to correct it
+                        FixWAV(ref sampleData);
+                    }
+                    
                     File.WriteAllBytes(file, sampleData);
                 }
                 return true;
@@ -139,42 +146,47 @@ namespace AudioPlugin
                 if (sampleExtension.ToLower() == "wav")
                 {
                     // since fmod5sharp gives us malformed wav data, we have to correct it
-
-                    int origLength = sampleData.Length;
-                    // remove ExtraParamSize field from fmt subchunk
-                    for (int i = 36; i < origLength - 2; i++)
-                    {
-                        sampleData[i] = sampleData[i + 2];
-                    }
-                    Array.Resize(ref sampleData, origLength - 2);
-                    // write ChunkSize to RIFF chunk
-                    byte[] riffHeaderChunkSize = BitConverter.GetBytes(sampleData.Length - 8);
-                    if (!BitConverter.IsLittleEndian)
-                    {
-                        Array.Reverse(riffHeaderChunkSize);
-                    }
-                    riffHeaderChunkSize.CopyTo(sampleData, 4);
-                    // write ChunkSize to fmt chunk
-                    byte[] fmtHeaderChunkSize = BitConverter.GetBytes(16); // it is always 16 for pcm data, which this always
-                    if (!BitConverter.IsLittleEndian)
-                    {
-                        Array.Reverse(fmtHeaderChunkSize);
-                    }
-                    fmtHeaderChunkSize.CopyTo(sampleData, 16);
-                    // write ChunkSize to data chunk
-                    byte[] dataHeaderChunkSize = BitConverter.GetBytes(sampleData.Length - 44);
-                    if (!BitConverter.IsLittleEndian)
-                    {
-                        Array.Reverse(dataHeaderChunkSize);
-                    }
-                    dataHeaderChunkSize.CopyTo(sampleData, 40);
+                    FixWAV(ref sampleData);
                 }
                 
                 File.WriteAllBytes(file, sampleData);
 
                 return true;
             }
+
             return false;
+        }
+
+        private static void FixWAV(ref byte[] wavData)
+        {
+            int origLength = wavData.Length;
+            // remove ExtraParamSize field from fmt subchunk
+            for (int i = 36; i < origLength - 2; i++)
+            {
+                wavData[i] = wavData[i + 2];
+            }
+            Array.Resize(ref wavData, origLength - 2);
+            // write ChunkSize to RIFF chunk
+            byte[] riffHeaderChunkSize = BitConverter.GetBytes(wavData.Length - 8);
+            if (!BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(riffHeaderChunkSize);
+            }
+            riffHeaderChunkSize.CopyTo(wavData, 4);
+            // write ChunkSize to fmt chunk
+            byte[] fmtHeaderChunkSize = BitConverter.GetBytes(16); // it is always 16 for pcm data, which this always
+            if (!BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(fmtHeaderChunkSize);
+            }
+            fmtHeaderChunkSize.CopyTo(wavData, 16);
+            // write ChunkSize to data chunk
+            byte[] dataHeaderChunkSize = BitConverter.GetBytes(wavData.Length - 44);
+            if (!BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(dataHeaderChunkSize);
+            }
+            dataHeaderChunkSize.CopyTo(wavData, 40);
         }
 
         private static string GetExtension(CompressionFormat format)
@@ -197,10 +209,16 @@ namespace AudioPlugin
         
         private bool GetAudioBytes(AssetContainer cont, string filepath, ulong offset, ulong size, out byte[] audioData)
         {
-            if (!string.IsNullOrEmpty(filepath) && cont.FileInstance.parentBundle != null)
+            if (string.IsNullOrEmpty(filepath))
+            {
+                audioData = Array.Empty<byte>();
+                return false;
+            }
+
+            if (cont.FileInstance.parentBundle != null)
             {
                 // read from parent bundle archive
-                //some versions apparently don't use archive:/
+                // some versions apparently don't use archive:/
                 string searchPath = filepath;
                 if (searchPath.StartsWith("archive:/"))
                     searchPath = searchPath.Substring(9);
@@ -221,21 +239,29 @@ namespace AudioPlugin
                         return true;
                     }
                 }
-                audioData = Array.Empty<byte>();
-                return false;
             }
-            else if (cont.FileInstance.parentBundle == null)
+
+            string assetsFileDirectory = Path.GetDirectoryName(cont.FileInstance.path);
+            if (cont.FileInstance.parentBundle != null)
+            {
+                // inside of bundles, the directory contains the bundle path. let's get rid of that.
+                assetsFileDirectory = Path.GetDirectoryName(assetsFileDirectory);
+            }
+
+            string resourceFilePath = Path.Combine(assetsFileDirectory, filepath);
+
+            if (File.Exists(resourceFilePath))
             {
                 // read from file
-                AssetsFileReader reader = new AssetsFileReader(Path.Combine(Path.GetDirectoryName(cont.FileInstance.path), filepath));
-                reader.Position = (long) offset;
+                AssetsFileReader reader = new AssetsFileReader(resourceFilePath);
+                reader.Position = (long)offset;
                 audioData = reader.ReadBytes((int)size);
                 return true;
             }
+
             audioData = Array.Empty<byte>();
             return false;
         }
-
     }
 
     public class TextAssetPlugin : UABEAPlugin
