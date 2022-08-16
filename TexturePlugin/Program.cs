@@ -145,8 +145,14 @@ namespace TexturePlugin
             if (dir != null && dir != string.Empty)
             {
                 List<string> extensions = new List<string>() { "png", "tga" };
+                
                 ImportBatch dialog = new ImportBatch(workspace, selection, dir, extensions);
                 List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
+                if (batchInfos == null)
+                {
+                    return false;
+                }
+
                 bool success = await ImportTextures(win, batchInfos);
                 if (success)
                 {
