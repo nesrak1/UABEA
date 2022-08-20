@@ -271,6 +271,11 @@
             List of reference types (unknown what this is for).
             </summary>
         </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.UserInformation">
+            <summary>
+            Unknown.
+            </summary>
+        </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.TypeFlags">
             <summary>
             1 if array
