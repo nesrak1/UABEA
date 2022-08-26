@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="150"
+		Width="300" Height="150"
+		x:Class="UABEAvalonia.MessageBox"
+		Title="Message Box">
+	<Grid Margin="10,10,10,10">
+		<Label Grid.Row="0" Name="titleLbl">Title</Label>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="30" />
+			<RowDefinition Height="*" />
+			<RowDefinition Height="8" />
+			<RowDefinition Height="30" />
+		</Grid.RowDefinitions>
+		<TextBox IsReadOnly="True" TextWrapping="Wrap" Grid.Row="1" Name="msgTextBox">
+			Message
+		</TextBox>
+		<StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10" FlowDirection="RightToLeft" Name="stackPanel">
+			<Button MinWidth="70" Name="btn3">Cancel</Button>
+			<Button MinWidth="70" Name="btn2">No</Button>
+			<Button MinWidth="70" Name="btn1">Yes</Button>
+		</StackPanel>
+	</Grid>
+</Window>

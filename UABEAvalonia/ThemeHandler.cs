@@ -27,11 +27,11 @@ namespace UABEAvalonia
             },
             new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
             {
-                Source = new Uri("avares://Avalonia.Themes.Default/Accents/BaseLight.xaml")
+                Source = new Uri("avares://Avalonia.Themes.Simple/Accents/BaseLight.xaml")
             },
             new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
             {
-                Source = new Uri("avares://Avalonia.Themes.Default/DefaultTheme.xaml")
+                Source = new Uri("avares://Avalonia.Themes.Simple/Controls/SimpleControls.xaml")
             }
         };
 
@@ -51,11 +51,11 @@ namespace UABEAvalonia
             },
             new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
             {
-                Source = new Uri("avares://Avalonia.Themes.Default/Accents/BaseDark.xaml")
+                Source = new Uri("avares://Avalonia.Themes.Simple/Accents/BaseDark.xaml")
             },
             new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
             {
-                Source = new Uri("avares://Avalonia.Themes.Default/DefaultTheme.xaml")
+                Source = new Uri("avares://Avalonia.Themes.Simple/Controls/SimpleControls.xaml")
             }
         };
 

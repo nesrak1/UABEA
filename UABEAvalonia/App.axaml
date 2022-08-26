@@ -1,39 +1,13 @@
-<!--<Application xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="UABEAvalonia.App">
-    <Application.Styles>
-        <FluentTheme Mode="Light"/>
-        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Default.xaml"/>
-        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
-    </Application.Styles>
-</Application>
--->
-
-<!--
-<Application xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="UABEAvalonia.App">
-    <Application.Styles>
-      //<FluentTheme Mode="Light"/>
-        <StyleInclude Source="avares://Avalonia.Themes.Default/DefaultTheme.xaml"/>
-        <StyleInclude Source="avares://Avalonia.Themes.Default/Accents/BaseLight.xaml"/>
-        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Default.xaml"/>
-      //<StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
-</Application.Styles>
-</Application>
--->
-
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sys="clr-namespace:System;assembly=netstandard"
              xmlns:uabea="clr-namespace:UABEAvalonia"
              x:Class="UABEAvalonia.App">
-  <Application.Styles>
-    <StyleInclude Source="avares://Avalonia.Themes.Default/DefaultTheme.xaml"/>
-    <StyleInclude Source="avares://Avalonia.Themes.Default/Accents/BaseLight.xaml"/>
-<!--<StyleInclude Source="avares://Avalonia.Themes.Default/Accents/BaseDark.xaml"/>-->
-    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Default.xaml"/>
-    <StyleInclude Source="/ExtendedControlStyles.axaml"/>
+	<Application.Styles>
+	<SimpleTheme Mode="Light"></SimpleTheme>
+	<StyleInclude Source="avares://Avalonia.Themes.Simple/Controls/SimpleControls.xaml"/>
+	<StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Simple.xaml"/>
+		<StyleInclude Source="/ExtendedControlStyles.axaml"/>
     <Style>
       <Style.Resources>
         <!-- thicker scrollbar -->

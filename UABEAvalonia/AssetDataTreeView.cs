@@ -3,6 +3,8 @@ using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
+using Avalonia.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +18,10 @@ namespace UABEAvalonia
         private AssetWorkspace workspace;
 
         private AvaloniaList<TreeViewItem> ListItems => (AvaloniaList<TreeViewItem>)Items;
+        private SolidColorBrush PrimNameBrush = SolidColorBrush.Parse("#569cd6");
+        private SolidColorBrush TypeNameBrush = SolidColorBrush.Parse("#4ec9b0");
+        private SolidColorBrush StringBrush = SolidColorBrush.Parse("#d69d85");
+        private SolidColorBrush ValueBrush = SolidColorBrush.Parse("#b5cea8");
 
         public void Init(AssetWorkspace workspace)
         {
@@ -92,6 +98,77 @@ namespace UABEAvalonia
             return new TreeViewItem() { Header = text };
         }
 
+        private TreeViewItem CreateColorTreeItem(string typeName, string fieldName)
+        {
+            RichTextBlock tb = new RichTextBlock();
+
+            Span span1 = new Span()
+            {
+                Foreground = TypeNameBrush,/*,
+                FontWeight = FontWeight.Bold*/
+            };
+            Bold bold1 = new Bold();
+            bold1.Inlines.Add(typeName);
+            span1.Inlines.Add(bold1);
+            tb.Inlines.Add(span1);
+
+            Bold bold2 = new Bold();
+            bold2.Inlines.Add($" {fieldName}");
+            tb.Inlines.Add(bold2);
+
+            /*
+			<Span Foreground="#4ec9b0">
+				<Bold>TypeName</Bold></Span>
+			<Bold>. fieldName = .</Bold>
+			<Span Foreground="#d69d85">
+				<Bold>"hi"</Bold>
+			</Span> 
+            */
+
+            return new TreeViewItem()
+            {
+                Header = tb
+            };
+        }
+
+        private TreeViewItem CreateColorTreeItem(string typeName, string fieldName, string middle, string value)
+        {
+            bool isString = value.StartsWith("\"");
+
+            RichTextBlock tb = new RichTextBlock();
+
+            bool primitiveType = AssetTypeValueField.GetValueTypeByTypeName(typeName) != AssetValueType.None;
+
+            Span span1 = new Span()
+            {
+                Foreground = primitiveType ? PrimNameBrush : TypeNameBrush
+            };
+            Bold bold1 = new Bold();
+            bold1.Inlines.Add(typeName);
+            span1.Inlines.Add(bold1);
+            tb.Inlines.Add(span1);
+
+            Bold bold2 = new Bold();
+            bold2.Inlines.Add($" {fieldName}");
+            tb.Inlines.Add(bold2);
+
+            tb.Inlines.Add(middle);
+
+            if (value != "")
+            {
+                Span span2 = new Span()
+                {
+                    Foreground = isString ? StringBrush : ValueBrush
+                };
+                Bold bold3 = new Bold();
+                bold3.Inlines.Add(value);
+                span2.Inlines.Add(bold3);
+                tb.Inlines.Add(span2);
+            }
+
+            return new TreeViewItem() { Header = tb };
+        }
+
         //lazy load tree items. avalonia is really slow to load if
         //we just throw everything in the treeview at once
         private void SetTreeItemEvents(TreeViewItem item, AssetsFileInstance fromFile, long fromPathId, AssetTypeValueField field)
@@ -153,13 +230,14 @@ namespace UABEAvalonia
             {
                 int size = assetField.AsArray.size;
                 AssetTypeTemplateField sizeTemplate = assetFieldTemplate.Children[0];
-                TreeViewItem arrayIndexTreeItem = CreateTreeItem($"{sizeTemplate.Type} {sizeTemplate.Name} = {size}");
+                TreeViewItem arrayIndexTreeItem = CreateColorTreeItem(sizeTemplate.Type, sizeTemplate.Name, " = ", size.ToString());
                 items.Add(arrayIndexTreeItem);
             }
 
             foreach (AssetTypeValueField childField in assetField)
             {
                 if (childField == null) return;
+                string middle = "";
                 string value = "";
                 if (childField.Value != null)
                 {
@@ -168,15 +246,16 @@ namespace UABEAvalonia
                     if (evt == AssetValueType.String) quote = "\"";
                     if (1 <= (int)evt && (int)evt <= 12)
                     {
-                        value = $" = {quote}{childField.AsString}{quote}";
+                        middle = " = ";
+                        value = $"{quote}{childField.AsString}{quote}";
                     }
                     if (evt == AssetValueType.Array)
                     {
-                        value = $" (size {childField.Children.Count})";
+                        middle = $" (size {childField.Children.Count})";
                     }
                     else if (evt == AssetValueType.ByteArray)
                     {
-                        value = $" (size {childField.AsByteArray.Length})";
+                        middle = $" (size {childField.AsByteArray.Length})";
                     }
                 }
 
@@ -185,7 +264,7 @@ namespace UABEAvalonia
                     TreeViewItem arrayIndexTreeItem = CreateTreeItem($"{arrayIdx}");
                     items.Add(arrayIndexTreeItem);
 
-                    TreeViewItem childTreeItem = CreateTreeItem($"{childField.TypeName} {childField.FieldName}{value}");
+                    TreeViewItem childTreeItem = CreateColorTreeItem(childField.TypeName, childField.FieldName, middle, value);
                     arrayIndexTreeItem.Items = new AvaloniaList<TreeViewItem>() { childTreeItem };
 
                     if (childField.Children.Count > 0)
@@ -199,7 +278,7 @@ namespace UABEAvalonia
                 }
                 else
                 {
-                    TreeViewItem childTreeItem = CreateTreeItem($"{childField.TypeName} {childField.FieldName}{value}");
+                    TreeViewItem childTreeItem = CreateColorTreeItem(childField.TypeName, childField.FieldName, middle, value);
                     items.Add(childTreeItem);
 
                     if (childField.Children.Count > 0)

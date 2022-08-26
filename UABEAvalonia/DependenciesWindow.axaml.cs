@@ -309,9 +309,9 @@ namespace UABEAvalonia
         {
             var result = await MessageBoxUtil.ShowDialog(this, "Warning",
                 "Are you sure you want to (re)move this dependency? This function will not automatically remap\n" + 
-                "the file ids in the assets in this file. Use only if you know what you're doing.", ButtonEnum.YesNo);
+                "the file ids in the assets in this file. Use only if you know what you're doing.", MessageBoxType.YesNo);
 
-            return result == ButtonResult.Yes;
+            return result == MessageBoxResult.Yes;
         }
 
         private void InitializeComponent()

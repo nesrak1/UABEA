@@ -615,10 +615,10 @@ namespace UABEAvalonia
         {
             if (changesUnsaved && bundleInst != null)
             {
-                ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
+                MessageBoxResult choice = await MessageBoxUtil.ShowDialog(this,
                     "Changes made", "You've modified this file. Would you like to save?",
-                    ButtonEnum.YesNo);
-                if (choice == ButtonResult.Yes)
+                    MessageBoxType.YesNo);
+                if (choice == MessageBoxResult.Yes)
                 {
                     await AskForLocationAndSave();
                 }
@@ -649,11 +649,11 @@ namespace UABEAvalonia
                             "changes, please close this bundle and open the file you saved. Click Ok to compress the file without changes.";
                     }
 
-                    ButtonResult continueWithChanges = await MessageBoxUtil.ShowDialog(
+                    MessageBoxResult continueWithChanges = await MessageBoxUtil.ShowDialog(
                         this, "Note", messageBoxTest,
-                        ButtonEnum.OkCancel);
+                        MessageBoxType.OKCancel);
 
-                    if (continueWithChanges == ButtonResult.Cancel)
+                    if (continueWithChanges == MessageBoxResult.Cancel)
                     {
                         return;
                     }
@@ -694,11 +694,11 @@ namespace UABEAvalonia
 
         private async Task<string?> AskLoadSplitFile(string selectedFile)
         {
-            ButtonResult splitRes = await MessageBoxUtil.ShowDialog(this,
+            MessageBoxResult splitRes = await MessageBoxUtil.ShowDialog(this,
                 "Split file detected", "This file ends with .split0. Create merged file?\n",
-                ButtonEnum.YesNoCancel);
+                MessageBoxType.YesNoCancel);
 
-            if (splitRes == ButtonResult.Yes)
+            if (splitRes == MessageBoxResult.Yes)
             {
                 SaveFileDialog sfd = new SaveFileDialog();
                 sfd.Title = "Select location for merged file";
@@ -727,11 +727,11 @@ namespace UABEAvalonia
                 }
                 return splitFilePath;
             }
-            else if (splitRes == ButtonResult.No)
+            else if (splitRes == MessageBoxResult.No)
             {
                 return selectedFile;
             }
-            else //if (splitRes == ButtonResult.Cancel)
+            else //if (splitRes == MessageBoxResult.Cancel)
             {
                 return null;
             }

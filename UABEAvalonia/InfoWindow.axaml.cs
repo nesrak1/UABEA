@@ -258,17 +258,10 @@ namespace UABEAvalonia
             AssetInfoDataGridItem gridItem = GetSelectedGridItem();
             if (gridItem.Size > 500000)
             {
-                var bigFileBox = MessageBoxManager
-                    .GetMessageBoxCustomWindow(new MessageBoxCustomParams
-                    {
-                        ContentHeader = "Warning",
-                        ContentMessage = "The asset you are about to open is very big and may take a lot of time and memory.",
-                        ButtonDefinitions = new[] {
-                            new ButtonDefinition {Name = "Continue anyway"},
-                            new ButtonDefinition {Name = "Cancel", IsDefault = true}
-                        }
-                    });
-                string result = await bigFileBox.Show();
+                var result = await MessageBoxUtil.ShowDialogCustom(this,
+                    "Warning", "The asset you are about to open is very big and may take a lot of time and memory.",
+                    "Continue anyway", "Cancel");
+
                 if (result == "Cancel")
                     return;
             }
@@ -338,10 +331,10 @@ namespace UABEAvalonia
             if (await FailIfNothingSelected())
                 return;
 
-            ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
+            MessageBoxResult choice = await MessageBoxUtil.ShowDialog(this,
                 "Removing assets", "Removing an asset referenced by other assets can cause crashes!\nAre you sure?",
-                ButtonEnum.YesNo);
-            if (choice == ButtonResult.Yes)
+                MessageBoxType.YesNo);
+            if (choice == MessageBoxResult.Yes)
             {
                 List<AssetContainer> selection = GetSelectedAssetsReplaced();
                 foreach (AssetContainer cont in selection)
@@ -392,10 +385,10 @@ namespace UABEAvalonia
 
         private async Task AskForSave()
         {
-            ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
+            MessageBoxResult choice = await MessageBoxUtil.ShowDialog(this,
                 "Changes made", "You've modified this file. Would you like to save?",
-                ButtonEnum.YesNo);
-            if (choice == ButtonResult.Yes)
+                MessageBoxType.YesNo);
+            if (choice == MessageBoxResult.Yes)
             {
                 await SaveFile();
             }
