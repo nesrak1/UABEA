@@ -26,6 +26,9 @@
         <MenuItem Header="Search by name" Name="menuSearchByName" />
         <MenuItem Header="Continue search" InputGesture="F3" Name="menuContinueSearch" />
         <MenuItem Header="Go to asset" Name="menuGoToAsset" />
+        <MenuItem Header="Filter" Name="menuFilter" />
+      </MenuItem>
+      <MenuItem Header="Tools">
         <MenuItem Header="Dependencies" Name="menuDependencies" />
         <MenuItem Header="Containters" Name="menuContainers" />
         <MenuItem Header="Scripts" Name="menuScripts" />
@@ -44,6 +47,7 @@
 				  </DataGridTemplateColumn.CellTemplate>
 		      </DataGridTemplateColumn>
 			  <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
+			  <DataGridTextColumn Header="Container" Binding="{Binding Container}"/>
 			  <DataGridTextColumn Header="Type" Binding="{Binding Type}"/>
 			  <DataGridTextColumn Header="File ID" Binding="{Binding FileID}"/>
 			  <DataGridTextColumn Header="Path ID" Binding="{Binding PathID}"/>

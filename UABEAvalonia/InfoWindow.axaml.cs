@@ -33,6 +33,7 @@ namespace UABEAvalonia
         private MenuItem menuSearchByName;
         private MenuItem menuContinueSearch;
         private MenuItem menuGoToAsset;
+        private MenuItem menuFilter;
         private MenuItem menuDependencies;
         private MenuItem menuContainers;
         private MenuItem menuScripts;
@@ -63,6 +64,8 @@ namespace UABEAvalonia
 
         private bool ignoreCloseEvent;
 
+        private HashSet<AssetClassID> filteredOutTypeIds;
+
         //would prefer using a stream over byte[] but whatever, will for now
         public List<Tuple<AssetsFileInstance, byte[]>> ChangedAssetsDatas { get; set; }
 
@@ -80,30 +83,31 @@ namespace UABEAvalonia
             this.AttachDevTools();
 #endif
             //generated items
-            menuAdd = this.FindControl<MenuItem>("menuAdd");
-            menuSave = this.FindControl<MenuItem>("menuSave");
-            menuCreateStandaloneInstaller = this.FindControl<MenuItem>("menuCreateStandaloneInstaller");
-            menuCreatePackageFile = this.FindControl<MenuItem>("menuCreatePackageFile");
-            menuClose = this.FindControl<MenuItem>("menuClose");
-            menuSearchByName = this.FindControl<MenuItem>("menuSearchByName");
-            menuContinueSearch = this.FindControl<MenuItem>("menuContinueSearch");
-            menuGoToAsset = this.FindControl<MenuItem>("menuGoToAsset");
-            menuDependencies = this.FindControl<MenuItem>("menuDependencies");
-            menuContainers = this.FindControl<MenuItem>("menuContainers");
-            menuScripts = this.FindControl<MenuItem>("menuScripts");
-            menuHierarchy = this.FindControl<MenuItem>("menuHierarchy");
-            btnViewData = this.FindControl<Button>("btnViewData");
-            btnExportRaw = this.FindControl<Button>("btnExportRaw");
-            btnExportDump = this.FindControl<Button>("btnExportDump");
-            btnPlugin = this.FindControl<Button>("btnPlugin");
-            btnImportRaw = this.FindControl<Button>("btnImportRaw");
-            btnImportDump = this.FindControl<Button>("btnImportDump");
-            btnRemove = this.FindControl<Button>("btnRemove");
-            dataGrid = this.FindControl<DataGrid>("dataGrid");
-            boxName = this.FindControl<TextBox>("boxName");
-            boxPathId = this.FindControl<TextBox>("boxPathId");
-            boxFileId = this.FindControl<TextBox>("boxFileId");
-            boxType = this.FindControl<TextBox>("boxType");
+            menuAdd = this.FindControl<MenuItem>("menuAdd")!;
+            menuSave = this.FindControl<MenuItem>("menuSave")!;
+            menuCreateStandaloneInstaller = this.FindControl<MenuItem>("menuCreateStandaloneInstaller")!;
+            menuCreatePackageFile = this.FindControl<MenuItem>("menuCreatePackageFile")!;
+            menuClose = this.FindControl<MenuItem>("menuClose")!;
+            menuSearchByName = this.FindControl<MenuItem>("menuSearchByName")!;
+            menuContinueSearch = this.FindControl<MenuItem>("menuContinueSearch")!;
+            menuGoToAsset = this.FindControl<MenuItem>("menuGoToAsset")!;
+            menuFilter = this.FindControl<MenuItem>("menuFilter")!;
+            menuDependencies = this.FindControl<MenuItem>("menuDependencies")!;
+            menuContainers = this.FindControl<MenuItem>("menuContainers")!;
+            menuScripts = this.FindControl<MenuItem>("menuScripts")!;
+            menuHierarchy = this.FindControl<MenuItem>("menuHierarchy")!;
+            btnViewData = this.FindControl<Button>("btnViewData")!;
+            btnExportRaw = this.FindControl<Button>("btnExportRaw")!;
+            btnExportDump = this.FindControl<Button>("btnExportDump")!;
+            btnPlugin = this.FindControl<Button>("btnPlugin")!;
+            btnImportRaw = this.FindControl<Button>("btnImportRaw")!;
+            btnImportDump = this.FindControl<Button>("btnImportDump")!;
+            btnRemove = this.FindControl<Button>("btnRemove")!;
+            dataGrid = this.FindControl<DataGrid>("dataGrid")!;
+            boxName = this.FindControl<TextBox>("boxName")!;
+            boxPathId = this.FindControl<TextBox>("boxPathId")!;
+            boxFileId = this.FindControl<TextBox>("boxFileId")!;
+            boxType = this.FindControl<TextBox>("boxType")!;
             //generated events
             KeyDown += InfoWindow_KeyDown;
             menuAdd.Click += MenuAdd_Click;
@@ -113,6 +117,7 @@ namespace UABEAvalonia
             menuSearchByName.Click += MenuSearchByName_Click;
             menuContinueSearch.Click += MenuContinueSearch_Click;
             menuGoToAsset.Click += MenuGoToAsset_Click;
+            menuFilter.Click += MenuFilter_Click;
             menuDependencies.Click += MenuDependencies_Click;
             menuScripts.Click += MenuScripts_Click;
             menuHierarchy.Click += MenuHierarchy_Click;
@@ -156,6 +161,8 @@ namespace UABEAvalonia
             searchDown = false;
             searchCaseSensitive = true;
             searching = false;
+
+            filteredOutTypeIds = new HashSet<AssetClassID>();
 
             ChangedAssetsDatas = new List<Tuple<AssetsFileInstance, byte[]>>();
         }
@@ -222,6 +229,16 @@ namespace UABEAvalonia
 
                 IdSearch(targetFile, targetPathId);
             }
+        }
+
+        private async void MenuFilter_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            FilterAssetTypeDialog dialog = new FilterAssetTypeDialog(filteredOutTypeIds);
+            filteredOutTypeIds = await dialog.ShowDialog<HashSet<AssetClassID>>(this);
+            
+            var filter = new Func<object, bool>(item => !filteredOutTypeIds.Contains(((AssetInfoDataGridItem)item).TypeClass));
+            dgcv.Filter = null; // avalonia bug? idk, doesn't update the filter without doing this
+            dgcv.Filter = filter;
         }
 
         private async void MenuDependencies_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
