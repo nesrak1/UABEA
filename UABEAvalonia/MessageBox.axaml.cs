@@ -89,14 +89,14 @@ namespace UABEAvalonia
             else if (buttonTexts.Length == 2)
             {
                 stackPanel.Children.Remove(btn3);
-                btn2.Content = buttonTexts[0];
-                btn1.Content = buttonTexts[1];
+                btn1.Content = buttonTexts[0];
+                btn2.Content = buttonTexts[1];
             }
             else
             {
-                btn3.Content = buttonTexts[0];
+                btn1.Content = buttonTexts[0];
                 btn2.Content = buttonTexts[1];
-                btn1.Content = buttonTexts[2];
+                btn3.Content = buttonTexts[2];
             }
         }
 
