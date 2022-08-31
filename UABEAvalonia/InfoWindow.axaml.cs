@@ -811,7 +811,6 @@ namespace UABEAvalonia
             bool foundResult = false;
             if (searching)
             {
-                //List<AssetInfoDataGridItem> itemList = dataGrid.Items.Cast<AssetInfoDataGridItem>().ToList();
                 List<AssetInfoDataGridItem> itemList = GetDataGridItemsSorted(dgcv);
                 if (searchDown)
                 {
@@ -870,7 +869,7 @@ namespace UABEAvalonia
         {
             bool foundResult = false;
 
-            List<AssetInfoDataGridItem> itemList = dataGrid.Items.Cast<AssetInfoDataGridItem>().ToList();
+            List<AssetInfoDataGridItem> itemList = GetDataGridItemsSorted(dgcv);
             for (int i = 0; i < itemList.Count; i++)
             {
                 AssetContainer cont = itemList[i].assetContainer;
