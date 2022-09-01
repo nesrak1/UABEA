@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace UABEAvalonia
@@ -683,7 +684,19 @@ namespace UABEAvalonia
 
                 if (compType != AssetBundleCompressionType.None)
                 {
-                    CompressBundle(bundleInst, file, compType);
+                    ProgressWindow progressWindow = new ProgressWindow("Compressing...");
+
+                    Thread thread = new Thread(new ParameterizedThreadStart(CompressBundle));
+                    object[] threadArgs =
+                    {
+                        bundleInst,
+                        file,
+                        compType,
+                        progressWindow.Progress
+                    };
+                    thread.Start(threadArgs);
+
+                    await progressWindow.ShowDialog(this);
                 }
             }
             else
@@ -852,12 +865,19 @@ namespace UABEAvalonia
             changesUnsaved = false;
         }
 
-        private void CompressBundle(BundleFileInstance bundleInst, string path, AssetBundleCompressionType compType)
+        private void CompressBundle(object? args)
         {
+            object[] argsArr = (object[])args!;
+
+            var bundleInst = (BundleFileInstance)argsArr[0];
+            var path = (string)argsArr[1];
+            var compType = (AssetBundleCompressionType)argsArr[2];
+            var progress = (IAssetBundleCompressProgress)argsArr[3];
+
             using (FileStream fs = File.OpenWrite(path))
             using (AssetsFileWriter w = new AssetsFileWriter(fs))
             {
-                bundleInst.file.Pack(bundleInst.file.Reader, w, compType);
+                bundleInst.file.Pack(bundleInst.file.Reader, w, compType, true, progress);
             }
         }
 

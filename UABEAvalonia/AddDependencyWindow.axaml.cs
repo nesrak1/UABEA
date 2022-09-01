@@ -102,7 +102,7 @@ namespace UABEAvalonia
                 VirtualAssetPathName = string.Empty,
                 PathName = boxFileName.Text ?? string.Empty, // thanks avalonia
                 OriginalPathName = boxOrigFileName.Text != string.Empty ? boxOrigFileName.Text : boxFileName.Text,
-                Type = ddDepType.SelectedIndex,
+                Type = (AssetsFileExternalType)ddDepType.SelectedIndex,
                 Guid = GetGuid()
             };
 

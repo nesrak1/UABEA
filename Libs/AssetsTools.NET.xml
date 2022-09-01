@@ -54,6 +54,21 @@
             List of file infos in this bundle.
             </summary>
         </member>
+        <member name="P:AssetsTools.NET.AssetBundleBlockInfo.DecompressedSize">
+            <summary>
+            Decompressed size of this block.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleBlockInfo.CompressedSize">
+            <summary>
+            Compressed size of this block. If uncompressed, this is the same as DecompressedSize.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleBlockInfo.Flags">
+            <summary>
+            Flags of this block.
+            </summary>
+        </member>
         <member name="F:AssetsTools.NET.AssetBundleDirectoryInfo.Offset">
             <summary>
             Offset from bundle's data start (header.GetFileDataOffset()).
@@ -73,6 +88,16 @@
         <member name="F:AssetsTools.NET.AssetBundleDirectoryInfo.Name">
             <summary>
             Name of this entry.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFile.Header">
+            <summary>
+            Bundle header. Contains bundle engine version.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFile.BlockAndDirInfo">
+            <summary>
+            List of compression blocks and file info (file names, address in file, etc.)
             </summary>
         </member>
         <member name="P:AssetsTools.NET.AssetBundleFSHeader.TotalFileSize">
@@ -206,6 +231,56 @@
             Address of the asset's data from the start of the file.
             </summary>
         </member>
+        <member name="P:AssetsTools.NET.AssetPPtr.FilePath">
+            <summary>
+            File path of the pointer. If empty or null, FileId will be used.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetPPtr.FileId">
+            <summary>
+            File ID of the pointer.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetPPtr.PathId">
+            <summary>
+            Path ID of the pointer.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFile.Header">
+            <summary>
+            Assets file header.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFile.Metadata">
+            <summary>
+            Contains metadata about the file (TypeTree, engine version, dependencies, etc.)
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.VirtualAssetPathName">
+            <summary>
+            Unknown.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.Guid">
+            <summary>
+            GUID for dependencies used in editor. Otherwise this is 0.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.Type">
+            <summary>
+            Dependency type.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.PathName">
+            <summary>
+            Real path name to the other file.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.OriginalPathName">
+            <summary>
+            Original path name listed in the assets file (if it was changed). You shouldn't modify this.
+            </summary>
+        </member>
         <member name="P:AssetsTools.NET.AssetsFileHeader.MetadataSize">
             <summary>
             Size of the metadata block (not including this header).
@@ -276,14 +351,50 @@
             Unknown.
             </summary>
         </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.Version">
+            <summary>
+            Version of the node
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.Level">
+            <summary>
+            Level of the node (0 for root, 1 for child, etc.)
+            </summary>
+        </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.TypeFlags">
             <summary>
             1 if array
             </summary>
         </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.TypeStrOffset">
+            <summary>
+            Offset of the type string in the string table.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.NameStrOffset">
+            <summary>
+            Offset of the name string in the string table.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.ByteSize">
+            <summary>
+            Byte size of the field's type (for example, int is 4).
+            If the field isn't a value type, then this value is a sum of all children sizes.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.Index">
+            <summary>
+            Index in the type tree. This should always be the same as the index in the array.
+            </summary>
+        </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.MetaFlags">
             <summary>
             0x4000 if aligned
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.RefTypeHash">
+            <summary>
+            Unknown.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeType.TypeId">
@@ -324,6 +435,56 @@
         <member name="P:AssetsTools.NET.TypeTreeType.TypeDependencies">
             <summary>
             Type dependencies for this type. Unknown purpose.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.Name">
+            <summary>
+            Name of the field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.Type">
+            <summary>
+            Type name of the field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.ValueType">
+            <summary>
+            Type of the field (as an enum).
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.IsArray">
+            <summary>
+            Is the field an array?
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.IsAligned">
+            <summary>
+            Is the field aligned? This aligns four bytes after all children have been read/written.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.HasValue">
+            <summary>
+            Does the field have value? (i.e. is the field a numeric / string / array type?)
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.Children">
+            <summary>
+            Children of the field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeValueField.TemplateField">
+            <summary>
+            Template field corresponding to this value field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeValueField.Value">
+            <summary>
+            Value of this field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeValueField.Children">
+            <summary>
+            Children of this field.
             </summary>
         </member>
         <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.None">
