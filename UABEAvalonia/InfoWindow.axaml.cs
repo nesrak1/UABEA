@@ -374,10 +374,20 @@ namespace UABEAvalonia
         private void DataGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             var gridItem = (AssetInfoDataGridItem)dataGrid.SelectedItem;
-            boxName.Text = gridItem.Name;
-            boxPathId.Text = gridItem.PathID.ToString();
-            boxFileId.Text = gridItem.FileID.ToString();
-            boxType.Text = $"0x{gridItem.TypeID:X8} ({gridItem.Type})";
+            if (gridItem == null)
+            {
+                boxName.Text = string.Empty;
+                boxPathId.Text = string.Empty;
+                boxFileId.Text = string.Empty;
+                boxType.Text = string.Empty;
+            }
+            else
+            {
+                boxName.Text = gridItem.Name;
+                boxPathId.Text = gridItem.PathID.ToString();
+                boxFileId.Text = gridItem.FileID.ToString();
+                boxType.Text = $"0x{gridItem.TypeID:X8} ({gridItem.Type})";
+            }
         }
 
         private async void InfoWindow_Closing(object? sender, CancelEventArgs e)
