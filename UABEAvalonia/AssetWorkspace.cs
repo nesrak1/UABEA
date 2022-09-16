@@ -1,6 +1,6 @@
 ﻿using AssetsTools.NET;
+using AssetsTools.NET.Cpp2IL;
 using AssetsTools.NET.Extra;
-using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,6 +36,8 @@ namespace UABEAvalonia
         public delegate void AssetWorkspaceItemUpdateEvent(AssetsFileInstance file, AssetID assetId);
         public event AssetWorkspaceItemUpdateEvent? ItemUpdated;
 
+        private bool setMonoTempGeneratorsYet;
+
         public AssetWorkspace(AssetsManager am, bool fromBundle)
         {
             this.am = am;
@@ -53,6 +55,8 @@ namespace UABEAvalonia
             OtherAssetChanges = new Dictionary<AssetsFileInstance, AssetsFileChangeTypes>();
 
             Modified = false;
+
+            setMonoTempGeneratorsYet = false;
         }
 
         public void AddReplacer(AssetsFileInstance forFile, AssetsReplacer replacer, Stream? previewStream = null)
@@ -183,52 +187,53 @@ namespace UABEAvalonia
 
         public AssetTypeTemplateField GetTemplateField(AssetContainer cont, bool deserializeMono = true)
         {
-            AssetsFileInstance fileInst = cont.FileInstance;
-            AssetsFile file = fileInst.file;
-            int type = cont.ClassId;
-            ushort scriptIndex = cont.MonoId;
-
-            int fixedId = AssetHelper.FixAudioID(type);
-            bool hasTypeTree = file.Metadata.TypeTreeEnabled;
-
-            AssetTypeTemplateField baseField = new AssetTypeTemplateField();
-            if (hasTypeTree)
-            {
-                TypeTreeType typeTreeType = AssetHelper.FindTypeTreeTypeByID(file.Metadata, fixedId, scriptIndex);
-
-                if (typeTreeType != null && typeTreeType.Nodes.Count > 0)
-                    baseField.FromTypeTree(typeTreeType);
-                else //fallback to cldb
-                    baseField.FromClassDatabase(am.classDatabase, AssetHelper.FindAssetClassByID(am.classDatabase, fixedId));
-            }
-            else
-            {
-                if (type == (uint)AssetClassID.MonoBehaviour && deserializeMono)
-                {
-                    AssetsFileMetadata meta = cont.FileInstance.file.Metadata;
-                    //check if typetree data exists already
-                    if (!meta.TypeTreeEnabled || AssetHelper.FindTypeTreeTypeByScriptIndex(meta, cont.MonoId) == null)
-                    {
-                        //deserialize from dll (todo: ask user if dll isn't in normal location)
-                        string filePath;
-                        if (fileInst.parentBundle != null)
-                            filePath = Path.GetDirectoryName(fileInst.parentBundle.path);
-                        else
-                            filePath = Path.GetDirectoryName(fileInst.path);
-
-                        string managedPath = Path.Combine(filePath, "Managed");
-                        if (Directory.Exists(managedPath))
-                        {
-                            return GetConcatMonoTemplateField(cont, managedPath);
-                        }
-                        //fallback to no mono deserialization for now
-                    }
-                }
-
-                baseField.FromClassDatabase(am.classDatabase, AssetHelper.FindAssetClassByID(am.classDatabase, fixedId));
-            }
-
-            return baseField;
+            return am.GetTemplateBaseField(cont.FileInstance, cont.FilePosition, cont.ClassId, cont.MonoId);
+            //AssetsFileInstance fileInst = cont.FileInstance;
+            //AssetsFile file = fileInst.file;
+            //int type = cont.ClassId;
+            //ushort scriptIndex = cont.MonoId;
+            //
+            //int fixedId = AssetHelper.FixAudioID(type);
+            //bool hasTypeTree = file.Metadata.TypeTreeEnabled;
+            //
+            //AssetTypeTemplateField baseField = new AssetTypeTemplateField();
+            //if (hasTypeTree)
+            //{
+            //    TypeTreeType typeTreeType = AssetHelper.FindTypeTreeTypeByID(file.Metadata, fixedId, scriptIndex);
+            //
+            //    if (typeTreeType != null && typeTreeType.Nodes.Count > 0)
+            //        baseField.FromTypeTree(typeTreeType);
+            //    else //fallback to cldb
+            //        baseField.FromClassDatabase(am.classDatabase, AssetHelper.FindAssetClassByID(am.classDatabase, fixedId));
+            //}
+            //else
+            //{
+            //    if (type == (uint)AssetClassID.MonoBehaviour && deserializeMono)
+            //    {
+            //        AssetsFileMetadata meta = cont.FileInstance.file.Metadata;
+            //        //check if typetree data exists already
+            //        if (!meta.TypeTreeEnabled || AssetHelper.FindTypeTreeTypeByScriptIndex(meta, cont.MonoId) == null)
+            //        {
+            //            //deserialize from dll (todo: ask user if dll isn't in normal location)
+            //            string filePath;
+            //            if (fileInst.parentBundle != null)
+            //                filePath = Path.GetDirectoryName(fileInst.parentBundle.path);
+            //            else
+            //                filePath = Path.GetDirectoryName(fileInst.path);
+            //
+            //            string managedPath = Path.Combine(filePath, "Managed");
+            //            if (Directory.Exists(managedPath))
+            //            {
+            //                return GetConcatMonoTemplateField(cont, managedPath);
+            //            }
+            //            //fallback to no mono deserialization for now
+            //        }
+            //    }
+            //
+            //    baseField.FromClassDatabase(am.classDatabase, AssetHelper.FindAssetClassByID(am.classDatabase, fixedId));
+            //}
+            //
+            //return baseField;
         }
 
         public AssetContainer GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)
@@ -331,6 +336,27 @@ namespace UABEAvalonia
                 baseTemp = mc.GetTemplateField(baseTemp, assemblyName, scriptNamespace, scriptClassName, new UnityVersion(file.Metadata.UnityVersion));
             }
             return baseTemp;
+        }
+
+        public void SetMonoTempGenerators(string fileDir)
+        {
+            if (!setMonoTempGeneratorsYet)
+            {
+                setMonoTempGeneratorsYet = true;
+                FindCpp2IlFilesResult il2cppFiles = FindCpp2IlFiles.Find(fileDir);
+                if (il2cppFiles.success)
+                {
+                    am.SetMonoTempGenerator(new Cpp2IlTempGenerator(il2cppFiles.metaPath, il2cppFiles.asmPath));
+                }
+                else
+                {
+                    string managedDir = Path.Combine(fileDir, "Managed");
+                    if (Directory.Exists(managedDir))
+                    {
+                        am.SetMonoTempGenerator(new MonoCecilTempGenerator(managedDir));
+                    }
+                }
+            }
         }
     }
 }

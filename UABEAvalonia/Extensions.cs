@@ -180,6 +180,21 @@ namespace UABEAvalonia
             }
         }
 
+        public static string GetAssetsFileDirectory(AssetsFileInstance firstFile)
+        {
+            string dir = Path.GetDirectoryName(firstFile.path)!;
+            if (firstFile.parentBundle != null)
+            {
+                string? bundleDir = Path.GetDirectoryName(dir);
+                if (bundleDir != null)
+                {
+                    dir = bundleDir;
+                }
+            }
+
+            return dir;
+        }
+
         //https://stackoverflow.com/a/23182807
         public static string ReplaceInvalidPathChars(string filename)
         {

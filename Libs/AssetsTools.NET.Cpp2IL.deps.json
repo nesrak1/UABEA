@@ -1,0 +1,138 @@
+{
+  "runtimeTarget": {
+    "name": ".NETStandard,Version=v2.0/",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETStandard,Version=v2.0": {},
+    ".NETStandard,Version=v2.0/": {
+      "AssetsTools.NET.Cpp2IL/1.0.0": {
+        "dependencies": {
+          "AssetsTools.NET": "1.0.0",
+          "NETStandard.Library": "2.0.3",
+          "Samboy063.LibCpp2IL": "2022.0.5"
+        },
+        "runtime": {
+          "AssetsTools.NET.Cpp2IL.dll": {}
+        }
+      },
+      "IndexRange/1.0.0": {
+        "runtime": {
+          "lib/netstandard2.0/IndexRange.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Microsoft.NETCore.Platforms/1.1.0": {},
+      "Mono.Cecil/0.11.3": {
+        "runtime": {
+          "lib/netstandard2.0/Mono.Cecil.Mdb.dll": {
+            "assemblyVersion": "0.11.3.0",
+            "fileVersion": "0.11.3.0"
+          },
+          "lib/netstandard2.0/Mono.Cecil.Pdb.dll": {
+            "assemblyVersion": "0.11.3.0",
+            "fileVersion": "0.11.3.0"
+          },
+          "lib/netstandard2.0/Mono.Cecil.Rocks.dll": {
+            "assemblyVersion": "0.11.3.0",
+            "fileVersion": "0.11.3.0"
+          },
+          "lib/netstandard2.0/Mono.Cecil.dll": {
+            "assemblyVersion": "0.11.3.0",
+            "fileVersion": "0.11.3.0"
+          }
+        }
+      },
+      "NETStandard.Library/2.0.3": {
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0"
+        }
+      },
+      "Samboy063.LibCpp2IL/2022.0.5": {
+        "dependencies": {
+          "IndexRange": "1.0.0",
+          "Samboy063.WasmDisassembler": "2022.0.2"
+        },
+        "runtime": {
+          "lib/netstandard2.0/LibCpp2IL.dll": {
+            "assemblyVersion": "2022.0.5.0",
+            "fileVersion": "2022.0.5.0"
+          }
+        }
+      },
+      "Samboy063.WasmDisassembler/2022.0.2": {
+        "runtime": {
+          "lib/netstandard2.0/WasmDisassembler.dll": {
+            "assemblyVersion": "2022.0.2.0",
+            "fileVersion": "2022.0.2.0"
+          }
+        }
+      },
+      "AssetsTools.NET/1.0.0": {
+        "dependencies": {
+          "Mono.Cecil": "0.11.3"
+        },
+        "runtime": {
+          "AssetsTools.NET.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "AssetsTools.NET.Cpp2IL/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "IndexRange/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6TgS1JLSUkpmPLfXBPaAgB39ZUix8E4soXWk2XSDcscVe84i1JKzIAtA7jHbRHSkOOrcr6YA0MpLCeq98y9mYQ==",
+      "path": "indexrange/1.0.0",
+      "hashPath": "indexrange.1.0.0.nupkg.sha512"
+    },
+    "Microsoft.NETCore.Platforms/1.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A==",
+      "path": "microsoft.netcore.platforms/1.1.0",
+      "hashPath": "microsoft.netcore.platforms.1.1.0.nupkg.sha512"
+    },
+    "Mono.Cecil/0.11.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-DNYE+io5XfEE8+E+5padThTPHJARJHbz1mhbhMPNrrWGKVKKqj/KEeLvbawAmbIcT73NuxLV7itHZaYCZcVWGg==",
+      "path": "mono.cecil/0.11.3",
+      "hashPath": "mono.cecil.0.11.3.nupkg.sha512"
+    },
+    "NETStandard.Library/2.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A==",
+      "path": "netstandard.library/2.0.3",
+      "hashPath": "netstandard.library.2.0.3.nupkg.sha512"
+    },
+    "Samboy063.LibCpp2IL/2022.0.5": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-eH+/FBclsKDxboa9N/tFoiM8kwvietVX0FtXYxvcexSp/geYCyTt2XUGOQjinqd3Yqg/QxmpIqBO7qy4MQHrhw==",
+      "path": "samboy063.libcpp2il/2022.0.5",
+      "hashPath": "samboy063.libcpp2il.2022.0.5.nupkg.sha512"
+    },
+    "Samboy063.WasmDisassembler/2022.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2uu+xBb7M3HKfBx9tAY6jiDieAf0hRnQjSmGX+7IdE6i24dYsx6TYgtrLvRx5lOuF2M8DijZ5H8yQ1pcuCs2SA==",
+      "path": "samboy063.wasmdisassembler/2022.0.2",
+      "hashPath": "samboy063.wasmdisassembler.2022.0.2.nupkg.sha512"
+    },
+    "AssetsTools.NET/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

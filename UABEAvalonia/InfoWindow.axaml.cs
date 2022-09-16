@@ -147,6 +147,12 @@ namespace UABEAvalonia
             Workspace = new AssetWorkspace(assetsManager, fromBundle);
             Workspace.ItemUpdated += Workspace_ItemUpdated;
 
+            if (assetsFiles.Count > 0)
+            {
+                AssetsFileInstance firstFile = assetsFiles[0];
+                string fileDir = Extensions.GetAssetsFileDirectory(firstFile);
+                Workspace.SetMonoTempGenerators(fileDir);
+            }
             LoadAllAssetsWithDeps(assetsFiles);
             MakeDataGridItems();
             dataGrid.Items = dataGridItems;
