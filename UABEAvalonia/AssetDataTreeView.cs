@@ -39,7 +39,17 @@ namespace UABEAvalonia
             if (workspace == null)
                 return;
 
-            AssetTypeValueField baseField = workspace.GetBaseField(container);
+            AssetTypeValueField? baseField = workspace.GetBaseField(container);
+
+            if (baseField == null)
+            {
+                TreeViewItem errorItem0 = CreateTreeItem("Asset failed to deserialize.");
+                TreeViewItem errorItem1 = CreateTreeItem("The file version may be too new for");
+                TreeViewItem errorItem2 = CreateTreeItem("this tpk or the file format is custom.");
+                errorItem0.Items = new List<TreeViewItem>() { errorItem1, errorItem2 };
+                ListItems.Add(errorItem0);
+                return;
+            }
 
             string baseItemString = $"{baseField.TypeName} {baseField.FieldName}";
             if (container.ClassId == (uint)AssetClassID.MonoBehaviour)

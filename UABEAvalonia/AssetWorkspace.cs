@@ -251,8 +251,15 @@ namespace UABEAvalonia
                     if (!onlyInfo && !cont.HasValueField)
                     {
                         AssetTypeTemplateField tempField = GetTemplateField(cont);
-                        AssetTypeValueField baseField = tempField.MakeValue(cont.FileReader, cont.FilePosition);
-                        cont = new AssetContainer(cont, baseField);
+                        try
+                        {
+                            AssetTypeValueField baseField = tempField.MakeValue(cont.FileReader, cont.FilePosition);
+                            cont = new AssetContainer(cont, baseField);
+                        }
+                        catch
+                        {
+                            cont = null;
+                        }
                     }
                     return cont;
                 }
