@@ -180,19 +180,21 @@ namespace UABEAvalonia
             }
         }
 
-        public static string GetAssetsFileDirectory(AssetsFileInstance firstFile)
+        public static string GetAssetsFileDirectory(AssetsFileInstance fileInst)
         {
-            string dir = Path.GetDirectoryName(firstFile.path)!;
-            if (firstFile.parentBundle != null)
+            if (fileInst.parentBundle != null)
             {
-                string? bundleDir = Path.GetDirectoryName(dir);
-                if (bundleDir != null)
-                {
-                    dir = bundleDir;
-                }
+                return Path.GetDirectoryName(fileInst.parentBundle.path)!;
             }
-
-            return dir;
+            else
+            {
+                string dir = Path.GetDirectoryName(fileInst.path)!;
+                if (fileInst.name == "unity default resources" || fileInst.name == "unity_builtin_extra")
+                {
+                    dir = Path.GetDirectoryName(dir)!;
+                }
+                return dir;
+            }
         }
 
         //https://stackoverflow.com/a/23182807
