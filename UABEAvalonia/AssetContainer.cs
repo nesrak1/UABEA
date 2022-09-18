@@ -13,6 +13,7 @@ namespace UABEAvalonia
         public int ClassId { get; }
         public ushort MonoId { get; }
         public uint Size { get; }
+        public string Container { get; set; } // should be a list later
         public AssetsFileInstance FileInstance { get; }
         public AssetTypeValueField? BaseValueField { get; }
 
@@ -37,6 +38,7 @@ namespace UABEAvalonia
             ClassId = info.TypeId;
             MonoId = fileInst.file.GetScriptIndex(info);
             Size = info.ByteSize;
+            Container = string.Empty;
             FileInstance = fileInst;
             BaseValueField = baseField;
         }
@@ -52,6 +54,7 @@ namespace UABEAvalonia
             ClassId = classId;
             MonoId = monoId;
             Size = size;
+            Container = string.Empty;
             FileInstance = fileInst;
             BaseValueField = baseField;
         }
@@ -66,6 +69,7 @@ namespace UABEAvalonia
             ClassId = container.ClassId;
             MonoId = container.MonoId;
             Size = size;
+            Container = string.Empty;
             FileInstance = container.FileInstance;
             BaseValueField = container.BaseValueField;
         }
@@ -79,6 +83,7 @@ namespace UABEAvalonia
             ClassId = container.ClassId;
             MonoId = container.MonoId;
             Size = container.Size;
+            Container = string.Empty;
             FileInstance = container.FileInstance;
             BaseValueField = baseField;
         }

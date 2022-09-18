@@ -149,10 +149,11 @@ namespace UABEAvalonia
             Workspace.MonoTemplateLoadFailed += Workspace_MonoTemplateLoadFailed;
 
             LoadAllAssetsWithDeps(assetsFiles);
+            SetupContainers(fromBundle);
             MakeDataGridItems();
             dataGrid.Items = dataGridItems;
 
-            this.dgcv = GetDataGridCollectionView(dataGrid);
+            dgcv = GetDataGridCollectionView(dataGrid);
 
             pluginManager = new PluginManager();
             pluginManager.LoadPluginsInDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins"));
@@ -896,6 +897,49 @@ namespace UABEAvalonia
             return foundResult;
         }
 
+        private void SetupContainers(bool isBundle)
+        {
+            if (Workspace.LoadedFiles.Count == 0)
+            {
+                return;
+            }
+
+            UnityContainer ucont = new UnityContainer();
+            if (isBundle)
+            {
+                foreach (AssetsFileInstance file in Workspace.LoadedFiles)
+                {
+                    AssetsFileInstance? actualFile;
+                    AssetTypeValueField? ucontBaseField;
+                    if (UnityContainer.TryGetContainerBaseField(Workspace, file, out actualFile, out ucontBaseField))
+                    {
+                        ucont.FromAssetBundle(am, actualFile, ucontBaseField);
+                    }
+                }
+            }
+            else
+            {
+                AssetsFileInstance firstFile = Workspace.LoadedFiles[0];
+
+                AssetsFileInstance? actualFile;
+                AssetTypeValueField? ucontBaseField;
+                if (UnityContainer.TryGetContainerBaseField(Workspace, firstFile, out actualFile, out ucontBaseField))
+                {
+                    ucont.FromResourceManager(am, actualFile, ucontBaseField);
+                }
+            }
+
+            foreach (var asset in Workspace.LoadedAssets)
+            {
+                AssetPPtr pptr = new AssetPPtr(asset.Key.fileName, 0, asset.Key.pathID);
+                string? path = ucont.GetContainerPath(pptr);
+                if (path != null)
+                {
+                    asset.Value.Container = path;
+                }
+            }
+        }
+
         private ObservableCollection<AssetInfoDataGridItem> MakeDataGridItems()
         {
             dataGridItems = new ObservableCollection<AssetInfoDataGridItem>();
@@ -912,7 +956,6 @@ namespace UABEAvalonia
         private AssetInfoDataGridItem AddDataGridItem(AssetContainer cont, bool isNewAsset = false)
         {
             AssetsFileInstance thisFileInst = cont.FileInstance;
-            AssetsFile thisFile = thisFileInst.file;
 
             string name;
             string container;
@@ -922,8 +965,8 @@ namespace UABEAvalonia
             int size;
             string modified;
 
-            container = string.Empty;
-            fileId = Workspace.LoadedFiles.IndexOf(thisFileInst); //todo faster lookup THIS IS JUST FOR TESTING
+            container = cont.Container;
+            fileId = Workspace.LoadedFiles.IndexOf(thisFileInst);
             pathId = cont.PathId;
             size = (int)cont.Size;
             modified = "";
@@ -958,43 +1001,9 @@ namespace UABEAvalonia
 
         private void LoadAllAssetsWithDeps(List<AssetsFileInstance> files)
         {
-            HashSet<string> fileNames = new HashSet<string>();
             foreach (AssetsFileInstance file in files)
             {
-                RecurseGetAllAssets(file, Workspace.LoadedAssets, Workspace.LoadedFiles, fileNames);
-            }
-        }
-
-        private void RecurseGetAllAssets(AssetsFileInstance fromFile, Dictionary<AssetID, AssetContainer> conts, List<AssetsFileInstance> files, HashSet<string> fileNames)
-        {
-            if (files.Contains(fromFile))
-                return;
-
-            fromFile.file.GenerateQuickLookupTree();
-
-            files.Add(fromFile);
-            fileNames.Add(fromFile.path.ToLower());
-
-            foreach (AssetFileInfo info in fromFile.file.AssetInfos)
-            {
-                AssetContainer cont = new AssetContainer(info, fromFile);
-                conts.Add(cont.AssetId, cont);
-            }
-
-            for (int i = 0; i < fromFile.file.Metadata.Externals.Count; i++)
-            {
-                AssetsFileInstance dep = fromFile.GetDependency(am, i);
-                if (dep == null)
-                    continue;
-                string depPath = dep.path.ToLower();
-                if (!fileNames.Contains(depPath))
-                {
-                    RecurseGetAllAssets(dep, conts, files, fileNames);
-                }
-                else
-                {
-                    continue;
-                }
+                Workspace.LoadAssetsFile(file, true);
             }
         }
 

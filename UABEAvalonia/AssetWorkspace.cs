@@ -16,6 +16,8 @@ namespace UABEAvalonia
         public bool fromBundle { get; }
 
         public List<AssetsFileInstance> LoadedFiles { get; }
+        public HashSet<string> LoadedFileNames { get; }
+        // todo: replace assetid -> assetpptr
         public Dictionary<AssetID, AssetContainer> LoadedAssets { get; }
 
         public Dictionary<string, AssetsFileInstance> LoadedFileLookup { get; }
@@ -47,6 +49,7 @@ namespace UABEAvalonia
             this.fromBundle = fromBundle;
 
             LoadedFiles = new List<AssetsFileInstance>();
+            LoadedFileNames = new HashSet<string>();
             LoadedAssets = new Dictionary<AssetID, AssetContainer>();
 
             LoadedFileLookup = new Dictionary<string, AssetsFileInstance>();
@@ -125,6 +128,45 @@ namespace UABEAvalonia
                 Modified = false;
         }
 
+        public void LoadAssetsFile(AssetsFileInstance fromFile, bool loadDependencies)
+        {
+            if (LoadedFiles.Contains(fromFile))
+                return;
+
+            fromFile.file.GenerateQuickLookupTree();
+
+            LoadedFiles.Add(fromFile);
+            LoadedFileNames.Add(fromFile.path.ToLower());
+
+            foreach (AssetFileInfo info in fromFile.file.AssetInfos)
+            {
+                AssetContainer cont = new AssetContainer(info, fromFile);
+                LoadedAssets.Add(cont.AssetId, cont);
+            }
+
+            if (loadDependencies)
+            {
+                for (int i = 0; i < fromFile.file.Metadata.Externals.Count; i++)
+                {
+                    AssetsFileInstance dep = fromFile.GetDependency(am, i);
+                    if (dep == null)
+                        continue;
+
+                    string depPath = dep.path.ToLower();
+                    if (!LoadedFileNames.Contains(depPath))
+                    {
+                        LoadAssetsFile(dep, true);
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        // todo: unload file
+
         // todo: not very fast and this loop happens twice since it iterates again during write
         public HashSet<AssetsFileInstance> GetChangedFiles()
         {
@@ -191,7 +233,7 @@ namespace UABEAvalonia
             return am.GetTemplateBaseField(cont.FileInstance, cont.FilePosition, cont.ClassId, cont.MonoId);
         }
 
-        public AssetContainer GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)
+        public AssetContainer? GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)
         {
             if (fileId != 0)
             {
