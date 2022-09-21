@@ -34,7 +34,10 @@ namespace UABEAvalonia
 
                 UnityContainerAssetInfo assetInfo = UnityContainerAssetInfo.FromField(value);
                 assetInfo.asset.SetFilePathFromFile(am, fromFile);
-                AssetMap.Add(assetInfo, key);
+                if (assetInfo.asset.PathId != 0)
+                {
+                    AssetMap[assetInfo] = key;
+                }
             }
         }
 
@@ -50,7 +53,10 @@ namespace UABEAvalonia
                 assetPPtr.SetFilePathFromFile(am, fromFile);
 
                 UnityContainerAssetInfo assetInfo = new UnityContainerAssetInfo(assetPPtr);
-                AssetMap.Add(assetInfo, key);
+                if (assetPPtr.PathId != 0)
+                {
+                    AssetMap[assetInfo] = key;
+                }
             }
         }
 
