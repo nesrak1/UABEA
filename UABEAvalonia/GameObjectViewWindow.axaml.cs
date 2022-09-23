@@ -22,6 +22,8 @@ namespace UABEAvalonia
         private InfoWindow win;
         private AssetWorkspace workspace;
 
+        private bool ignoreDropdownEvent;
+
         public GameObjectViewWindow()
         {
             InitializeComponent();
@@ -47,6 +49,8 @@ namespace UABEAvalonia
         {
             this.win = win;
             this.workspace = workspace;
+
+            ignoreDropdownEvent = true;
 
             componentTreeView.Init(workspace);
             PopulateFilesComboBox();
@@ -92,6 +96,14 @@ namespace UABEAvalonia
 
         private void CbxFiles_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
+            // this event happens after the constructor
+            // is called, so this is the only way to do it
+            if (ignoreDropdownEvent)
+            {
+                ignoreDropdownEvent = false;
+                return;
+            }
+
             PopulateHierarchyTreeView();
         }
 
