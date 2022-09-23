@@ -143,7 +143,10 @@ namespace UABEAvalonia
             {
                 AssetContainer assetCont = asset.Value;
 
-                if (assetCont.FileInstance == fileInstance && assetCont.ClassId == (uint)AssetClassID.Transform)
+                AssetClassID assetType = (AssetClassID)assetCont.ClassId;
+                bool isTransformType = assetType == AssetClassID.Transform || assetType == AssetClassID.RectTransform;
+
+                if (assetCont.FileInstance == fileInstance && isTransformType)
                 {
                     AssetTypeValueField transformBf = workspace.GetBaseField(assetCont);
                     AssetTypeValueField transformFatherBf = transformBf["m_Father"];
