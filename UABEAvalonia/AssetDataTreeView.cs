@@ -64,7 +64,6 @@ namespace UABEAvalonia
 
         public void Reset()
         {
-            int a;
             Items = new AvaloniaList<TreeViewItem>();
         }
 
