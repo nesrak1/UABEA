@@ -19,13 +19,22 @@ namespace UABEAvalonia
 
         private AvaloniaList<TreeViewItem> ListItems => (AvaloniaList<TreeViewItem>)Items;
 
+        private static SolidColorBrush PrimNameBrushDark = SolidColorBrush.Parse("#569cd6");
+        private static SolidColorBrush PrimNameBrushLight = SolidColorBrush.Parse("#0000ff");
+        private static SolidColorBrush TypeNameBrushDark = SolidColorBrush.Parse("#4ec9b0");
+        private static SolidColorBrush TypeNameBrushLight = SolidColorBrush.Parse("#2b91af");
+        private static SolidColorBrush StringBrushDark = SolidColorBrush.Parse("#d69d85");
+        private static SolidColorBrush StringBrushLight = SolidColorBrush.Parse("#a31515");
+        private static SolidColorBrush ValueBrushDark = SolidColorBrush.Parse("#b5cea8");
+        private static SolidColorBrush ValueBrushLight = SolidColorBrush.Parse("#5b2da8");
+
         private SolidColorBrush PrimNameBrush
         {
             get
             {
                 return ThemeHandler.UseDarkTheme
-                    ? SolidColorBrush.Parse("#569cd6")
-                    : SolidColorBrush.Parse("#0000ff");
+                    ? PrimNameBrushDark
+                    : PrimNameBrushLight;
             }
         }
         private SolidColorBrush TypeNameBrush
@@ -33,8 +42,8 @@ namespace UABEAvalonia
             get
             {
                 return ThemeHandler.UseDarkTheme
-                    ? SolidColorBrush.Parse("#4ec9b0")
-                    : SolidColorBrush.Parse("#2b91af");
+                    ? TypeNameBrushDark
+                    : TypeNameBrushLight;
             }
         }
         private SolidColorBrush StringBrush
@@ -42,8 +51,8 @@ namespace UABEAvalonia
             get
             {
                 return ThemeHandler.UseDarkTheme
-                    ? SolidColorBrush.Parse("#d69d85")
-                    : SolidColorBrush.Parse("#a31515");
+                    ? StringBrushDark
+                    : StringBrushLight;
             }
         }
         private SolidColorBrush ValueBrush
@@ -51,8 +60,8 @@ namespace UABEAvalonia
             get
             {
                 return ThemeHandler.UseDarkTheme
-                    ? SolidColorBrush.Parse("#b5cea8")
-                    : SolidColorBrush.Parse("#5b2da8");
+                    ? ValueBrushDark
+                    : ValueBrushLight;
             }
         }
 
