@@ -18,10 +18,43 @@ namespace UABEAvalonia
         private AssetWorkspace workspace;
 
         private AvaloniaList<TreeViewItem> ListItems => (AvaloniaList<TreeViewItem>)Items;
-        private SolidColorBrush PrimNameBrush = SolidColorBrush.Parse("#569cd6");
-        private SolidColorBrush TypeNameBrush = SolidColorBrush.Parse("#4ec9b0");
-        private SolidColorBrush StringBrush = SolidColorBrush.Parse("#d69d85");
-        private SolidColorBrush ValueBrush = SolidColorBrush.Parse("#b5cea8");
+
+        private SolidColorBrush PrimNameBrush
+        {
+            get
+            {
+                return ThemeHandler.UseDarkTheme
+                    ? SolidColorBrush.Parse("#569cd6")
+                    : SolidColorBrush.Parse("#0000ff");
+            }
+        }
+        private SolidColorBrush TypeNameBrush
+        {
+            get
+            {
+                return ThemeHandler.UseDarkTheme
+                    ? SolidColorBrush.Parse("#4ec9b0")
+                    : SolidColorBrush.Parse("#2b91af");
+            }
+        }
+        private SolidColorBrush StringBrush
+        {
+            get
+            {
+                return ThemeHandler.UseDarkTheme
+                    ? SolidColorBrush.Parse("#d69d85")
+                    : SolidColorBrush.Parse("#a31515");
+            }
+        }
+        private SolidColorBrush ValueBrush
+        {
+            get
+            {
+                return ThemeHandler.UseDarkTheme
+                    ? SolidColorBrush.Parse("#b5cea8")
+                    : SolidColorBrush.Parse("#5b2da8");
+            }
+        }
 
         public void Init(AssetWorkspace workspace)
         {
@@ -31,6 +64,7 @@ namespace UABEAvalonia
 
         public void Reset()
         {
+            int a;
             Items = new AvaloniaList<TreeViewItem>();
         }
 
