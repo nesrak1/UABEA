@@ -16,6 +16,7 @@
       <MenuItem Header="File">
         <MenuItem Header="Add" Name="menuAdd" />
         <MenuItem Header="Save" Name="menuSave" />
+        <MenuItem Header="Save as..." Name="menuSaveAs" />
         <MenuItem Header="Mod Maker">
           <MenuItem Header="Create standalone installer" Name="menuCreateStandaloneInstaller" />
           <MenuItem Header="Create package file" Name="menuCreatePackageFile" />

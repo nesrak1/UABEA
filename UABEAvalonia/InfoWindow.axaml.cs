@@ -27,6 +27,7 @@ namespace UABEAvalonia
         //controls
         private MenuItem menuAdd;
         private MenuItem menuSave;
+        private MenuItem menuSaveAs;
         private MenuItem menuCreateStandaloneInstaller;
         private MenuItem menuCreatePackageFile;
         private MenuItem menuClose;
@@ -85,6 +86,7 @@ namespace UABEAvalonia
             //generated items
             menuAdd = this.FindControl<MenuItem>("menuAdd")!;
             menuSave = this.FindControl<MenuItem>("menuSave")!;
+            menuSaveAs = this.FindControl<MenuItem>("menuSaveAs")!;
             menuCreateStandaloneInstaller = this.FindControl<MenuItem>("menuCreateStandaloneInstaller")!;
             menuCreatePackageFile = this.FindControl<MenuItem>("menuCreatePackageFile")!;
             menuClose = this.FindControl<MenuItem>("menuClose")!;
@@ -112,6 +114,7 @@ namespace UABEAvalonia
             KeyDown += InfoWindow_KeyDown;
             menuAdd.Click += MenuAdd_Click;
             menuSave.Click += MenuSave_Click;
+            menuSaveAs.Click += MenuSaveAs_Click;
             menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
             menuClose.Click += MenuClose_Click;
             menuSearchByName.Click += MenuSearchByName_Click;
@@ -177,7 +180,14 @@ namespace UABEAvalonia
 
         private async void MenuSave_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            await SaveFile();
+            await SaveFile(false);
+            ClearModified();
+            Workspace.Modified = false;
+        }
+
+        private async void MenuSaveAs_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            await SaveFile(true);
             ClearModified();
             Workspace.Modified = false;
         }
@@ -419,11 +429,11 @@ namespace UABEAvalonia
                 MessageBoxType.YesNo);
             if (choice == MessageBoxResult.Yes)
             {
-                await SaveFile();
+                await SaveFile(false);
             }
         }
 
-        private async Task SaveFile()
+        private async Task SaveFile(bool saveAs)
         {
             var fileToReplacer = new Dictionary<AssetsFileInstance, List<AssetsReplacer>>();
             var changedFiles = Workspace.GetChangedFiles();
@@ -454,13 +464,23 @@ namespace UABEAvalonia
                     else
                         replacers = new List<AssetsReplacer>(0);
 
-                    using (MemoryStream ms = new MemoryStream())
-                    using (AssetsFileWriter w = new AssetsFileWriter(ms))
+                    try
                     {
-                        file.file.Write(w, 0, replacers);
-                        ChangedAssetsDatas.Add(new Tuple<AssetsFileInstance, byte[]>(file, ms.ToArray()));
+                        using (MemoryStream ms = new MemoryStream())
+                        using (AssetsFileWriter w = new AssetsFileWriter(ms))
+                        {
+                            file.file.Write(w, 0, replacers);
+                            ChangedAssetsDatas.Add(new Tuple<AssetsFileInstance, byte[]>(file, ms.ToArray()));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        await MessageBoxUtil.ShowDialog(this,
+                            "Write exception", "There was a problem while writing the file:\n" + ex.ToString());
                     }
                 }
+
+                await MessageBoxUtil.ShowDialog(this, "Success", "File saved. To complete changes, exit this window and File->Save in bundle window.");
             }
             else
             {
@@ -472,29 +492,38 @@ namespace UABEAvalonia
                     else
                         replacers = new List<AssetsReplacer>(0);
 
-                    SaveFileDialog sfd = new SaveFileDialog();
-                    sfd.Title = "Save as...";
-                    sfd.InitialFileName = file.name;
-
                     string filePath;
 
-                    while (true)
+                    if (saveAs)
                     {
-                        filePath = await sfd.ShowAsync(this);
+                        SaveFileDialog sfd = new SaveFileDialog();
+                        sfd.Title = "Save as...";
+                        sfd.InitialFileName = file.name;
 
-                        if (filePath == "" || filePath == null)
-                            return;
+                        while (true)
+                        {
+                            filePath = await sfd.ShowAsync(this);
 
-                        if (Path.GetFullPath(filePath) == Path.GetFullPath(file.path))
-                        {
-                            await MessageBoxUtil.ShowDialog(this,
-                                "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
-                            continue;
+                            if (filePath == "" || filePath == null)
+                                return;
+
+                            if (Path.GetFullPath(filePath) == Path.GetFullPath(file.path))
+                            {
+                                await MessageBoxUtil.ShowDialog(this,
+                                    "File in use", "You already have this file open. To overwrite, use Save instead of Save as.");
+                                continue;
+                            }
+                            else
+                            {
+                                break;
+                            }
                         }
-                        else
-                        {
-                            break;
-                        }
+                    }
+                    else
+                    {
+                        string newName = "~" + file.name;
+                        string dir = Path.GetDirectoryName(file.path)!;
+                        filePath = Path.Combine(dir, newName);
                     }
 
                     try
@@ -504,11 +533,22 @@ namespace UABEAvalonia
                         {
                             file.file.Write(w, 0, replacers);
                         }
+
+                        if (!saveAs)
+                        {
+                            string origFilePath = file.path;
+
+                            // "overwrite" the original
+                            file.file.Reader.Close();
+                            File.Delete(file.path);
+                            File.Move(filePath, origFilePath);
+                            file.file = new AssetsFile(new AssetsFileReader(File.OpenRead(origFilePath)));
+                        }
                     }
                     catch (Exception ex)
                     {
                         await MessageBoxUtil.ShowDialog(this,
-                            "Write exception", "There was a problem while writing the file:\n" + ex.Message);
+                            "Write exception", "There was a problem while writing the file:\n" + ex.ToString());
                     }
                 }
             }
