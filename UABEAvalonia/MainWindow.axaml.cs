@@ -289,8 +289,8 @@ namespace UABEAvalonia
 
                 using FileStream fileStream = File.OpenWrite(file);
 
-                AssetsFileReader bundleReader = bundleInst.file.Reader;
-                bundleReader.Position = bundleInst.file.Header.GetFileDataOffset() + dirInf.Offset;
+                AssetsFileReader bundleReader = bundleInst.file.DataReader;
+                bundleReader.Position = dirInf.Offset;
                 bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.DecompressedSize);
             }
         }
@@ -412,8 +412,8 @@ namespace UABEAvalonia
             //warning: does not update if you import an assets file onto
             //a file that wasn't originally an assets file
             var fileInf = BundleHelper.GetDirInfo(bundleFile, index);
-            long bundleEntryOffset = bundleFile.Header.GetFileDataOffset() + fileInf.Offset;
-            DetectedFileType fileType = AssetBundleDetector.DetectFileType(bundleFile.Reader, bundleEntryOffset);
+            long bundleEntryOffset = fileInf.Offset;
+            DetectedFileType fileType = AssetBundleDetector.DetectFileType(bundleFile.DataReader, bundleEntryOffset);
 
             if (fileType == DetectedFileType.AssetsFile)
             {
@@ -471,8 +471,8 @@ namespace UABEAvalonia
 
                 using FileStream fileStream = File.OpenWrite(bunAssetPath);
 
-                AssetsFileReader bundleReader = bundleInst.file.Reader;
-                bundleReader.Position = bundleInst.file.Header.GetFileDataOffset() + dirInf.Offset;
+                AssetsFileReader bundleReader = bundleInst.file.DataReader;
+                bundleReader.Position = dirInf.Offset;
                 bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.DecompressedSize);
             }
         }

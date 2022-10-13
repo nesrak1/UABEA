@@ -222,14 +222,14 @@ namespace TexturePlugin
 
                 AssetBundleFile bundle = cont.FileInstance.parentBundle.file;
 
-                AssetsFileReader reader = bundle.Reader;
+                AssetsFileReader reader = bundle.DataReader;
                 AssetBundleDirectoryInfo[] dirInf = bundle.BlockAndDirInfo.DirectoryInfos;
                 for (int i = 0; i < dirInf.Length; i++)
                 {
                     AssetBundleDirectoryInfo info = dirInf[i];
                     if (info.Name == searchPath)
                     {
-                        reader.Position = bundle.Header.GetFileDataOffset() + info.Offset + (long)streamInfo.offset;
+                        reader.Position = info.Offset + (long)streamInfo.offset;
                         texFile.pictureData = reader.ReadBytes((int)streamInfo.size);
                         texFile.m_StreamData.offset = 0;
                         texFile.m_StreamData.size = 0;

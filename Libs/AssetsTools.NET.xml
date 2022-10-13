@@ -328,7 +328,7 @@
         </member>
         <member name="P:AssetsTools.NET.AssetsFileMetadata.AssetInfos">
             <summary>
-            List of asset infos. Do not modify this directly. Instead, use Write (and optionally Absorb).
+            List of asset infos. Do not modify this directly. Instead, use Write.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.AssetsFileMetadata.ScriptTypes">
@@ -487,47 +487,47 @@
             Children of this field.
             </summary>
         </member>
-        <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.None">
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.None">
             <summary>
             None of the flags apply to this class
             </summary>
         </member>
-        <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.IsAbstract">
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsAbstract">
             <summary>
             Is the class abstract?
             </summary>
         </member>
-        <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.IsSealed">
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsSealed">
             <summary>
             Is the class sealed? Not necessarily accurate.
             </summary>
         </member>
-        <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.IsEditorOnly">
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsEditorOnly">
             <summary>
             Does the class only appear in the editor?
             </summary>
         </member>
-        <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.IsReleaseOnly">
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsReleaseOnly">
             <summary>
             Does the class only appear in game files? Not currently used
             </summary>
         </member>
-        <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.IsStripped">
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsStripped">
             <summary>
             Is the class stripped?
             </summary>
         </member>
-        <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.Reserved">
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.Reserved">
             <summary>
             Not currently used
             </summary>
         </member>
-        <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.HasEditorRootNode">
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.HasEditorRootNode">
             <summary>
             Does the class have an editor root node?
             </summary>
         </member>
-        <member name="F:AssetsTools.NET.ClassDatabasePackageTypeFlags.HasReleaseRootNode">
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.HasReleaseRootNode">
             <summary>
             Does the class have a release root node?
             </summary>

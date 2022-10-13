@@ -86,7 +86,7 @@ namespace UABEAvalonia
 
             if (includesCldb)
             {
-                addedTypes.Write(writer);
+                addedTypes.Write(writer, ClassFileCompressionType.Uncompressed);
                 //writer.Position = 0x16 + addedTypes.Header.CompressedSize;
             }
 

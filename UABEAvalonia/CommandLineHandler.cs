@@ -284,8 +284,8 @@ namespace UABEAvalonia
                             //read in assets files from the bundle for replacers that need them
                             string assetName = bunRep.GetOriginalEntryName();
                             var bunRepInf = BundleHelper.GetDirInfo(bun, assetName);
-                            long pos = bun.Header.GetFileDataOffset() + bunRepInf.Offset;
-                            bunRep.Init(bun.Reader, pos, bunRepInf.DecompressedSize);
+                            long pos = bunRepInf.Offset;
+                            bunRep.Init(bun.DataReader, pos, bunRepInf.DecompressedSize);
                         }
                         reps.Add(bunRep);
                     }
