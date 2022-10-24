@@ -100,6 +100,16 @@
             List of compression blocks and file info (file names, address in file, etc.)
             </summary>
         </member>
+        <member name="P:AssetsTools.NET.AssetBundleFile.DataReader">
+            <summary>
+            Reader for data block of bundle
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFile.DataIsCompressed">
+            <summary>
+            Is data reader reading compressed data? Only LZMA bundles set this to true.
+            </summary>
+        </member>
         <member name="P:AssetsTools.NET.AssetBundleFSHeader.TotalFileSize">
             <summary>
             Size of entire file.

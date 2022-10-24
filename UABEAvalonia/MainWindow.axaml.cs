@@ -752,7 +752,6 @@ namespace UABEAvalonia
 
         private async void AskLoadCompressedBundle(BundleFileInstance bundleInst)
         {
-            bundleInst.file.UnpackInfoOnly();
             string decompSize = Extensions.GetFormattedByteSize(GetBundleDataDecompressedSize(bundleInst.file));
 
             const string fileOption = "File";
@@ -792,7 +791,11 @@ namespace UABEAvalonia
             }
             else if (result == memoryOption)
             {
-                DecompressToMemory(bundleInst);
+                // for lz4 block reading
+                if (bundleInst.file.DataIsCompressed)
+                {
+                    DecompressToMemory(bundleInst);
+                }
             }
             else //if (result == cancelOption || result == closeOption)
             {
