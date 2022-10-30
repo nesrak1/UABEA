@@ -161,7 +161,9 @@ namespace UABEAvalonia
                 }
                 else
                 {
-                    AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont, false);
+                    // this is a bad idea. this directly calls am.GetTemplateField
+                    // which won't look for new MonoScripts from UABEA.
+                    AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont);
                     monoBf = monoTemp.MakeValue(cont.FileReader, cont.FilePosition);
                 }
 

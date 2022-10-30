@@ -787,7 +787,7 @@ namespace UABEAvalonia
 
                             if (selectedFilePath.EndsWith(".json"))
                             {
-                                AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont, true);
+                                AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont);
                                 bytes = importer.ImportJsonAsset(tempField, sr, out exceptionMessage);
                             }
                             else
@@ -838,7 +838,7 @@ namespace UABEAvalonia
                     string? exceptionMessage = null;
                     if (file.EndsWith(".json"))
                     {
-                        AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont, true);
+                        AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont);
                         bytes = importer.ImportJsonAsset(tempField, sr, out exceptionMessage);
                     }
                     else

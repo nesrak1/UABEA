@@ -228,9 +228,9 @@ namespace UABEAvalonia
             }
         }
 
-        public AssetTypeTemplateField GetTemplateField(AssetContainer cont, bool deserializeMono = true)
+        public AssetTypeTemplateField GetTemplateField(AssetContainer cont)
         {
-            return am.GetTemplateBaseField(cont.FileInstance, cont.FilePosition, cont.ClassId, cont.MonoId);
+            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId);
         }
 
         public AssetContainer? GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)
@@ -324,7 +324,7 @@ namespace UABEAvalonia
         public AssetTypeTemplateField GetConcatMonoTemplateField(AssetContainer cont, string managedPath)
         {
             AssetsFile file = cont.FileInstance.file;
-            AssetTypeTemplateField baseTemp = GetTemplateField(cont, false);
+            AssetTypeTemplateField baseTemp = GetTemplateField(cont);
 
             ushort scriptIndex = cont.MonoId;
             if (scriptIndex != 0xFFFF)
