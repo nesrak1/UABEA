@@ -17,7 +17,7 @@ namespace TexturePlugin
     {
         public static AssetTypeValueField GetByteArrayTexture(AssetWorkspace workspace, AssetContainer tex)
         {
-            AssetTypeTemplateField textureTemp = workspace.GetTemplateField(tex, false);
+            AssetTypeTemplateField textureTemp = workspace.GetTemplateField(tex);
             AssetTypeTemplateField image_data = textureTemp.Children.FirstOrDefault(f => f.Name == "image data");
             if (image_data == null)
                 return null;
