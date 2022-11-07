@@ -25,8 +25,6 @@ namespace UABEAvalonia
         private MenuItem menuClose;
         private MenuItem menuSave;
         private MenuItem menuCompress;
-        private MenuItem menuCreateStandaloneInstaller;
-        private MenuItem menuCreatePackageFile;
         private MenuItem menuExit;
         private MenuItem menuEditTypeDatabase;
         private MenuItem menuEditTypePackage;
@@ -70,11 +68,7 @@ namespace UABEAvalonia
             menuClose = this.FindControl<MenuItem>("menuClose")!;
             menuSave = this.FindControl<MenuItem>("menuSave")!;
             menuCompress = this.FindControl<MenuItem>("menuCompress")!;
-            menuCreateStandaloneInstaller = this.FindControl<MenuItem>("menuCreateStandaloneInstaller")!;
-            menuCreatePackageFile = this.FindControl<MenuItem>("menuCreatePackageFile")!;
             menuExit = this.FindControl<MenuItem>("menuExit")!;
-            menuEditTypeDatabase = this.FindControl<MenuItem>("menuEditTypeDatabase")!;
-            menuEditTypePackage = this.FindControl<MenuItem>("menuEditTypePackage")!;
             menuToggleDarkTheme = this.FindControl<MenuItem>("menuToggleDarkTheme")!;
             menuAbout = this.FindControl<MenuItem>("menuAbout")!;
             lblFileName = this.FindControl<TextBlock>("lblFileName")!;
@@ -92,7 +86,6 @@ namespace UABEAvalonia
             menuClose.Click += MenuClose_Click;
             menuSave.Click += MenuSave_Click;
             menuCompress.Click += MenuCompress_Click;
-            menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
             menuExit.Click += MenuExit_Click;
             menuToggleDarkTheme.Click += MenuToggleDarkTheme_Click;
             menuAbout.Click += MenuAbout_Click;
@@ -471,14 +464,6 @@ namespace UABEAvalonia
             Workspace.Files.Remove(null);
         }
 
-        private async void MenuCreatePackageFile_Click(object? sender, RoutedEventArgs e)
-        {
-            await MessageBoxUtil.ShowDialog(this, "Not implemented",
-                "Bundle pkgs are not supported at the moment.\n" +
-                "Trying to install an emip file? Try running\n" +
-                "UABEAvalonia applyemip from the command line.");
-        }
-
         private void MenuExit_Click(object? sender, RoutedEventArgs e)
         {
             Close();
@@ -732,7 +717,7 @@ namespace UABEAvalonia
                 sfd.Title = "Save as...";
                 sfd.Filters = new List<FileDialogFilter>() { new FileDialogFilter() { Name = "All files", Extensions = new List<string>() { "*" } } };
 
-                string savePath;
+                string? savePath;
                 while (true)
                 {
                     savePath = await sfd.ShowAsync(this);
