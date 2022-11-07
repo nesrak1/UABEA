@@ -339,10 +339,13 @@ namespace UABEAvalonia
                     return;
 
                 string origName = item.OriginalName;
+                string name = item.Name;
                 item.IsRemoved = true;
                 Workspace.RemovedFiles.Add(origName);
+                Workspace.Files.Remove(item);
+                Workspace.FileLookup.Remove(name);
 
-                SetBundleControlsEnabled(true, Workspace.RemovedFiles.Count != Workspace.Files.Count);
+                SetBundleControlsEnabled(true, Workspace.Files.Count > 0);
 
                 changesUnsaved = true;
                 changesMade = true;
@@ -808,7 +811,7 @@ namespace UABEAvalonia
 
             lblFileName.Text = bundleInst.name;
 
-            SetBundleControlsEnabled(true, Workspace.RemovedFiles.Count != Workspace.Files.Count);
+            SetBundleControlsEnabled(true, Workspace.Files.Count > 0);
         }
 
         private void SaveBundle(BundleFileInstance bundleInst, string path)
