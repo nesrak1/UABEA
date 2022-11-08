@@ -10,12 +10,12 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.0.0-preview2" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.0.0-preview2" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.0.0-preview2" />
-    <PackageReference Include="Avalonia.Diagnostics" Version="11.0.0-preview2" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.0-preview2" />
-    <PackageReference Include="Avalonia.Themes.Simple" Version="11.0.0-preview2" />
+    <PackageReference Include="Avalonia" Version="11.0.0-preview3" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.0.0-preview3" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.0.0-preview3" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.0.0-preview3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.0-preview3" />
+    <PackageReference Include="Avalonia.Themes.Simple" Version="11.0.0-preview3" />
     <PackageReference Include="MessageBox.Avalonia" Version="2.2.0" />
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2-beta2" />
