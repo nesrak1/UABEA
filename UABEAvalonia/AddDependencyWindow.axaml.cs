@@ -25,12 +25,12 @@ namespace UABEAvalonia
             this.AttachDevTools();
 #endif
             //generated controls
-            boxFileName = this.FindControl<TextBox>("boxFileName");
-            boxOrigFileName = this.FindControl<TextBox>("boxOrigFileName");
-            ddDepType = this.FindControl<ComboBox>("ddDepType");
-            boxGuid = this.FindControl<TextBox>("boxGuid");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
+            boxFileName = this.FindControl<TextBox>("boxFileName")!;
+            boxOrigFileName = this.FindControl<TextBox>("boxOrigFileName")!;
+            ddDepType = this.FindControl<ComboBox>("ddDepType")!;
+            boxGuid = this.FindControl<TextBox>("boxGuid")!;
+            btnOk = this.FindControl<Button>("btnOk")!;
+            btnCancel = this.FindControl<Button>("btnCancel")!;
             //generated events
             boxFileName.AddHandler(TextInputEvent, BoxFileName_TextInput, RoutingStrategies.Tunnel); // no textchanged event
             boxFileName.KeyDown += TextBoxKeyDown;
@@ -41,9 +41,17 @@ namespace UABEAvalonia
             btnCancel.Click += BtnCancel_Click;
         }
 
+        public AddDependencyWindow(string fileName, string origFileName, AssetsFileExternalType depType, GUID128 guid) : this()
+        {
+            boxFileName.Text = fileName;
+            boxOrigFileName.Text = origFileName;
+            ddDepType.SelectedIndex = (int)depType;
+            boxGuid.Text = FromGuid(guid);
+        }
+
         private GUID128 GetGuid()
         {
-            string guidText = boxGuid.Text.Trim().Replace(" ", "").Replace("-", "");
+            string guidText = (boxGuid.Text ?? string.Empty).Trim().Replace(" ", "").Replace("-", "");
             if (guidText.Length != 32)
                 return default;
 
@@ -64,6 +72,16 @@ namespace UABEAvalonia
             };
 
             return guid;
+        }
+
+        private string FromGuid(GUID128 guid)
+        {
+            ulong mostSignificant = guid.mostSignificant;
+            ulong leastSignificant = guid.leastSignificant;
+            string firstHalf = mostSignificant.ToString("X16");
+            string secondHalf = leastSignificant.ToString("X16");
+
+            return firstHalf + secondHalf;
         }
 
         private void BoxFileName_TextInput(object? sender, TextInputEventArgs e)
@@ -111,7 +129,9 @@ namespace UABEAvalonia
 
         private void BtnCancel_Click(object? sender, RoutedEventArgs e)
         {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             Close(null);
+#pragma warning restore CS8625
         }
 
         private void InitializeComponent()

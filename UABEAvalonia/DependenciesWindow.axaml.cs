@@ -17,6 +17,7 @@ namespace UABEAvalonia
         private ListBox boxDependenciesList;
         private ComboBox cbxFiles;
         private Button btnAdd;
+        private Button btnEdit;
         private Button btnRemove;
         private Button btnMoveUp;
         private Button btnMoveDown;
@@ -37,16 +38,18 @@ namespace UABEAvalonia
             this.AttachDevTools();
 #endif
             //generated controls
-            boxDependenciesList = this.FindControl<ListBox>("boxDependenciesList");
-            cbxFiles = this.FindControl<ComboBox>("cbxFiles");
-            btnAdd = this.FindControl<Button>("btnAdd");
-            btnRemove = this.FindControl<Button>("btnRemove");
-            btnMoveUp = this.FindControl<Button>("btnMoveUp");
-            btnMoveDown = this.FindControl<Button>("btnMoveDown");
-            btnCancel = this.FindControl<Button>("btnCancel");
-            btnOk = this.FindControl<Button>("btnOk");
+            boxDependenciesList = this.FindControl<ListBox>("boxDependenciesList")!;
+            cbxFiles = this.FindControl<ComboBox>("cbxFiles")!;
+            btnAdd = this.FindControl<Button>("btnAdd")!;
+            btnEdit = this.FindControl<Button>("btnEdit")!;
+            btnRemove = this.FindControl<Button>("btnRemove")!;
+            btnMoveUp = this.FindControl<Button>("btnMoveUp")!;
+            btnMoveDown = this.FindControl<Button>("btnMoveDown")!;
+            btnCancel = this.FindControl<Button>("btnCancel")!;
+            btnOk = this.FindControl<Button>("btnOk")!;
             //generated events
             btnAdd.Click += BtnAdd_Click;
+            btnEdit.Click += BtnEdit_Click;
             btnRemove.Click += BtnRemove_Click;
             btnMoveUp.Click += BtnMoveUp_Click;
             btnMoveDown.Click += BtnMoveDown_Click;
@@ -145,6 +148,53 @@ namespace UABEAvalonia
 
             dependencyMap[selectedFile].Add(dependency);
             dependenciesModified.Add(selectedFile);
+
+            UpdateListBox();
+        }
+
+        private async void BtnEdit_Click(object? sender, RoutedEventArgs e)
+        {
+            AssetsFileInstance? selectedFile = GetSelectedAssetsFile();
+            if (selectedFile == null)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Error",
+                    "You must edit a dependency in a file, not one in the entire workspace.");
+
+                return;
+            }
+
+            DependencyListBoxItem? dependency = GetSelectedDependency();
+            if (dependency == null || dependency.dependency == null)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Error",
+                    "You must select a dependency to edit.");
+
+                return;
+            }
+
+            if (!dependency.isDependency)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Error",
+                    "The base file is not a dependency.");
+
+                return;
+            }
+
+            AssetsFileExternal oldDependency = dependency.dependency;
+
+            AddDependencyWindow window = new AddDependencyWindow(oldDependency.PathName, oldDependency.OriginalPathName, oldDependency.Type, oldDependency.Guid);
+            AssetsFileExternal? newDependency = await window.ShowDialog<AssetsFileExternal?>(this);
+            if (newDependency == null)
+            {
+                return;
+            }
+
+            // not trusting dependency.index for now
+            int oldDependencyIndex = dependencyMap[selectedFile].IndexOf(oldDependency);
+            if (oldDependencyIndex == -1)
+                return;
+
+            dependencyMap[selectedFile][oldDependencyIndex] = newDependency;
 
             UpdateListBox();
         }
@@ -282,6 +332,7 @@ namespace UABEAvalonia
         private void SetButtonsEnabled(bool enabled)
         {
             btnAdd.IsEnabled = enabled;
+            btnEdit.IsEnabled = enabled;
             btnRemove.IsEnabled = enabled;
             btnMoveUp.IsEnabled = enabled;
             btnMoveDown.IsEnabled = enabled;

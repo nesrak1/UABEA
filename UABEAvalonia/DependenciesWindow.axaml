@@ -28,9 +28,11 @@
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"></ColumnDefinition>
           <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <Button Grid.Column="0" Name="btnAdd">Add</Button>
-        <Button Grid.Column="1" Name="btnRemove">Remove</Button>
+        <Button Grid.Column="1" Name="btnEdit">Edit</Button>
+        <Button Grid.Column="2" Name="btnRemove">Remove</Button>
       </Grid>
       <Grid Grid.Row="2">
         <Grid.ColumnDefinitions>
