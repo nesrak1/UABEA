@@ -6,7 +6,7 @@
 
 ## UABEAvalonia
 
-Cross-platform Asset Bundle/Serialized File reader and writer. Originally based on [UABE](github.com/SeriousCache/UABE).
+Cross-platform Asset Bundle/Serialized File reader and writer. Originally based on [UABE](https://github.com/SeriousCache/UABE).
 
 
 
