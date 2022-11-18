@@ -18,8 +18,4 @@ Many games are also now using addressables. You can tell if the bundle you're op
 
 ## Libraries
 
-* [Avalonia](https://github.com/AvaloniaUI/Avalonia) for UI
-* [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET) for assets reading/writing which uses [detex](https://github.com/hglm/detex) for DXT decoding
-* [ISPC](https://github.com/GameTechDev/ISPCTextureCompressor) for DXT encoding
-* [crnlib](https://github.com/Unity-Technologies/crunch/tree/unity) (crunch) for crunch decompressing and compressing
-* [PVRTexLib](https://developer.imaginationtech.com/downloads/) (PVRTexTool) for all other texture decoding and encoding
+The new update is being worked on here: https://github.com/nesrak1/UABEA/tree/at3
