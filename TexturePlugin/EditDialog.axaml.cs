@@ -125,63 +125,58 @@ namespace TexturePlugin
                     return;
                 }
 
-                AssetTypeValueField m_StreamData = baseField.Get("m_StreamData");
-                m_StreamData.Get("offset").GetValue().Set(0);
-                m_StreamData.Get("size").GetValue().Set(0);
-                m_StreamData.Get("path").GetValue().Set("");
+                AssetTypeValueField m_StreamData = baseField["m_StreamData"];
+                m_StreamData["offset"].AsInt = 0;
+                m_StreamData["size"].AsInt = 0;
+                m_StreamData["path"].AsString = "";
 
-                baseField.Get("m_Name").GetValue().Set(boxName.Text);
+                baseField["m_Name"].AsString = boxName.Text;
 
-                if (!baseField.Get("m_MipMap").IsDummy())
-                    baseField.Get("m_MipMap").GetValue().Set(chkHasMipMaps.IsChecked ?? false);
+                if (!baseField["m_MipMap"].IsDummy)
+                    baseField["m_MipMap"].AsBool = chkHasMipMaps.IsChecked ?? false;
 
-                if (!baseField.Get("m_MipCount").IsDummy())
-                    baseField.Get("m_MipCount").GetValue().Set(1);
+                if (!baseField["m_MipCount"].IsDummy)
+                    baseField["m_MipCount"].AsInt = 1;
 
-                if (!baseField.Get("m_ReadAllowed").IsDummy())
-                    baseField.Get("m_ReadAllowed").GetValue().Set(chkIsReadable.IsChecked ?? false);
+                if (!baseField["m_ReadAllowed"].IsDummy)
+                    baseField["m_ReadAllowed"].AsBool = chkIsReadable.IsChecked ?? false;
 
-                AssetTypeValueField m_TextureSettings = baseField.Get("m_TextureSettings");
+                AssetTypeValueField m_TextureSettings = baseField["m_TextureSettings"];
 
-                m_TextureSettings.Get("m_FilterMode").GetValue().Set(ddFilterMode.SelectedIndex);
+                m_TextureSettings["m_FilterMode"].AsInt = ddFilterMode.SelectedIndex;
 
                 if (int.TryParse(boxAnisotFilter.Text, out int aniso))
-                    m_TextureSettings.Get("m_Aniso").GetValue().Set(aniso);
+                    m_TextureSettings["m_Aniso"].AsInt = aniso;
 
                 if (int.TryParse(boxMipMapBias.Text, out int mipBias))
-                    m_TextureSettings.Get("m_MipBias").GetValue().Set(mipBias);
+                    m_TextureSettings["m_MipBias"].AsInt = mipBias;
 
-                m_TextureSettings.Get("m_WrapU").GetValue().Set(ddWrapModeU.SelectedIndex);
-                m_TextureSettings.Get("m_WrapV").GetValue().Set(ddWrapModeV.SelectedIndex);
+                m_TextureSettings["m_WrapU"].AsInt = ddWrapModeU.SelectedIndex;
+                m_TextureSettings["m_WrapV"].AsInt = ddWrapModeV.SelectedIndex;
 
                 if (boxLightMapFormat.Text.StartsWith("0x"))
                 {
                     if (int.TryParse(boxLightMapFormat.Text, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out int lightFmt))
-                        baseField.Get("m_LightmapFormat").GetValue().Set(lightFmt);
+                        baseField["m_LightmapFormat"].AsInt = lightFmt;
                 }
                 else
                 {
                     if (int.TryParse(boxLightMapFormat.Text, out int lightFmt))
-                        baseField.Get("m_LightmapFormat").GetValue().Set(lightFmt);
+                        baseField["m_LightmapFormat"].AsInt = lightFmt;
                 }
 
-                baseField.Get("m_ColorSpace").GetValue().Set(ddColorSpace.SelectedIndex);
+                baseField["m_ColorSpace"].AsInt = ddColorSpace.SelectedIndex;
 
-                baseField.Get("m_TextureFormat").GetValue().Set((int)fmt);
-                baseField.Get("m_CompleteImageSize").GetValue().Set(encImageBytes.Length);
+                baseField["m_TextureFormat"].AsInt = (int)fmt;
+                baseField["m_CompleteImageSize"].AsInt = encImageBytes.Length;
 
-                baseField.Get("m_Width").GetValue().Set(tex.m_Width);
-                baseField.Get("m_Height").GetValue().Set(tex.m_Height);
+                baseField["m_Width"].AsInt = tex.m_Width;
+                baseField["m_Height"].AsInt = tex.m_Height;
 
-                AssetTypeValueField image_data = baseField.Get("image data");
-                image_data.GetValue().type = EnumValueTypes.ByteArray;
-                image_data.templateField.valueType = EnumValueTypes.ByteArray;
-                AssetTypeByteArray byteArray = new AssetTypeByteArray()
-                {
-                    size = (uint)encImageBytes.Length,
-                    data = encImageBytes
-                };
-                image_data.GetValue().Set(byteArray);
+                AssetTypeValueField image_data = baseField["image data"];
+                image_data.Value.ValueType = AssetValueType.ByteArray;
+                image_data.TemplateField.ValueType = AssetValueType.ByteArray;
+                image_data.AsByteArray = encImageBytes;
 
                 Close(true);
             }

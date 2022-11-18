@@ -22,6 +22,8 @@ namespace UABEAvalonia
         private InfoWindow win;
         private AssetWorkspace workspace;
 
+        private bool ignoreDropdownEvent;
+
         public GameObjectViewWindow()
         {
             InitializeComponent();
@@ -48,6 +50,8 @@ namespace UABEAvalonia
             this.win = win;
             this.workspace = workspace;
 
+            ignoreDropdownEvent = true;
+
             componentTreeView.Init(workspace);
             PopulateFilesComboBox();
             PopulateHierarchyTreeView();
@@ -68,13 +72,13 @@ namespace UABEAvalonia
 
             AssetContainer gameObjectCont = (AssetContainer)selectedItem.Tag;
             AssetTypeValueField gameObjectBf = workspace.GetBaseField(gameObjectCont);
-            AssetTypeValueField components = gameObjectBf.Get("m_Component").Get("Array");
+            AssetTypeValueField components = gameObjectBf["m_Component"]["Array"];
 
             componentTreeView.Reset();
 
-            foreach (AssetTypeValueField data in components.GetChildrenList())
+            foreach (AssetTypeValueField data in components)
             {
-                AssetTypeValueField component = data.Get("component");
+                AssetTypeValueField component = data["component"];
                 AssetContainer componentCont = workspace.GetAssetContainer(gameObjectCont.FileInstance, component, false);
                 componentTreeView.LoadComponent(componentCont);
             }
@@ -92,6 +96,14 @@ namespace UABEAvalonia
 
         private void CbxFiles_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
+            // this event happens after the constructor
+            // is called, so this is the only way to do it
+            if (ignoreDropdownEvent)
+            {
+                ignoreDropdownEvent = false;
+                return;
+            }
+
             PopulateHierarchyTreeView();
         }
 
@@ -143,11 +155,14 @@ namespace UABEAvalonia
             {
                 AssetContainer assetCont = asset.Value;
 
-                if (assetCont.FileInstance == fileInstance && assetCont.ClassId == (uint)AssetClassID.Transform)
+                AssetClassID assetType = (AssetClassID)assetCont.ClassId;
+                bool isTransformType = assetType == AssetClassID.Transform || assetType == AssetClassID.RectTransform;
+
+                if (assetCont.FileInstance == fileInstance && isTransformType)
                 {
                     AssetTypeValueField transformBf = workspace.GetBaseField(assetCont);
-                    AssetTypeValueField transformFatherBf = transformBf.Get("m_Father");
-                    long pathId = transformFatherBf.Get("m_PathID").GetValue().AsInt64();
+                    AssetTypeValueField transformFatherBf = transformBf["m_Father"];
+                    long pathId = transformFatherBf["m_PathID"].AsLong;
                     //is root GameObject
                     if (pathId == 0)
                     {
@@ -161,20 +176,20 @@ namespace UABEAvalonia
         {
             TreeViewItem treeItem = new TreeViewItem();
 
-            AssetTypeValueField gameObjectRef = transformBf.Get("m_GameObject");
+            AssetTypeValueField gameObjectRef = transformBf["m_GameObject"];
             AssetContainer gameObjectCont = workspace.GetAssetContainer(transformCont.FileInstance, gameObjectRef, false);
 
             if (gameObjectCont == null)
                 return;
 
             AssetTypeValueField gameObjectBf = workspace.GetBaseField(gameObjectCont);
-            string name = gameObjectBf.Get("m_Name").GetValue().AsString();
+            string name = gameObjectBf["m_Name"].AsString;
 
             treeItem.Header = name;
             treeItem.Tag = gameObjectCont;
 
-            AssetTypeValueField children = transformBf.Get("m_Children").Get("Array");
-            foreach (AssetTypeValueField child in children.GetChildrenList())
+            AssetTypeValueField children = transformBf["m_Children"]["Array"];
+            foreach (AssetTypeValueField child in children)
             {
                 AssetContainer childTransformCont = workspace.GetAssetContainer(transformCont.FileInstance, child, false);
                 AssetTypeValueField childTransformBf = workspace.GetBaseField(childTransformCont);

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <Platforms>AnyCPU;x64;x86</Platforms>
@@ -14,7 +14,7 @@
             <UABEABinDir>$(SolutionDir)UABEAvalonia\$(OutputPath)</UABEABinDir>
         </PropertyGroup>
 
-        <Copy SourceFiles="$(OutputPath)AudioClipPlugin.dll;$(OutputPath)Fmod5Sharp.dll;$(OutputPath)IndexRange.dll;$(OutputPath)NAudio.Core.dll;$(OutputPath)OggVorbisEncoder.dll;$(OutputPath)System.Text.Json.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
+        <Copy SourceFiles="$(OutputPath)AudioClipPlugin.dll;$(OutputPath)Fmod5Sharp.dll;$(OutputPath)NAudio.Core.dll;$(OutputPath)OggVorbisEncoder.dll;$(OutputPath)System.Text.Json.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
     </Target>
     <!-- publish event -->
     <Target Name="CopyLibrariesPublish" AfterTargets="Publish" Condition="'$(SolutionDir)' != '*Undefined*'">
@@ -22,7 +22,7 @@
             <UABEABinDir>$(SolutionDir)UABEAvalonia\$(PublishDir)</UABEABinDir>
         </PropertyGroup>
 
-        <Copy SourceFiles="$(OutputPath)AudioClipPlugin.dll;$(OutputPath)Fmod5Sharp.dll;$(OutputPath)IndexRange.dll;$(OutputPath)NAudio.Core.dll;$(OutputPath)OggVorbisEncoder.dll;$(OutputPath)System.Text.Json.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
+        <Copy SourceFiles="$(OutputPath)AudioClipPlugin.dll;$(OutputPath)Fmod5Sharp.dll;$(OutputPath)NAudio.Core.dll;$(OutputPath)OggVorbisEncoder.dll;$(OutputPath)System.Text.Json.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
     </Target>
 
     <ItemGroup>
@@ -36,9 +36,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="0.10.13" />
-        <PackageReference Include="Avalonia.Desktop" Version="0.10.13" />
-        <PackageReference Include="Avalonia.Diagnostics" Version="0.10.13" />
+        <PackageReference Include="Avalonia" Version="11.0.0-preview3" />
+        <PackageReference Include="Avalonia.Desktop" Version="11.0.0-preview3" />
+        <PackageReference Include="Avalonia.Diagnostics" Version="11.0.0-preview3" />
         <PackageReference Include="Fmod5Sharp" Version="3.0.1" />
         <PackageReference Include="Mono.Cecil" Version="0.11.4" />
     </ItemGroup>

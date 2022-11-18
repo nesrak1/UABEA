@@ -17,6 +17,7 @@ namespace UABEAvalonia
         private ListBox boxDependenciesList;
         private ComboBox cbxFiles;
         private Button btnAdd;
+        private Button btnEdit;
         private Button btnRemove;
         private Button btnMoveUp;
         private Button btnMoveDown;
@@ -25,7 +26,7 @@ namespace UABEAvalonia
 		
         private AssetWorkspace workspace;
 
-        private Dictionary<AssetsFileInstance, List<AssetsFileDependency>> dependencyMap;
+        private Dictionary<AssetsFileInstance, List<AssetsFileExternal>> dependencyMap;
         private HashSet<AssetsFileInstance> dependenciesModified;
         
         private bool askedAboutMoving;
@@ -37,16 +38,18 @@ namespace UABEAvalonia
             this.AttachDevTools();
 #endif
             //generated controls
-            boxDependenciesList = this.FindControl<ListBox>("boxDependenciesList");
-            cbxFiles = this.FindControl<ComboBox>("cbxFiles");
-            btnAdd = this.FindControl<Button>("btnAdd");
-            btnRemove = this.FindControl<Button>("btnRemove");
-            btnMoveUp = this.FindControl<Button>("btnMoveUp");
-            btnMoveDown = this.FindControl<Button>("btnMoveDown");
-            btnCancel = this.FindControl<Button>("btnCancel");
-            btnOk = this.FindControl<Button>("btnOk");
+            boxDependenciesList = this.FindControl<ListBox>("boxDependenciesList")!;
+            cbxFiles = this.FindControl<ComboBox>("cbxFiles")!;
+            btnAdd = this.FindControl<Button>("btnAdd")!;
+            btnEdit = this.FindControl<Button>("btnEdit")!;
+            btnRemove = this.FindControl<Button>("btnRemove")!;
+            btnMoveUp = this.FindControl<Button>("btnMoveUp")!;
+            btnMoveDown = this.FindControl<Button>("btnMoveDown")!;
+            btnCancel = this.FindControl<Button>("btnCancel")!;
+            btnOk = this.FindControl<Button>("btnOk")!;
             //generated events
             btnAdd.Click += BtnAdd_Click;
+            btnEdit.Click += BtnEdit_Click;
             btnRemove.Click += BtnRemove_Click;
             btnMoveUp.Click += BtnMoveUp_Click;
             btnMoveDown.Click += BtnMoveDown_Click;
@@ -54,7 +57,7 @@ namespace UABEAvalonia
             btnOk.Click += BtnOk_Click;
             cbxFiles.SelectionChanged += CbxFiles_SelectionChanged;
 
-            dependencyMap = new Dictionary<AssetsFileInstance, List<AssetsFileDependency>>();
+            dependencyMap = new Dictionary<AssetsFileInstance, List<AssetsFileExternal>>();
             dependenciesModified = new HashSet<AssetsFileInstance>();
 
             askedAboutMoving = false;
@@ -73,10 +76,10 @@ namespace UABEAvalonia
                 AssetsFileInstance file = workspace.LoadedFiles[i];
                 comboBoxFiles.Add(new DependencyComboBoxItem(file.name, file));
                 
-                List<AssetsFileDependency> dependencies = new List<AssetsFileDependency>();
-                for (int j = 0; j < file.file.dependencies.dependencies.Count; j++)
+                List<AssetsFileExternal> dependencies = new List<AssetsFileExternal>();
+                for (int j = 0; j < file.file.Metadata.Externals.Count; j++)
                 {
-                    dependencies.Add(file.file.dependencies.dependencies[j]);
+                    dependencies.Add(file.file.Metadata.Externals[j]);
                 }
 
                 dependencyMap[file] = dependencies;
@@ -110,7 +113,7 @@ namespace UABEAvalonia
             }
             else
             {
-                List<AssetsFileDependency> deps = dependencyMap[selectedFile];
+                List<AssetsFileExternal> deps = dependencyMap[selectedFile];
 
                 List<DependencyListBoxItem> lbDeps = new List<DependencyListBoxItem>();
                 lbDeps.Add(new DependencyListBoxItem(0, selectedFile));
@@ -137,7 +140,7 @@ namespace UABEAvalonia
             }
 
             AddDependencyWindow window = new AddDependencyWindow();
-            AssetsFileDependency? dependency = await window.ShowDialog<AssetsFileDependency?>(this);
+            AssetsFileExternal? dependency = await window.ShowDialog<AssetsFileExternal?>(this);
             if (dependency == null)
             {
                 return;
@@ -145,6 +148,53 @@ namespace UABEAvalonia
 
             dependencyMap[selectedFile].Add(dependency);
             dependenciesModified.Add(selectedFile);
+
+            UpdateListBox();
+        }
+
+        private async void BtnEdit_Click(object? sender, RoutedEventArgs e)
+        {
+            AssetsFileInstance? selectedFile = GetSelectedAssetsFile();
+            if (selectedFile == null)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Error",
+                    "You must edit a dependency in a file, not one in the entire workspace.");
+
+                return;
+            }
+
+            DependencyListBoxItem? dependency = GetSelectedDependency();
+            if (dependency == null || dependency.dependency == null)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Error",
+                    "You must select a dependency to edit.");
+
+                return;
+            }
+
+            if (!dependency.isDependency)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Error",
+                    "The base file is not a dependency.");
+
+                return;
+            }
+
+            AssetsFileExternal oldDependency = dependency.dependency;
+
+            AddDependencyWindow window = new AddDependencyWindow(oldDependency.PathName, oldDependency.OriginalPathName, oldDependency.Type, oldDependency.Guid);
+            AssetsFileExternal? newDependency = await window.ShowDialog<AssetsFileExternal?>(this);
+            if (newDependency == null)
+            {
+                return;
+            }
+
+            // not trusting dependency.index for now
+            int oldDependencyIndex = dependencyMap[selectedFile].IndexOf(oldDependency);
+            if (oldDependencyIndex == -1)
+                return;
+
+            dependencyMap[selectedFile][oldDependencyIndex] = newDependency;
 
             UpdateListBox();
         }
@@ -177,7 +227,7 @@ namespace UABEAvalonia
                 return;
             }
 
-            int originalDependencyCount = selectedFile.file.dependencies.dependencyCount;
+            int originalDependencyCount = selectedFile.file.Metadata.Externals.Count;
             if (!askedAboutMoving && boxDependenciesList.SelectedIndex <= originalDependencyCount)
             {
                 bool shouldContinue = await ShowMoveConfirmationDialog();
@@ -231,7 +281,7 @@ namespace UABEAvalonia
                 return;
             }
 
-            List<AssetsFileDependency> deps = dependencyMap[selectedFile];
+            List<AssetsFileExternal> deps = dependencyMap[selectedFile];
 
             if (!moveUp && boxDependenciesList.SelectedIndex == deps.Count)
             {
@@ -241,7 +291,7 @@ namespace UABEAvalonia
                 return;
             }
 
-            int originalDependencyCount = selectedFile.file.dependencies.dependencyCount;
+            int originalDependencyCount = selectedFile.file.Metadata.Externals.Count;
             int moveUpCheckOffset = moveUp ? 1 : 0; // if moving up, don't allow moving the next item either
             if (!askedAboutMoving && boxDependenciesList.SelectedIndex <= originalDependencyCount + moveUpCheckOffset)
             {
@@ -252,7 +302,7 @@ namespace UABEAvalonia
                 askedAboutMoving = true;
             }
 
-            AssetsFileDependency dep = dependency.dependency!;
+            AssetsFileExternal dep = dependency.dependency!;
             int depIndex = deps.IndexOf(dep);
             int moveUpOffset = moveUp ? -1 : 1;
 
@@ -272,9 +322,8 @@ namespace UABEAvalonia
         {
             foreach (AssetsFileInstance file in dependenciesModified)
             {
-                List<AssetsFileDependency> deps = dependencyMap[file];
-                file.file.dependencies.dependencies = deps;
-                file.file.dependencies.dependencyCount = deps.Count;
+                List<AssetsFileExternal> deps = dependencyMap[file];
+                file.file.Metadata.Externals = deps;
             }
 
             Close(dependenciesModified);
@@ -283,6 +332,7 @@ namespace UABEAvalonia
         private void SetButtonsEnabled(bool enabled)
         {
             btnAdd.IsEnabled = enabled;
+            btnEdit.IsEnabled = enabled;
             btnRemove.IsEnabled = enabled;
             btnMoveUp.IsEnabled = enabled;
             btnMoveDown.IsEnabled = enabled;
@@ -310,9 +360,9 @@ namespace UABEAvalonia
         {
             var result = await MessageBoxUtil.ShowDialog(this, "Warning",
                 "Are you sure you want to (re)move this dependency? This function will not automatically remap\n" + 
-                "the file ids in the assets in this file. Use only if you know what you're doing.", ButtonEnum.YesNo);
+                "the file ids in the assets in this file. Use only if you know what you're doing.", MessageBoxType.YesNo);
 
-            return result == ButtonResult.Yes;
+            return result == MessageBoxResult.Yes;
         }
 
         private void InitializeComponent()
@@ -341,7 +391,7 @@ namespace UABEAvalonia
         {
             public int index;
             public AssetsFileInstance? file;
-            public AssetsFileDependency? dependency;
+            public AssetsFileExternal? dependency;
             public bool isDependency;
 
             public DependencyListBoxItem(int index, AssetsFileInstance? file)
@@ -351,7 +401,7 @@ namespace UABEAvalonia
                 isDependency = false;
             }
 
-            public DependencyListBoxItem(int index, AssetsFileDependency? dependency)
+            public DependencyListBoxItem(int index, AssetsFileExternal? dependency)
             {
                 this.index = index;
                 this.dependency = dependency;
@@ -362,10 +412,10 @@ namespace UABEAvalonia
             {
                 if (isDependency && dependency != null)
                 {
-                    if (dependency.assetPath != string.Empty)
-                        return $"{index} - {dependency.assetPath}";
+                    if (dependency.PathName != string.Empty)
+                        return $"{index} - {dependency.PathName}";
                     else
-                        return $"{index} - {dependency.guid.mostSignificant:x16}{dependency.guid.leastSignificant:x16}";
+                        return $"{index} - {dependency.Guid.mostSignificant:x16}{dependency.Guid.leastSignificant:x16}";
                 }
                 else if (!isDependency && file != null)
                     return $"{index} - {file.name}";

@@ -39,8 +39,19 @@ namespace UABEAvalonia
             this.win = win;
             this.workspace = workspace;
 
+            SetWindowTitle(workspace, cont);
+
             treeView.Init(workspace);
             treeView.LoadComponent(cont);
+        }
+
+        private void SetWindowTitle(AssetWorkspace workspace, AssetContainer cont)
+        {
+            Extensions.GetUABENameFast(workspace, cont, false, out string assetName, out string typeName);
+            if (assetName == "Unnamed asset")
+                Title += $": {typeName} ({cont.FileInstance.name}/{cont.PathId})";
+            else
+                Title += $": {typeName} {assetName} ({cont.FileInstance.name}/{cont.PathId})";
         }
 
         private void TreeView_DoubleTapped(object? sender, Avalonia.Interactivity.RoutedEventArgs e)

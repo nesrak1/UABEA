@@ -194,16 +194,17 @@ namespace UABEAvalonia
         //todo add this to a helper class
         private async Task<bool> LoadOrAskTypeData(AssetsFileInstance fileInst)
         {
-            string uVer = fileInst.file.typeTree.unityVersion;
-            if (am.LoadClassDatabaseFromPackage(uVer) == null)
-            {
-                VersionWindow version = new VersionWindow(uVer, am.classPackage);
-                var newFile = await version.ShowDialog<ClassDatabaseFile>(this);
-                if (newFile == null)
-                    return false;
-
-                am.classFile = newFile;
-            }
+            string uVer = fileInst.file.Metadata.UnityVersion;
+            am.LoadClassDatabaseFromPackage(uVer);
+            //if (am.LoadClassDatabaseFromPackage(uVer) == null)
+            //{
+            //    VersionWindow version = new VersionWindow(uVer, am.classPackage);
+            //    var newFile = await version.ShowDialog<ClassDatabaseFile>(this);
+            //    if (newFile == null)
+            //        return false;
+            //
+            //    am.classFile = newFile;
+            //}
             return true;
         }
 

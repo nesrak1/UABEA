@@ -36,7 +36,7 @@ namespace AudioPlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classFile, "AudioClip").classId;
+            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "AudioClip").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -67,16 +67,16 @@ namespace AudioPlugin
                 {
                     AssetTypeValueField baseField = workspace.GetBaseField(cont);
 
-                    string name = baseField.Get("m_Name").GetValue().AsString();
+                    string name = baseField["m_Name"].AsString;
                     name = Extensions.ReplaceInvalidPathChars(name);
                     
-                    CompressionFormat compressionFormat = (CompressionFormat) baseField.Get("m_CompressionFormat").GetValue().AsInt();
+                    CompressionFormat compressionFormat = (CompressionFormat)baseField["m_CompressionFormat"].AsInt;
                     string extension = GetExtension(compressionFormat);
                     string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}");
 
-                    string ResourceSource = baseField.Get("m_Resource").Get("m_Source").GetValue().AsString();
-                    ulong ResourceOffset = baseField.Get("m_Resource").Get("m_Offset").GetValue().AsUInt64();
-                    ulong ResourceSize = baseField.Get("m_Resource").Get("m_Size").GetValue().AsUInt64();
+                    string ResourceSource = baseField["m_Resource.m_Source"].AsString;
+                    ulong ResourceOffset = baseField["m_Resource.m_Offset"].AsULong;
+                    ulong ResourceSize = baseField["m_Resource.m_Size"].AsULong;
 
                     byte[] resourceData;
                     if (!GetAudioBytes(cont, ResourceSource, ResourceOffset, ResourceSize, out resourceData))
@@ -103,6 +103,7 @@ namespace AudioPlugin
             }
             return false;
         }
+
         public async Task<bool> SingleExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             AssetContainer cont = selection[0];
@@ -110,10 +111,10 @@ namespace AudioPlugin
             SaveFileDialog sfd = new SaveFileDialog();
 
             AssetTypeValueField baseField = workspace.GetBaseField(cont);
-            string name = baseField.Get("m_Name").GetValue().AsString();
+            string name = baseField["m_Name"].AsString;
             name = Extensions.ReplaceInvalidPathChars(name);
             
-            CompressionFormat compressionFormat = (CompressionFormat) baseField.Get("m_CompressionFormat").GetValue().AsInt();
+            CompressionFormat compressionFormat = (CompressionFormat) baseField["m_CompressionFormat"].AsInt;
 
             sfd.Title = "Save audio file";
             string extension = GetExtension(compressionFormat);
@@ -126,9 +127,9 @@ namespace AudioPlugin
 
             if (file != null && file != string.Empty)
             {
-                string ResourceSource = baseField.Get("m_Resource").Get("m_Source").GetValue().AsString();
-                ulong ResourceOffset = baseField.Get("m_Resource").Get("m_Offset").GetValue().AsUInt64();
-                ulong ResourceSize = baseField.Get("m_Resource").Get("m_Size").GetValue().AsUInt64();
+                string ResourceSource = baseField["m_Resource.m_Source"].AsString;
+                ulong ResourceOffset = baseField["m_Resource.m_Offset"].AsULong;
+                ulong ResourceSize = baseField["m_Resource.m_Size"].AsULong;
 
                 byte[] resourceData;
                 if (!GetAudioBytes(cont, ResourceSource, ResourceOffset, ResourceSize, out resourceData))
@@ -227,14 +228,14 @@ namespace AudioPlugin
 
                 AssetBundleFile bundle = cont.FileInstance.parentBundle.file;
 
-                AssetsFileReader reader = bundle.reader;
-                AssetBundleDirectoryInfo06[] dirInf = bundle.bundleInf6.dirInf;
+                AssetsFileReader reader = bundle.DataReader;
+                AssetBundleDirectoryInfo[] dirInf = bundle.BlockAndDirInfo.DirectoryInfos;
                 for (int i = 0; i < dirInf.Length; i++)
                 {
-                    AssetBundleDirectoryInfo06 info = dirInf[i];
-                    if (info.name == searchPath)
+                    AssetBundleDirectoryInfo info = dirInf[i];
+                    if (info.Name == searchPath)
                     {
-                        reader.Position = bundle.bundleHeader6.GetFileDataOffset() + info.offset + (long) offset;
+                        reader.Position = info.Offset + (long)offset;
                         audioData = reader.ReadBytes((int)size);
                         return true;
                     }

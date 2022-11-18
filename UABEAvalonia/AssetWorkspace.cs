@@ -1,6 +1,6 @@
 ﻿using AssetsTools.NET;
+using AssetsTools.NET.Cpp2IL;
 using AssetsTools.NET.Extra;
-using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,10 +16,11 @@ namespace UABEAvalonia
         public bool fromBundle { get; }
 
         public List<AssetsFileInstance> LoadedFiles { get; }
+        public HashSet<string> LoadedFileNames { get; }
+        // todo: replace assetid -> assetpptr
         public Dictionary<AssetID, AssetContainer> LoadedAssets { get; }
 
         public Dictionary<string, AssetsFileInstance> LoadedFileLookup { get; }
-        public Dictionary<string, AssemblyDefinition> LoadedAssemblies { get; }
 
         public Dictionary<AssetID, AssetsReplacer> NewAssets { get; }
         public Dictionary<AssetID, Stream> NewAssetDatas { get; } //for preview in info window
@@ -37,16 +38,21 @@ namespace UABEAvalonia
         public delegate void AssetWorkspaceItemUpdateEvent(AssetsFileInstance file, AssetID assetId);
         public event AssetWorkspaceItemUpdateEvent? ItemUpdated;
 
+        public delegate void MonoTemplateFailureEvent(string path);
+        public event MonoTemplateFailureEvent? MonoTemplateLoadFailed;
+
+        private bool setMonoTempGeneratorsYet;
+
         public AssetWorkspace(AssetsManager am, bool fromBundle)
         {
             this.am = am;
             this.fromBundle = fromBundle;
 
             LoadedFiles = new List<AssetsFileInstance>();
+            LoadedFileNames = new HashSet<string>();
             LoadedAssets = new Dictionary<AssetID, AssetContainer>();
 
             LoadedFileLookup = new Dictionary<string, AssetsFileInstance>();
-            LoadedAssemblies = new Dictionary<string, AssemblyDefinition>();
 
             NewAssets = new Dictionary<AssetID, AssetsReplacer>();
             NewAssetDatas = new Dictionary<AssetID, Stream>();
@@ -55,6 +61,8 @@ namespace UABEAvalonia
             OtherAssetChanges = new Dictionary<AssetsFileInstance, AssetsFileChangeTypes>();
 
             Modified = false;
+
+            setMonoTempGeneratorsYet = false;
         }
 
         public void AddReplacer(AssetsFileInstance forFile, AssetsReplacer replacer, Stream? previewStream = null)
@@ -82,7 +90,7 @@ namespace UABEAvalonia
             {
                 AssetsFileReader reader = new AssetsFileReader(previewStream);
                 AssetContainer cont = new AssetContainer(
-                    reader, 0, replacer.GetPathID(), (uint)replacer.GetClassID(),
+                    reader, 0, replacer.GetPathID(), replacer.GetClassID(),
                     replacer.GetMonoScriptID(), (uint)previewStream.Length, forFile);
 
                 LoadedAssets[assetId] = cont;
@@ -92,8 +100,7 @@ namespace UABEAvalonia
                 LoadedAssets.Remove(assetId);
             }
 
-            if (ItemUpdated != null)
-                ItemUpdated(forFile, assetId);
+            ItemUpdated?.Invoke(forFile, assetId);
 
             Modified = true;
         }
@@ -115,12 +122,50 @@ namespace UABEAvalonia
             if (replacer is AssetsRemover && RemovedAssets.Contains(assetId))
                 RemovedAssets.Remove(assetId);
 
-            if (ItemUpdated != null)
-                ItemUpdated(forFile, assetId);
+            ItemUpdated?.Invoke(forFile, assetId);
 
             if (NewAssets.Count == 0 && !AnyOtherAssetChanges())
                 Modified = false;
         }
+
+        public void LoadAssetsFile(AssetsFileInstance fromFile, bool loadDependencies)
+        {
+            if (LoadedFiles.Contains(fromFile))
+                return;
+
+            fromFile.file.GenerateQuickLookupTree();
+
+            LoadedFiles.Add(fromFile);
+            LoadedFileNames.Add(fromFile.path.ToLower());
+
+            foreach (AssetFileInfo info in fromFile.file.AssetInfos)
+            {
+                AssetContainer cont = new AssetContainer(info, fromFile);
+                LoadedAssets.Add(cont.AssetId, cont);
+            }
+
+            if (loadDependencies)
+            {
+                for (int i = 0; i < fromFile.file.Metadata.Externals.Count; i++)
+                {
+                    AssetsFileInstance dep = fromFile.GetDependency(am, i);
+                    if (dep == null)
+                        continue;
+
+                    string depPath = dep.path.ToLower();
+                    if (!LoadedFileNames.Contains(depPath))
+                    {
+                        LoadAssetsFile(dep, true);
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        // todo: unload file
 
         // todo: not very fast and this loop happens twice since it iterates again during write
         public HashSet<AssetsFileInstance> GetChangedFiles()
@@ -183,58 +228,12 @@ namespace UABEAvalonia
             }
         }
 
-        public AssetTypeTemplateField GetTemplateField(AssetContainer cont, bool deserializeMono = true)
+        public AssetTypeTemplateField GetTemplateField(AssetContainer cont)
         {
-            AssetsFileInstance fileInst = cont.FileInstance;
-            AssetsFile file = fileInst.file;
-            uint type = cont.ClassId;
-            ushort scriptIndex = cont.MonoId;
-
-            uint fixedId = AssetHelper.FixAudioID(type);
-            bool hasTypeTree = file.typeTree.hasTypeTree;
-
-            AssetTypeTemplateField baseField = new AssetTypeTemplateField();
-            if (hasTypeTree)
-            {
-                Type_0D type0d = AssetHelper.FindTypeTreeTypeByID(file.typeTree, fixedId, scriptIndex);
-
-                if (type0d != null && type0d.typeFieldsExCount > 0)
-                    baseField.From0D(type0d, 0);
-                else //fallback to cldb
-                    baseField.FromClassDatabase(am.classFile, AssetHelper.FindAssetClassByID(am.classFile, fixedId), 0);
-            }
-            else
-            {
-
-                if (type == (uint)AssetClassID.MonoBehaviour && deserializeMono)
-                {
-                    TypeTree tt = cont.FileInstance.file.typeTree;
-                    //check if typetree data exists already
-                    if (!tt.hasTypeTree || AssetHelper.FindTypeTreeTypeByScriptIndex(tt, cont.MonoId) == null)
-                    {
-                        //deserialize from dll (todo: ask user if dll isn't in normal location)
-                        string filePath;
-                        if (fileInst.parentBundle != null)
-                            filePath = Path.GetDirectoryName(fileInst.parentBundle.path);
-                        else
-                            filePath = Path.GetDirectoryName(fileInst.path);
-
-                        string managedPath = Path.Combine(filePath, "Managed");
-                        if (Directory.Exists(managedPath))
-                        {
-                            return GetConcatMonoTemplateField(cont, managedPath);
-                        }
-                        //fallback to no mono deserialization for now
-                    }
-                }
-
-                baseField.FromClassDatabase(am.classFile, AssetHelper.FindAssetClassByID(am.classFile, fixedId), 0);
-            }
-
-            return baseField;
+            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId);
         }
 
-        public AssetContainer GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)
+        public AssetContainer? GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)
         {
             if (fileId != 0)
             {
@@ -246,11 +245,29 @@ namespace UABEAvalonia
                 AssetID assetId = new AssetID(fileInst.path, pathId);
                 if (LoadedAssets.TryGetValue(assetId, out AssetContainer? cont))
                 {
-                    if (!onlyInfo && !cont.HasInstance)
+                    if (!onlyInfo && !cont.HasValueField)
                     {
+                        // only set mono temp generator when we open a MonoBehaviour
+                        if (cont.ClassId == (int)AssetClassID.MonoBehaviour && !setMonoTempGeneratorsYet && !fileInst.file.Metadata.TypeTreeEnabled)
+                        {
+                            string dataDir = Extensions.GetAssetsFileDirectory(fileInst);
+                            bool success = SetMonoTempGenerators(dataDir);
+                            if (!success)
+                            {
+                                MonoTemplateLoadFailed?.Invoke(dataDir);
+                            }
+                        }
+
                         AssetTypeTemplateField tempField = GetTemplateField(cont);
-                        AssetTypeInstance typeInst = new AssetTypeInstance(tempField, cont.FileReader, cont.FilePosition);
-                        cont = new AssetContainer(cont, typeInst);
+                        try
+                        {
+                            AssetTypeValueField baseField = tempField.MakeValue(cont.FileReader, cont.FilePosition);
+                            cont = new AssetContainer(cont, baseField);
+                        }
+                        catch
+                        {
+                            cont = null;
+                        }
                     }
                     return cont;
                 }
@@ -260,24 +277,24 @@ namespace UABEAvalonia
 
         public AssetContainer GetAssetContainer(AssetsFileInstance fileInst, AssetTypeValueField pptrField, bool onlyInfo = true)
         {
-            int fileId = pptrField.Get("m_FileID").GetValue().AsInt();
-            long pathId = pptrField.Get("m_PathID").GetValue().AsInt64();
+            int fileId = pptrField["m_FileID"].AsInt;
+            long pathId = pptrField["m_PathID"].AsLong;
             return GetAssetContainer(fileInst, fileId, pathId, onlyInfo);
         }
 
-        public AssetTypeValueField GetBaseField(AssetContainer cont)
+        public AssetTypeValueField? GetBaseField(AssetContainer cont)
         {
-            if (cont.HasInstance)
-                return cont.TypeInstance.GetBaseField();
+            if (cont.HasValueField)
+                return cont.BaseValueField;
 
             cont = GetAssetContainer(cont.FileInstance, 0, cont.PathId, false);
             if (cont != null)
-                return cont.TypeInstance.GetBaseField();
+                return cont.BaseValueField;
             else
                 return null;
         }
 
-        public AssetTypeValueField GetBaseField(AssetsFileInstance fileInst, int fileId, long pathId)
+        public AssetTypeValueField? GetBaseField(AssetsFileInstance fileInst, int fileId, long pathId)
         {
             AssetContainer? cont = GetAssetContainer(fileInst, fileId, pathId, false);
             if (cont != null)
@@ -286,10 +303,11 @@ namespace UABEAvalonia
                 return null;
         }
 
-        public AssetTypeValueField GetBaseField(AssetsFileInstance fileInst, AssetTypeValueField pptrField)
+        public AssetTypeValueField? GetBaseField(AssetsFileInstance fileInst, AssetTypeValueField pptrField)
         {
-            int fileId = pptrField.Get("m_FileID").GetValue().AsInt();
-            long pathId = pptrField.Get("m_PathID").GetValue().AsInt64();
+            int fileId = pptrField["m_FileID"].AsInt;
+            long pathId = pptrField["m_PathID"].AsLong;
+
             AssetContainer? cont = GetAssetContainer(fileInst, fileId, pathId, false);
             if (cont != null)
                 return GetBaseField(cont);
@@ -300,52 +318,64 @@ namespace UABEAvalonia
         public AssetTypeValueField GetConcatMonoBaseField(AssetContainer cont, string managedPath)
         {
             AssetTypeTemplateField baseTemp = GetConcatMonoTemplateField(cont, managedPath);
-            return new AssetTypeInstance(baseTemp, cont.FileReader, cont.FilePosition).GetBaseField();
+            return baseTemp.MakeValue(cont.FileReader, cont.FilePosition);
         }
 
         public AssetTypeTemplateField GetConcatMonoTemplateField(AssetContainer cont, string managedPath)
         {
             AssetsFile file = cont.FileInstance.file;
-            AssetTypeTemplateField baseTemp = GetTemplateField(cont, false);
+            AssetTypeTemplateField baseTemp = GetTemplateField(cont);
 
             ushort scriptIndex = cont.MonoId;
             if (scriptIndex != 0xFFFF)
             {
-                AssetTypeValueField baseField = new AssetTypeInstance(baseTemp, cont.FileReader, cont.FilePosition).GetBaseField();
+                AssetTypeValueField baseField = baseTemp.MakeValue(cont.FileReader, cont.FilePosition);
 
-                AssetContainer monoScriptCont = GetAssetContainer(cont.FileInstance, baseField.Get("m_Script"), false);
+                AssetContainer monoScriptCont = GetAssetContainer(cont.FileInstance, baseField["m_Script"], false);
                 if (monoScriptCont == null)
                     return baseTemp;
 
-                AssetTypeValueField scriptBaseField = monoScriptCont.TypeInstance.GetBaseField();
-                string scriptClassName = scriptBaseField.Get("m_ClassName").GetValue().AsString();
-                string scriptNamespace = scriptBaseField.Get("m_Namespace").GetValue().AsString();
-                string assemblyName = scriptBaseField.Get("m_AssemblyName").GetValue().AsString();
-                string assemblyPath = Path.Combine(managedPath, assemblyName);
+                AssetTypeValueField scriptBaseField = monoScriptCont.BaseValueField;
+                if (scriptBaseField == null)
+                    return baseTemp;
 
-                if (scriptNamespace != string.Empty)
-                    scriptClassName = scriptNamespace + "." + scriptClassName;
+                string scriptClassName = scriptBaseField["m_ClassName"].AsString;
+                string scriptNamespace = scriptBaseField["m_Namespace"].AsString;
+                string assemblyName = scriptBaseField["m_AssemblyName"].AsString;
+                string assemblyPath = Path.Combine(managedPath, assemblyName);
 
                 if (!File.Exists(assemblyPath))
                     return baseTemp;
 
-                AssemblyDefinition asmDef;
-
-                if (!LoadedAssemblies.ContainsKey(assemblyName))
-                {
-                    LoadedAssemblies.Add(assemblyName, MonoDeserializer.GetAssemblyWithDependencies(assemblyPath));
-                }
-                asmDef = LoadedAssemblies[assemblyName];
-
-                MonoDeserializer mc = new MonoDeserializer();
-                mc.Read(scriptClassName, asmDef, new UnityVersion(file.typeTree.unityVersion));
-                List<AssetTypeTemplateField> monoTemplateFields = mc.children;
-
-                AssetTypeTemplateField[] templateField = baseTemp.children.Concat(monoTemplateFields).ToArray();
-                baseTemp.children = templateField;
-                baseTemp.childrenCount = baseTemp.children.Length;
+                MonoCecilTempGenerator mc = new MonoCecilTempGenerator(managedPath);
+                baseTemp = mc.GetTemplateField(baseTemp, assemblyName, scriptNamespace, scriptClassName, new UnityVersion(file.Metadata.UnityVersion));
             }
             return baseTemp;
+        }
+
+        public bool SetMonoTempGenerators(string fileDir)
+        {
+            if (!setMonoTempGeneratorsYet)
+            {
+                setMonoTempGeneratorsYet = true;
+                FindCpp2IlFilesResult il2cppFiles = FindCpp2IlFiles.Find(fileDir);
+                if (il2cppFiles.success)
+                {
+                    am.SetMonoTempGenerator(new Cpp2IlTempGenerator(il2cppFiles.metaPath, il2cppFiles.asmPath));
+                    return true;
+                }
+                else
+                {
+                    string managedDir = Path.Combine(fileDir, "Managed");
+                    if (Directory.Exists(managedDir))
+                    {
+                        am.SetMonoTempGenerator(new MonoCecilTempGenerator(managedDir));
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }

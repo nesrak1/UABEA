@@ -14,21 +14,26 @@
   <Grid>
     <Menu Height="22" VerticalAlignment="Top">
       <MenuItem Header="File">
-        <MenuItem Header="Add" Name="menuAdd" />
-        <MenuItem Header="Save" Name="menuSave" />
+        <MenuItem Header="Add" HotKey="Ctrl+N" InputGesture="Ctrl+N" Name="menuAdd" />
+        <MenuItem Header="Save" HotKey="Ctrl+S" InputGesture="Ctrl+S" Name="menuSave" />
+        <MenuItem Header="Save as..." HotKey="Ctrl+Shift+S" InputGesture="Ctrl+Shift+S" Name="menuSaveAs" />
         <MenuItem Header="Mod Maker">
           <MenuItem Header="Create standalone installer" Name="menuCreateStandaloneInstaller" />
           <MenuItem Header="Create package file" Name="menuCreatePackageFile" />
         </MenuItem>
-        <MenuItem Header="Close" Name="menuClose" />
+        <MenuItem Header="Close" HotKey="Ctrl+W" InputGesture="Ctrl+W" Name="menuClose" />
       </MenuItem>
       <MenuItem Header="View">
-        <MenuItem Header="Search by name" Name="menuSearchByName" />
+        <MenuItem Header="Search by name" HotKey="Ctrl+F" InputGesture="Ctrl+F" Name="menuSearchByName" />
         <MenuItem Header="Continue search" InputGesture="F3" Name="menuContinueSearch" />
-        <MenuItem Header="Go to asset" Name="menuGoToAsset" />
-        <MenuItem Header="Dependencies" Name="menuDependencies" />
-        <MenuItem Header="Containters" Name="menuContainers" />
-        <MenuItem Header="Scene Hierarchy" Name="menuHierarchy" />
+        <MenuItem Header="Go to asset" HotKey="Ctrl+G" InputGesture="Ctrl+G" Name="menuGoToAsset" />
+        <MenuItem Header="Filter" HotKey="Ctrl+I" InputGesture="Ctrl+I" Name="menuFilter" />
+      </MenuItem>
+      <MenuItem Header="Tools">
+        <MenuItem Header="Dependencies" HotKey="F5" InputGesture="F5" Name="menuDependencies" />
+        <MenuItem Header="Containters" HotKey="F6" InputGesture="F6" Name="menuContainers" />
+        <MenuItem Header="Scripts" HotKey="F7" InputGesture="F7" Name="menuScripts" />
+        <MenuItem Header="Scene Hierarchy" HotKey="F8" InputGesture="F8" Name="menuHierarchy" />
       </MenuItem>
     </Menu>
     <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="Assets" />
@@ -43,6 +48,7 @@
 				  </DataGridTemplateColumn.CellTemplate>
 		      </DataGridTemplateColumn>
 			  <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
+			  <DataGridTextColumn Header="Container" Binding="{Binding Container}"/>
 			  <DataGridTextColumn Header="Type" Binding="{Binding Type}"/>
 			  <DataGridTextColumn Header="File ID" Binding="{Binding FileID}"/>
 			  <DataGridTextColumn Header="Path ID" Binding="{Binding PathID}"/>

@@ -19,7 +19,7 @@ namespace UABEAvalonia
 
         public bool Read(AssetsFileReader reader, bool prefReplacersInMemory = false)
         {
-            reader.bigEndian = false;
+            reader.BigEndian = false;
 
             magic = reader.ReadStringLength(4);
             if (magic != "EMIP")
@@ -35,8 +35,8 @@ namespace UABEAvalonia
             {
                 addedTypes = new ClassDatabaseFile();
                 addedTypes.Read(reader);
-                //get past the string table since the reader goes back to the beginning
-                reader.Position = addedTypes.header.stringTablePos + addedTypes.header.stringTableLen;
+                ////get past the data since the reader goes back to the beginning
+                //reader.Position = 0x16 + addedTypes.Header.CompressedSize;
             }
             else
             {
@@ -74,7 +74,7 @@ namespace UABEAvalonia
         }
         public void Write(AssetsFileWriter writer)
         {
-            writer.bigEndian = false;
+            writer.BigEndian = false;
 
             writer.Write(Encoding.ASCII.GetBytes(magic));
             
@@ -86,8 +86,8 @@ namespace UABEAvalonia
 
             if (includesCldb)
             {
-                addedTypes.Write(writer);
-                writer.Position = addedTypes.header.stringTablePos + addedTypes.header.stringTableLen;
+                addedTypes.Write(writer, ClassFileCompressionType.Uncompressed);
+                //writer.Position = 0x16 + addedTypes.Header.CompressedSize;
             }
 
             writer.Write(affectedFiles.Count);
@@ -201,7 +201,7 @@ namespace UABEAvalonia
                     }
                     else
                     {
-                        replacer = new AssetsReplacerFromStream(fileId, pathId, classId, monoScriptIndex, reader.BaseStream, reader.Position, bufLength);
+                        replacer = new AssetsReplacerFromStream(pathId, classId, monoScriptIndex, reader.BaseStream, reader.Position, bufLength);
                         reader.Position += bufLength;
                     }
 

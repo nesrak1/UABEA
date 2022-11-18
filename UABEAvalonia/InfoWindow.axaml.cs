@@ -27,14 +27,17 @@ namespace UABEAvalonia
         //controls
         private MenuItem menuAdd;
         private MenuItem menuSave;
+        private MenuItem menuSaveAs;
         private MenuItem menuCreateStandaloneInstaller;
         private MenuItem menuCreatePackageFile;
         private MenuItem menuClose;
         private MenuItem menuSearchByName;
         private MenuItem menuContinueSearch;
         private MenuItem menuGoToAsset;
+        private MenuItem menuFilter;
         private MenuItem menuDependencies;
         private MenuItem menuContainers;
+        private MenuItem menuScripts;
         private MenuItem menuHierarchy;
         private Button btnViewData;
         private Button btnExportRaw;
@@ -62,6 +65,8 @@ namespace UABEAvalonia
 
         private bool ignoreCloseEvent;
 
+        private HashSet<AssetClassID> filteredOutTypeIds;
+
         //would prefer using a stream over byte[] but whatever, will for now
         public List<Tuple<AssetsFileInstance, byte[]>> ChangedAssetsDatas { get; set; }
 
@@ -79,39 +84,45 @@ namespace UABEAvalonia
             this.AttachDevTools();
 #endif
             //generated items
-            menuAdd = this.FindControl<MenuItem>("menuAdd");
-            menuSave = this.FindControl<MenuItem>("menuSave");
-            menuCreateStandaloneInstaller = this.FindControl<MenuItem>("menuCreateStandaloneInstaller");
-            menuCreatePackageFile = this.FindControl<MenuItem>("menuCreatePackageFile");
-            menuClose = this.FindControl<MenuItem>("menuClose");
-            menuSearchByName = this.FindControl<MenuItem>("menuSearchByName");
-            menuContinueSearch = this.FindControl<MenuItem>("menuContinueSearch");
-            menuGoToAsset = this.FindControl<MenuItem>("menuGoToAsset");
-            menuDependencies = this.FindControl<MenuItem>("menuDependencies");
-            menuContainers = this.FindControl<MenuItem>("menuContainers");
-            menuHierarchy = this.FindControl<MenuItem>("menuHierarchy");
-            btnViewData = this.FindControl<Button>("btnViewData");
-            btnExportRaw = this.FindControl<Button>("btnExportRaw");
-            btnExportDump = this.FindControl<Button>("btnExportDump");
-            btnPlugin = this.FindControl<Button>("btnPlugin");
-            btnImportRaw = this.FindControl<Button>("btnImportRaw");
-            btnImportDump = this.FindControl<Button>("btnImportDump");
-            btnRemove = this.FindControl<Button>("btnRemove");
-            dataGrid = this.FindControl<DataGrid>("dataGrid");
-            boxName = this.FindControl<TextBox>("boxName");
-            boxPathId = this.FindControl<TextBox>("boxPathId");
-            boxFileId = this.FindControl<TextBox>("boxFileId");
-            boxType = this.FindControl<TextBox>("boxType");
+            menuAdd = this.FindControl<MenuItem>("menuAdd")!;
+            menuSave = this.FindControl<MenuItem>("menuSave")!;
+            menuSaveAs = this.FindControl<MenuItem>("menuSaveAs")!;
+            menuCreateStandaloneInstaller = this.FindControl<MenuItem>("menuCreateStandaloneInstaller")!;
+            menuCreatePackageFile = this.FindControl<MenuItem>("menuCreatePackageFile")!;
+            menuClose = this.FindControl<MenuItem>("menuClose")!;
+            menuSearchByName = this.FindControl<MenuItem>("menuSearchByName")!;
+            menuContinueSearch = this.FindControl<MenuItem>("menuContinueSearch")!;
+            menuGoToAsset = this.FindControl<MenuItem>("menuGoToAsset")!;
+            menuFilter = this.FindControl<MenuItem>("menuFilter")!;
+            menuDependencies = this.FindControl<MenuItem>("menuDependencies")!;
+            menuContainers = this.FindControl<MenuItem>("menuContainers")!;
+            menuScripts = this.FindControl<MenuItem>("menuScripts")!;
+            menuHierarchy = this.FindControl<MenuItem>("menuHierarchy")!;
+            btnViewData = this.FindControl<Button>("btnViewData")!;
+            btnExportRaw = this.FindControl<Button>("btnExportRaw")!;
+            btnExportDump = this.FindControl<Button>("btnExportDump")!;
+            btnPlugin = this.FindControl<Button>("btnPlugin")!;
+            btnImportRaw = this.FindControl<Button>("btnImportRaw")!;
+            btnImportDump = this.FindControl<Button>("btnImportDump")!;
+            btnRemove = this.FindControl<Button>("btnRemove")!;
+            dataGrid = this.FindControl<DataGrid>("dataGrid")!;
+            boxName = this.FindControl<TextBox>("boxName")!;
+            boxPathId = this.FindControl<TextBox>("boxPathId")!;
+            boxFileId = this.FindControl<TextBox>("boxFileId")!;
+            boxType = this.FindControl<TextBox>("boxType")!;
             //generated events
             KeyDown += InfoWindow_KeyDown;
             menuAdd.Click += MenuAdd_Click;
             menuSave.Click += MenuSave_Click;
+            menuSaveAs.Click += MenuSaveAs_Click;
             menuCreatePackageFile.Click += MenuCreatePackageFile_Click;
             menuClose.Click += MenuClose_Click;
             menuSearchByName.Click += MenuSearchByName_Click;
             menuContinueSearch.Click += MenuContinueSearch_Click;
             menuGoToAsset.Click += MenuGoToAsset_Click;
+            menuFilter.Click += MenuFilter_Click;
             menuDependencies.Click += MenuDependencies_Click;
+            menuScripts.Click += MenuScripts_Click;
             menuHierarchy.Click += MenuHierarchy_Click;
             btnViewData.Click += BtnViewData_Click;
             btnExportRaw.Click += BtnExportRaw_Click;
@@ -138,12 +149,14 @@ namespace UABEAvalonia
         {
             Workspace = new AssetWorkspace(assetsManager, fromBundle);
             Workspace.ItemUpdated += Workspace_ItemUpdated;
+            Workspace.MonoTemplateLoadFailed += Workspace_MonoTemplateLoadFailed;
 
             LoadAllAssetsWithDeps(assetsFiles);
+            SetupContainers(fromBundle);
             MakeDataGridItems();
             dataGrid.Items = dataGridItems;
 
-            this.dgcv = GetDataGridCollectionView(dataGrid);
+            dgcv = GetDataGridCollectionView(dataGrid);
 
             pluginManager = new PluginManager();
             pluginManager.LoadPluginsInDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins"));
@@ -153,6 +166,8 @@ namespace UABEAvalonia
             searchDown = false;
             searchCaseSensitive = true;
             searching = false;
+
+            filteredOutTypeIds = new HashSet<AssetClassID>();
 
             ChangedAssetsDatas = new List<Tuple<AssetsFileInstance, byte[]>>();
         }
@@ -165,7 +180,14 @@ namespace UABEAvalonia
 
         private async void MenuSave_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            await SaveFile();
+            await SaveFile(false);
+            ClearModified();
+            Workspace.Modified = false;
+        }
+
+        private async void MenuSaveAs_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            await SaveFile(true);
             ClearModified();
             Workspace.Modified = false;
         }
@@ -214,11 +236,21 @@ namespace UABEAvalonia
             AssetPPtr res = await dialog.ShowDialog<AssetPPtr>(this);
             if (res != null)
             {
-                AssetsFileInstance targetFile = Workspace.LoadedFiles[res.fileID];
-                long targetPathId = res.pathID;
+                AssetsFileInstance targetFile = Workspace.LoadedFiles[res.FileId];
+                long targetPathId = res.PathId;
 
                 IdSearch(targetFile, targetPathId);
             }
+        }
+
+        private async void MenuFilter_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            FilterAssetTypeDialog dialog = new FilterAssetTypeDialog(filteredOutTypeIds);
+            filteredOutTypeIds = await dialog.ShowDialog<HashSet<AssetClassID>>(this);
+            
+            var filter = new Func<object, bool>(item => !filteredOutTypeIds.Contains(((AssetInfoDataGridItem)item).TypeClass));
+            dgcv.Filter = null; // avalonia bug? idk, doesn't update the filter without doing this
+            dgcv.Filter = filter;
         }
 
         private async void MenuDependencies_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -235,6 +267,12 @@ namespace UABEAvalonia
             }
         }
 
+        private void MenuScripts_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            ScriptsWindow dialog = new ScriptsWindow(Workspace);
+            dialog.Show(this);
+        }
+
         private void MenuHierarchy_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             GameObjectViewWindow dialog = new GameObjectViewWindow(this, Workspace);
@@ -249,17 +287,10 @@ namespace UABEAvalonia
             AssetInfoDataGridItem gridItem = GetSelectedGridItem();
             if (gridItem.Size > 500000)
             {
-                var bigFileBox = MessageBoxManager
-                    .GetMessageBoxCustomWindow(new MessageBoxCustomParams
-                    {
-                        ContentHeader = "Warning",
-                        ContentMessage = "The asset you are about to open is very big and may take a lot of time and memory.",
-                        ButtonDefinitions = new[] {
-                            new ButtonDefinition {Name = "Continue anyway"},
-                            new ButtonDefinition {Name = "Cancel", IsDefault = true}
-                        }
-                    });
-                string result = await bigFileBox.Show();
+                var result = await MessageBoxUtil.ShowDialogCustom(this,
+                    "Warning", "The asset you are about to open is very big and may take a lot of time and memory.",
+                    "Continue anyway", "Cancel");
+
                 if (result == "Cancel")
                     return;
             }
@@ -329,10 +360,10 @@ namespace UABEAvalonia
             if (await FailIfNothingSelected())
                 return;
 
-            ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
+            MessageBoxResult choice = await MessageBoxUtil.ShowDialog(this,
                 "Removing assets", "Removing an asset referenced by other assets can cause crashes!\nAre you sure?",
-                ButtonEnum.YesNo);
-            if (choice == ButtonResult.Yes)
+                MessageBoxType.YesNo);
+            if (choice == MessageBoxResult.Yes)
             {
                 List<AssetContainer> selection = GetSelectedAssetsReplaced();
                 foreach (AssetContainer cont in selection)
@@ -355,10 +386,20 @@ namespace UABEAvalonia
         private void DataGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             var gridItem = (AssetInfoDataGridItem)dataGrid.SelectedItem;
-            boxName.Text = gridItem.Name;
-            boxPathId.Text = gridItem.PathID.ToString();
-            boxFileId.Text = gridItem.FileID.ToString();
-            boxType.Text = $"0x{gridItem.TypeID:X8} ({gridItem.Type})";
+            if (gridItem == null)
+            {
+                boxName.Text = string.Empty;
+                boxPathId.Text = string.Empty;
+                boxFileId.Text = string.Empty;
+                boxType.Text = string.Empty;
+            }
+            else
+            {
+                boxName.Text = gridItem.Name;
+                boxPathId.Text = gridItem.PathID.ToString();
+                boxFileId.Text = gridItem.FileID.ToString();
+                boxType.Text = $"0x{gridItem.TypeID:X8} ({gridItem.Type})";
+            }
         }
 
         private async void InfoWindow_Closing(object? sender, CancelEventArgs e)
@@ -383,16 +424,16 @@ namespace UABEAvalonia
 
         private async Task AskForSave()
         {
-            ButtonResult choice = await MessageBoxUtil.ShowDialog(this,
+            MessageBoxResult choice = await MessageBoxUtil.ShowDialog(this,
                 "Changes made", "You've modified this file. Would you like to save?",
-                ButtonEnum.YesNo);
-            if (choice == ButtonResult.Yes)
+                MessageBoxType.YesNo);
+            if (choice == MessageBoxResult.Yes)
             {
-                await SaveFile();
+                await SaveFile(false);
             }
         }
 
-        private async Task SaveFile()
+        private async Task SaveFile(bool saveAs)
         {
             var fileToReplacer = new Dictionary<AssetsFileInstance, List<AssetsReplacer>>();
             var changedFiles = Workspace.GetChangedFiles();
@@ -423,13 +464,23 @@ namespace UABEAvalonia
                     else
                         replacers = new List<AssetsReplacer>(0);
 
-                    using (MemoryStream ms = new MemoryStream())
-                    using (AssetsFileWriter w = new AssetsFileWriter(ms))
+                    try
                     {
-                        file.file.Write(w, 0, replacers, 0);
-                        ChangedAssetsDatas.Add(new Tuple<AssetsFileInstance, byte[]>(file, ms.ToArray()));
+                        using (MemoryStream ms = new MemoryStream())
+                        using (AssetsFileWriter w = new AssetsFileWriter(ms))
+                        {
+                            file.file.Write(w, 0, replacers);
+                            ChangedAssetsDatas.Add(new Tuple<AssetsFileInstance, byte[]>(file, ms.ToArray()));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        await MessageBoxUtil.ShowDialog(this,
+                            "Write exception", "There was a problem while writing the file:\n" + ex.ToString());
                     }
                 }
+
+                await MessageBoxUtil.ShowDialog(this, "Success", "File saved. To complete changes, exit this window and File->Save in bundle window.");
             }
             else
             {
@@ -441,29 +492,38 @@ namespace UABEAvalonia
                     else
                         replacers = new List<AssetsReplacer>(0);
 
-                    SaveFileDialog sfd = new SaveFileDialog();
-                    sfd.Title = "Save as...";
-                    sfd.InitialFileName = file.name;
-
                     string filePath;
 
-                    while (true)
+                    if (saveAs)
                     {
-                        filePath = await sfd.ShowAsync(this);
+                        SaveFileDialog sfd = new SaveFileDialog();
+                        sfd.Title = "Save as...";
+                        sfd.InitialFileName = file.name;
 
-                        if (filePath == "" || filePath == null)
-                            return;
+                        while (true)
+                        {
+                            filePath = await sfd.ShowAsync(this);
 
-                        if (Path.GetFullPath(filePath) == Path.GetFullPath(file.path))
-                        {
-                            await MessageBoxUtil.ShowDialog(this,
-                                "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
-                            continue;
+                            if (filePath == "" || filePath == null)
+                                return;
+
+                            if (Path.GetFullPath(filePath) == Path.GetFullPath(file.path))
+                            {
+                                await MessageBoxUtil.ShowDialog(this,
+                                    "File in use", "You already have this file open. To overwrite, use Save instead of Save as.");
+                                continue;
+                            }
+                            else
+                            {
+                                break;
+                            }
                         }
-                        else
-                        {
-                            break;
-                        }
+                    }
+                    else
+                    {
+                        string newName = "~" + file.name;
+                        string dir = Path.GetDirectoryName(file.path)!;
+                        filePath = Path.Combine(dir, newName);
                     }
 
                     try
@@ -471,13 +531,24 @@ namespace UABEAvalonia
                         using (FileStream fs = File.OpenWrite(filePath))
                         using (AssetsFileWriter w = new AssetsFileWriter(fs))
                         {
-                            file.file.Write(w, 0, replacers, 0);
+                            file.file.Write(w, 0, replacers);
+                        }
+
+                        if (!saveAs)
+                        {
+                            string origFilePath = file.path;
+
+                            // "overwrite" the original
+                            file.file.Reader.Close();
+                            File.Delete(file.path);
+                            File.Move(filePath, origFilePath);
+                            file.file = new AssetsFile(new AssetsFileReader(File.OpenRead(origFilePath)));
                         }
                     }
                     catch (Exception ex)
                     {
                         await MessageBoxUtil.ShowDialog(this,
-                            "Write exception", "There was a problem while writing the file:\n" + ex.Message);
+                            "Write exception", "There was a problem while writing the file:\n" + ex.ToString());
                     }
                 }
             }
@@ -716,7 +787,7 @@ namespace UABEAvalonia
 
                             if (selectedFilePath.EndsWith(".json"))
                             {
-                                AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont, true);
+                                AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont);
                                 bytes = importer.ImportJsonAsset(tempField, sr, out exceptionMessage);
                             }
                             else
@@ -767,7 +838,7 @@ namespace UABEAvalonia
                     string? exceptionMessage = null;
                     if (file.EndsWith(".json"))
                     {
-                        AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont, true);
+                        AssetTypeTemplateField tempField = Workspace.GetTemplateField(selectedCont);
                         bytes = importer.ImportJsonAsset(tempField, sr, out exceptionMessage);
                     }
                     else
@@ -792,7 +863,6 @@ namespace UABEAvalonia
             bool foundResult = false;
             if (searching)
             {
-                //List<AssetInfoDataGridItem> itemList = dataGrid.Items.Cast<AssetInfoDataGridItem>().ToList();
                 List<AssetInfoDataGridItem> itemList = GetDataGridItemsSorted(dgcv);
                 if (searchDown)
                 {
@@ -851,7 +921,7 @@ namespace UABEAvalonia
         {
             bool foundResult = false;
 
-            List<AssetInfoDataGridItem> itemList = dataGrid.Items.Cast<AssetInfoDataGridItem>().ToList();
+            List<AssetInfoDataGridItem> itemList = GetDataGridItemsSorted(dgcv);
             for (int i = 0; i < itemList.Count; i++)
             {
                 AssetContainer cont = itemList[i].assetContainer;
@@ -865,6 +935,49 @@ namespace UABEAvalonia
             }
 
             return foundResult;
+        }
+
+        private void SetupContainers(bool isBundle)
+        {
+            if (Workspace.LoadedFiles.Count == 0)
+            {
+                return;
+            }
+
+            UnityContainer ucont = new UnityContainer();
+            if (isBundle)
+            {
+                foreach (AssetsFileInstance file in Workspace.LoadedFiles)
+                {
+                    AssetsFileInstance? actualFile;
+                    AssetTypeValueField? ucontBaseField;
+                    if (UnityContainer.TryGetContainerBaseField(Workspace, file, out actualFile, out ucontBaseField))
+                    {
+                        ucont.FromAssetBundle(am, actualFile, ucontBaseField);
+                    }
+                }
+            }
+            else
+            {
+                AssetsFileInstance firstFile = Workspace.LoadedFiles[0];
+
+                AssetsFileInstance? actualFile;
+                AssetTypeValueField? ucontBaseField;
+                if (UnityContainer.TryGetContainerBaseField(Workspace, firstFile, out actualFile, out ucontBaseField))
+                {
+                    ucont.FromResourceManager(am, actualFile, ucontBaseField);
+                }
+            }
+
+            foreach (var asset in Workspace.LoadedAssets)
+            {
+                AssetPPtr pptr = new AssetPPtr(asset.Key.fileName, 0, asset.Key.pathID);
+                string? path = ucont.GetContainerPath(pptr);
+                if (path != null)
+                {
+                    asset.Value.Container = path;
+                }
+            }
         }
 
         private ObservableCollection<AssetInfoDataGridItem> MakeDataGridItems()
@@ -883,7 +996,6 @@ namespace UABEAvalonia
         private AssetInfoDataGridItem AddDataGridItem(AssetContainer cont, bool isNewAsset = false)
         {
             AssetsFileInstance thisFileInst = cont.FileInstance;
-            AssetsFile thisFile = thisFileInst.file;
 
             string name;
             string container;
@@ -893,8 +1005,8 @@ namespace UABEAvalonia
             int size;
             string modified;
 
-            container = string.Empty;
-            fileId = Workspace.LoadedFiles.IndexOf(thisFileInst); //todo faster lookup THIS IS JUST FOR TESTING
+            container = cont.Container;
+            fileId = Workspace.LoadedFiles.IndexOf(thisFileInst);
             pathId = cont.PathId;
             size = (int)cont.Size;
             modified = "";
@@ -929,43 +1041,9 @@ namespace UABEAvalonia
 
         private void LoadAllAssetsWithDeps(List<AssetsFileInstance> files)
         {
-            HashSet<string> fileNames = new HashSet<string>();
             foreach (AssetsFileInstance file in files)
             {
-                RecurseGetAllAssets(file, Workspace.LoadedAssets, Workspace.LoadedFiles, fileNames);
-            }
-        }
-
-        private void RecurseGetAllAssets(AssetsFileInstance fromFile, Dictionary<AssetID, AssetContainer> conts, List<AssetsFileInstance> files, HashSet<string> fileNames)
-        {
-            if (files.Contains(fromFile))
-                return;
-
-            fromFile.table.GenerateQuickLookupTree();
-
-            files.Add(fromFile);
-            fileNames.Add(fromFile.path.ToLower());
-
-            foreach (AssetFileInfoEx info in fromFile.table.assetFileInfo)
-            {
-                AssetContainer cont = new AssetContainer(info, fromFile);
-                conts.Add(cont.AssetId, cont);
-            }
-
-            for (int i = 0; i < fromFile.dependencies.Count; i++)
-            {
-                AssetsFileInstance dep = fromFile.GetDependency(am, i);
-                if (dep == null)
-                    continue;
-                string depPath = dep.path.ToLower();
-                if (!fileNames.Contains(depPath))
-                {
-                    RecurseGetAllAssets(dep, conts, files, fileNames);
-                }
-                else
-                {
-                    continue;
-                }
+                Workspace.LoadAssetsFile(file, true);
             }
         }
 
@@ -1056,6 +1134,15 @@ namespace UABEAvalonia
             }
         }
 
+        private async void Workspace_MonoTemplateLoadFailed(string path)
+        {
+            await MessageBoxUtil.ShowDialog(
+                this, "Error",
+                "MonoBehaviour template info failed to load.\n" +
+                "MonoBehaviour assets will not be fully deserialized.\n" +
+                $"Searched in {path}");
+        }
+
         // TEMPORARY DATAGRID HACKS
         private DataGridCollectionView GetDataGridCollectionView(DataGrid dg)
         {
@@ -1098,7 +1185,7 @@ namespace UABEAvalonia
         public string Name { get; set; }
         public string Container { get; set; }
         public string Type { get; set; }
-        public uint TypeID { get; set; }
+        public int TypeID { get; set; }
         public int FileID { get; set; }
         public long PathID { get; set; }
         public int Size { get; set; }

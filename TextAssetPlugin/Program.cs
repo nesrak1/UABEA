@@ -20,7 +20,7 @@ namespace TexturePlugin
             if (action != UABEAPluginAction.Import)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classFile, "TextAsset").classId;
+            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "TextAsset").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -59,7 +59,7 @@ namespace TexturePlugin
                     string file = batchInfo.importFile;
 
                     byte[] byteData = File.ReadAllBytes(file);
-                    baseField.Get("m_Script").GetValue().Set(byteData);
+                    baseField["m_Script"].AsByteArray = byteData;
 
                     byte[] savedAsset = baseField.WriteToByteArray();
 
@@ -94,7 +94,7 @@ namespace TexturePlugin
             if (file != null && file != string.Empty)
             {
                 byte[] byteData = File.ReadAllBytes(file);
-                baseField.Get("m_Script").GetValue().Set(byteData);
+                baseField["m_Script"].AsByteArray = byteData;
 
                 byte[] savedAsset = baseField.WriteToByteArray();
 
@@ -116,7 +116,7 @@ namespace TexturePlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classFile, "TextAsset").classId;
+            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "TextAsset").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -147,8 +147,8 @@ namespace TexturePlugin
                 {
                     AssetTypeValueField baseField = workspace.GetBaseField(cont);
 
-                    string name = baseField.Get("m_Name").GetValue().AsString();
-                    byte[] byteData = baseField.Get("m_Script").GetValue().AsStringBytes();
+                    string name = baseField["m_Name"].AsString;
+                    byte[] byteData = baseField["m_Script"].AsByteArray;
 
                     name = Extensions.ReplaceInvalidPathChars(name);
                     string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.txt");
@@ -166,7 +166,7 @@ namespace TexturePlugin
             SaveFileDialog sfd = new SaveFileDialog();
 
             AssetTypeValueField baseField = workspace.GetBaseField(cont);
-            string name = baseField.Get("m_Name").GetValue().AsString();
+            string name = baseField["m_Name"].AsString;
             name = Extensions.ReplaceInvalidPathChars(name);
 
             sfd.Title = "Save text file";
@@ -179,7 +179,7 @@ namespace TexturePlugin
 
             if (file != null && file != string.Empty)
             {
-                byte[] byteData = baseField.Get("m_Script").GetValue().AsStringBytes();
+                byte[] byteData = baseField["m_Script"].AsByteArray;
                 File.WriteAllBytes(file, byteData);
 
                 return true;

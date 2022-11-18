@@ -38,48 +38,47 @@ namespace UABEAvalonia
 
         private void RecurseTextDump(AssetTypeValueField field, int depth)
         {
-            AssetTypeTemplateField template = field.GetTemplateField();
-            string align = template.align ? "1" : "0";
-            string typeName = template.type;
-            string fieldName = template.name;
-            bool isArray = template.isArray;
+            AssetTypeTemplateField template = field.TemplateField;
+            string align = template.IsAligned ? "1" : "0";
+            string typeName = template.Type;
+            string fieldName = template.Name;
+            bool isArray = template.IsArray;
 
             //string's field isn't aligned but its array is
-            if (template.valueType == EnumValueTypes.String)
+            if (template.ValueType == AssetValueType.String)
                 align = "1";
 
             //mainly to handle enum fields not having the int type name
-            if (template.valueType != EnumValueTypes.None &&
-                template.valueType != EnumValueTypes.Array &&
-                template.valueType != EnumValueTypes.ByteArray &&
+            if (template.ValueType != AssetValueType.None &&
+                template.ValueType != AssetValueType.Array &&
+                template.ValueType != AssetValueType.ByteArray &&
                 !isArray)
             {
-                typeName = CorrectTypeName(template.valueType);
+                typeName = CorrectTypeName(template.ValueType);
             }
 
             if (isArray)
             {
-                AssetTypeTemplateField sizeTemplate = template.children[0];
-                string sizeAlign = sizeTemplate.align ? "1" : "0";
-                string sizeTypeName = sizeTemplate.type;
-                string sizeFieldName = sizeTemplate.name;
+                AssetTypeTemplateField sizeTemplate = template.Children[0];
+                string sizeAlign = sizeTemplate.IsAligned ? "1" : "0";
+                string sizeTypeName = sizeTemplate.Type;
+                string sizeFieldName = sizeTemplate.Name;
 
-                if (template.valueType != EnumValueTypes.ByteArray)
+                if (template.ValueType != AssetValueType.ByteArray)
                 {
-                    int size = field.GetValue().AsArray().size;
+                    int size = field.AsArray.size;
                     sw.WriteLine($"{new string(' ', depth)}{align} {typeName} {fieldName} ({size} items)");
                     sw.WriteLine($"{new string(' ', depth + 1)}{sizeAlign} {sizeTypeName} {sizeFieldName} = {size}");
-                    for (int i = 0; i < field.childrenCount; i++)
+                    for (int i = 0; i < field.Children.Count; i++)
                     {
                         sw.WriteLine($"{new string(' ', depth + 1)}[{i}]");
-                        RecurseTextDump(field.children[i], depth + 2);
+                        RecurseTextDump(field.Children[i], depth + 2);
                     }
                 }
                 else
                 {
-                    AssetTypeByteArray byteArray = field.GetValue().AsByteArray();
-                    byte[] data = byteArray.data;
-                    int size = (int)byteArray.size;
+                    byte[] data = field.AsByteArray;
+                    int size = data.Length;
 
                     sw.WriteLine($"{new string(' ', depth)}{align} {typeName} {fieldName} ({size} items)");
                     sw.WriteLine($"{new string(' ', depth + 1)}{sizeAlign} {sizeTypeName} {sizeFieldName} = {size}");
@@ -93,14 +92,14 @@ namespace UABEAvalonia
             else
             {
                 string value = "";
-                if (field.GetValue() != null)
+                if (field.Value != null)
                 {
-                    EnumValueTypes evt = field.GetValue().GetValueType();
-                    if (evt == EnumValueTypes.String)
+                    AssetValueType evt = field.Value.ValueType;
+                    if (evt == AssetValueType.String)
                     {
                         //only replace \ with \\ but not " with \" lol
                         //you just have to find the last "
-                        string fixedStr = field.GetValue().AsString()
+                        string fixedStr = field.AsString
                             .Replace("\\", "\\\\")
                             .Replace("\r", "\\r")
                             .Replace("\n", "\\n");
@@ -108,14 +107,14 @@ namespace UABEAvalonia
                     }
                     else if (1 <= (int)evt && (int)evt <= 12)
                     {
-                        value = $" = {field.GetValue().AsString()}";
+                        value = $" = {field.AsString}";
                     }
                 }
                 sw.WriteLine($"{new string(' ', depth)}{align} {typeName} {fieldName}{value}");
 
-                for (int i = 0; i < field.childrenCount; i++)
+                for (int i = 0; i < field.Children.Count; i++)
                 {
-                    RecurseTextDump(field.children[i], depth + 1);
+                    RecurseTextDump(field.Children[i], depth + 1);
                 }
             }
         }
@@ -129,24 +128,24 @@ namespace UABEAvalonia
 
         private JToken RecurseJsonDump(AssetTypeValueField field, bool uabeFlavor)
         {
-            AssetTypeTemplateField template = field.GetTemplateField();
+            AssetTypeTemplateField template = field.TemplateField;
 
-            bool isArray = template.isArray;
+            bool isArray = template.IsArray;
 
             if (isArray)
             {
                 JArray jArray = new JArray();
 
-                if (template.valueType != EnumValueTypes.ByteArray)
+                if (template.ValueType != AssetValueType.ByteArray)
                 {
-                    for (int i = 0; i < field.childrenCount; i++)
+                    for (int i = 0; i < field.Children.Count; i++)
                     {
-                        jArray.Add(RecurseJsonDump(field.children[i], uabeFlavor));
+                        jArray.Add(RecurseJsonDump(field.Children[i], uabeFlavor));
                     }
                 }
                 else
                 {
-                    byte[] byteArrayData = field.GetValue().AsByteArray().data;
+                    byte[] byteArrayData = field.AsByteArray;
                     for (int i = 0; i < byteArrayData.Length; i++)
                     {
                         jArray.Add(byteArrayData[i]);
@@ -157,24 +156,24 @@ namespace UABEAvalonia
             }
             else
             {
-                if (field.GetValue() != null)
+                if (field.Value != null)
                 {
-                    EnumValueTypes evt = field.GetValue().GetValueType();
+                    AssetValueType evt = field.Value.ValueType;
                     
                     object value = evt switch
                     {
-                        EnumValueTypes.Bool => field.GetValue().AsBool(),
-                        EnumValueTypes.Int8 or
-                        EnumValueTypes.Int16 or
-                        EnumValueTypes.Int32 => field.GetValue().AsInt(),
-                        EnumValueTypes.Int64 => field.GetValue().AsInt64(),
-                        EnumValueTypes.UInt8 or
-                        EnumValueTypes.UInt16 or
-                        EnumValueTypes.UInt32 => field.GetValue().AsUInt(),
-                        EnumValueTypes.UInt64 => field.GetValue().AsUInt64(),
-                        EnumValueTypes.String => field.GetValue().AsString(),
-                        EnumValueTypes.Float => field.GetValue().AsFloat(),
-                        EnumValueTypes.Double => field.GetValue().AsDouble(),
+                        AssetValueType.Bool => field.AsBool,
+                        AssetValueType.Int8 or
+                        AssetValueType.Int16 or
+                        AssetValueType.Int32 => field.AsInt,
+                        AssetValueType.Int64 => field.AsLong,
+                        AssetValueType.UInt8 or
+                        AssetValueType.UInt16 or
+                        AssetValueType.UInt32 => field.AsUInt,
+                        AssetValueType.UInt64 => field.AsULong,
+                        AssetValueType.String => field.AsString,
+                        AssetValueType.Float => field.AsFloat,
+                        AssetValueType.Double => field.AsDouble,
                         _ => "invalid value"
                     };
 
@@ -184,9 +183,9 @@ namespace UABEAvalonia
                 {
                     JObject jObject = new JObject();
 
-                    for (int i = 0; i < field.childrenCount; i++)
+                    for (int i = 0; i < field.Children.Count; i++)
                     {
-                        jObject.Add(field.children[i].GetName(), RecurseJsonDump(field.children[i], uabeFlavor));
+                        jObject.Add(field.Children[i].FieldName, RecurseJsonDump(field.Children[i], uabeFlavor));
                     }
 
                     return jObject;
@@ -209,7 +208,7 @@ namespace UABEAvalonia
             using (MemoryStream ms = new MemoryStream())
             {
                 aw = new AssetsFileWriter(ms);
-                aw.bigEndian = false;
+                aw.BigEndian = false;
                 try
                 {
                     ImportTextAssetLoop();
@@ -329,7 +328,7 @@ namespace UABEAvalonia
             using (MemoryStream ms = new MemoryStream())
             {
                 aw = new AssetsFileWriter(ms);
-                aw.bigEndian = false;
+                aw.BigEndian = false;
 
                 try
                 {
@@ -350,16 +349,16 @@ namespace UABEAvalonia
 
         private void RecurseJsonImport(AssetTypeTemplateField tempField, JToken token)
         {
-            bool align = tempField.align;
+            bool align = tempField.IsAligned;
 
-            if (!tempField.hasValue && !tempField.isArray)
+            if (!tempField.HasValue && !tempField.IsArray)
             {
-                foreach (AssetTypeTemplateField childTempField in tempField.children)
+                foreach (AssetTypeTemplateField childTempField in tempField.Children)
                 {
-                    JToken? childToken = token[childTempField.name];
+                    JToken? childToken = token[childTempField.Name];
 
                     if (childToken == null)
-                        throw new Exception($"Missing field {childTempField.name} in json.");
+                        throw new Exception($"Missing field {childTempField.Name} in json.");
                         
                     RecurseJsonImport(childTempField, childToken);
                 }
@@ -371,70 +370,70 @@ namespace UABEAvalonia
             }
             else
             {
-                switch (tempField.valueType)
+                switch (tempField.ValueType)
                 {
-                    case EnumValueTypes.Bool:
+                    case AssetValueType.Bool:
                     {
                         aw.Write((bool)token);
                         break;
                     }
-                    case EnumValueTypes.UInt8:
+                    case AssetValueType.UInt8:
                     {
                         aw.Write((byte)token);
                         break;
                     }
-                    case EnumValueTypes.Int8:
+                    case AssetValueType.Int8:
                     {
                         aw.Write((sbyte)token);
                         break;
                     }
-                    case EnumValueTypes.UInt16:
+                    case AssetValueType.UInt16:
                     {
                         aw.Write((ushort)token);
                         break;
                     }
-                    case EnumValueTypes.Int16:
+                    case AssetValueType.Int16:
                     {
                         aw.Write((short)token);
                         break;
                     }
-                    case EnumValueTypes.UInt32:
+                    case AssetValueType.UInt32:
                     {
                         aw.Write((uint)token);
                         break;
                     }
-                    case EnumValueTypes.Int32:
+                    case AssetValueType.Int32:
                     {
                         aw.Write((int)token);
                         break;
                     }
-                    case EnumValueTypes.UInt64:
+                    case AssetValueType.UInt64:
                     {
                         aw.Write((ulong)token);
                         break;
                     }
-                    case EnumValueTypes.Int64:
+                    case AssetValueType.Int64:
                     {
                         aw.Write((long)token);
                         break;
                     }
-                    case EnumValueTypes.Float:
+                    case AssetValueType.Float:
                     {
                         aw.Write((float)token);
                         break;
                     }
-                    case EnumValueTypes.Double:
+                    case AssetValueType.Double:
                     {
                         aw.Write((double)token);
                         break;
                     }
-                    case EnumValueTypes.String:
+                    case AssetValueType.String:
                     {
                         align = true;
                         aw.WriteCountStringInt32((string?)token ?? "");
                         break;
                     }
-                    case EnumValueTypes.ByteArray:
+                    case AssetValueType.ByteArray:
                     {
                         JArray byteArrayJArray = ((JArray?)token) ?? new JArray();
                         byte[] byteArrayData = new byte[byteArrayJArray.Count];
@@ -449,15 +448,15 @@ namespace UABEAvalonia
                 }
 
                 //have to do this because of bug in MonoDeserializer
-                if (tempField.isArray && tempField.valueType != EnumValueTypes.ByteArray)
+                if (tempField.IsArray && tempField.ValueType != AssetValueType.ByteArray)
                 {
                     //children[0] is size field, children[1] is the data field
-                    AssetTypeTemplateField childTempField = tempField.children[1];
+                    AssetTypeTemplateField childTempField = tempField.Children[1];
 
                     JArray? tokenArray = (JArray?)token;
 
                     if (tokenArray == null)
-                        throw new Exception($"Field {tempField.name} was not an array in json.");
+                        throw new Exception($"Field {tempField.Name} was not an array in json.");
 
                     aw.Write(tokenArray.Count);
                     foreach (JToken childToken in tokenArray.Children())
@@ -512,33 +511,33 @@ namespace UABEAvalonia
             return sb.ToString();
         }
 
-        private string CorrectTypeName(EnumValueTypes valueTypes)
+        private string CorrectTypeName(AssetValueType valueTypes)
         {
             switch (valueTypes)
             {
-                case EnumValueTypes.Bool:
+                case AssetValueType.Bool:
                     return "bool";
-                case EnumValueTypes.UInt8:
+                case AssetValueType.UInt8:
                     return "UInt8";
-                case EnumValueTypes.Int8:
+                case AssetValueType.Int8:
                     return "SInt8";
-                case EnumValueTypes.UInt16:
+                case AssetValueType.UInt16:
                     return "UInt16";
-                case EnumValueTypes.Int16:
+                case AssetValueType.Int16:
                     return "SInt16";
-                case EnumValueTypes.UInt32:
+                case AssetValueType.UInt32:
                     return "unsigned int";
-                case EnumValueTypes.Int32:
+                case AssetValueType.Int32:
                     return "int";
-                case EnumValueTypes.UInt64:
+                case AssetValueType.UInt64:
                     return "UInt64";
-                case EnumValueTypes.Int64:
+                case AssetValueType.Int64:
                     return "SInt64";
-                case EnumValueTypes.Float:
+                case AssetValueType.Float:
                     return "float";
-                case EnumValueTypes.Double:
+                case AssetValueType.Double:
                     return "double";
-                case EnumValueTypes.String:
+                case AssetValueType.String:
                     return "string";
             }
             return "UnknownBaseType";

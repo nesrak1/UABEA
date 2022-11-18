@@ -3,6 +3,8 @@ using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
+using Avalonia.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +18,52 @@ namespace UABEAvalonia
         private AssetWorkspace workspace;
 
         private AvaloniaList<TreeViewItem> ListItems => (AvaloniaList<TreeViewItem>)Items;
+
+        private static SolidColorBrush PrimNameBrushDark = SolidColorBrush.Parse("#569cd6");
+        private static SolidColorBrush PrimNameBrushLight = SolidColorBrush.Parse("#0000ff");
+        private static SolidColorBrush TypeNameBrushDark = SolidColorBrush.Parse("#4ec9b0");
+        private static SolidColorBrush TypeNameBrushLight = SolidColorBrush.Parse("#2b91af");
+        private static SolidColorBrush StringBrushDark = SolidColorBrush.Parse("#d69d85");
+        private static SolidColorBrush StringBrushLight = SolidColorBrush.Parse("#a31515");
+        private static SolidColorBrush ValueBrushDark = SolidColorBrush.Parse("#b5cea8");
+        private static SolidColorBrush ValueBrushLight = SolidColorBrush.Parse("#5b2da8");
+
+        private SolidColorBrush PrimNameBrush
+        {
+            get
+            {
+                return ThemeHandler.UseDarkTheme
+                    ? PrimNameBrushDark
+                    : PrimNameBrushLight;
+            }
+        }
+        private SolidColorBrush TypeNameBrush
+        {
+            get
+            {
+                return ThemeHandler.UseDarkTheme
+                    ? TypeNameBrushDark
+                    : TypeNameBrushLight;
+            }
+        }
+        private SolidColorBrush StringBrush
+        {
+            get
+            {
+                return ThemeHandler.UseDarkTheme
+                    ? StringBrushDark
+                    : StringBrushLight;
+            }
+        }
+        private SolidColorBrush ValueBrush
+        {
+            get
+            {
+                return ThemeHandler.UseDarkTheme
+                    ? ValueBrushDark
+                    : ValueBrushLight;
+            }
+        }
 
         public void Init(AssetWorkspace workspace)
         {
@@ -33,9 +81,19 @@ namespace UABEAvalonia
             if (workspace == null)
                 return;
 
-            AssetTypeValueField baseField = workspace.GetBaseField(container);
+            AssetTypeValueField? baseField = workspace.GetBaseField(container);
 
-            string baseItemString = $"{baseField.GetFieldType()} {baseField.GetName()}";
+            if (baseField == null)
+            {
+                TreeViewItem errorItem0 = CreateTreeItem("Asset failed to deserialize.");
+                TreeViewItem errorItem1 = CreateTreeItem("The file version may be too new for");
+                TreeViewItem errorItem2 = CreateTreeItem("this tpk or the file format is custom.");
+                errorItem0.Items = new List<TreeViewItem>() { errorItem1, errorItem2 };
+                ListItems.Add(errorItem0);
+                return;
+            }
+
+            string baseItemString = $"{baseField.TypeName} {baseField.FieldName}";
             if (container.ClassId == (uint)AssetClassID.MonoBehaviour)
             {
                 string monoName = Extensions.GetMonoBehaviourNameFast(workspace, container);
@@ -92,6 +150,77 @@ namespace UABEAvalonia
             return new TreeViewItem() { Header = text };
         }
 
+        private TreeViewItem CreateColorTreeItem(string typeName, string fieldName)
+        {
+            RichTextBlock tb = new RichTextBlock();
+
+            Span span1 = new Span()
+            {
+                Foreground = TypeNameBrush,/*,
+                FontWeight = FontWeight.Bold*/
+            };
+            Bold bold1 = new Bold();
+            bold1.Inlines.Add(typeName);
+            span1.Inlines.Add(bold1);
+            tb.Inlines.Add(span1);
+
+            Bold bold2 = new Bold();
+            bold2.Inlines.Add($" {fieldName}");
+            tb.Inlines.Add(bold2);
+
+            /*
+			<Span Foreground="#4ec9b0">
+				<Bold>TypeName</Bold></Span>
+			<Bold>. fieldName = .</Bold>
+			<Span Foreground="#d69d85">
+				<Bold>"hi"</Bold>
+			</Span> 
+            */
+
+            return new TreeViewItem()
+            {
+                Header = tb
+            };
+        }
+
+        private TreeViewItem CreateColorTreeItem(string typeName, string fieldName, string middle, string value)
+        {
+            bool isString = value.StartsWith("\"");
+
+            RichTextBlock tb = new RichTextBlock();
+
+            bool primitiveType = AssetTypeValueField.GetValueTypeByTypeName(typeName) != AssetValueType.None;
+
+            Span span1 = new Span()
+            {
+                Foreground = primitiveType ? PrimNameBrush : TypeNameBrush
+            };
+            Bold bold1 = new Bold();
+            bold1.Inlines.Add(typeName);
+            span1.Inlines.Add(bold1);
+            tb.Inlines.Add(span1);
+
+            Bold bold2 = new Bold();
+            bold2.Inlines.Add($" {fieldName}");
+            tb.Inlines.Add(bold2);
+
+            tb.Inlines.Add(middle);
+
+            if (value != "")
+            {
+                Span span2 = new Span()
+                {
+                    Foreground = isString ? StringBrush : ValueBrush
+                };
+                Bold bold3 = new Bold();
+                bold3.Inlines.Add(value);
+                span2.Inlines.Add(bold3);
+                tb.Inlines.Add(span2);
+            }
+
+            return new TreeViewItem() { Header = tb };
+        }
+
         //lazy load tree items. avalonia is really slow to load if
         //we just throw everything in the treeview at once
         private void SetTreeItemEvents(TreeViewItem item, AssetsFileInstance fromFile, long fromPathId, AssetTypeValueField field)
@@ -124,7 +253,7 @@ namespace UABEAvalonia
                     if (cont != null)
                     {
                         AssetTypeValueField baseField = workspace.GetBaseField(cont);
-                        TreeViewItem baseItem = CreateTreeItem($"{baseField.GetFieldType()} {baseField.GetName()}");
+                        TreeViewItem baseItem = CreateTreeItem($"{baseField.TypeName} {baseField.FieldName}");
 
                         TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
                         baseItem.Items = new AvaloniaList<TreeViewItem>() { arrayIndexTreeItem };
@@ -141,42 +270,44 @@ namespace UABEAvalonia
 
         private void TreeLoad(AssetsFileInstance fromFile, AssetTypeValueField assetField, long fromPathId, TreeViewItem treeItem)
         {
-            if (assetField.childrenCount == 0) return;
+            if (assetField.Children.Count == 0) return;
 
             int arrayIdx = 0;
-            AvaloniaList<TreeViewItem> items = new AvaloniaList<TreeViewItem>(assetField.childrenCount + 1);
+            AvaloniaList<TreeViewItem> items = new AvaloniaList<TreeViewItem>(assetField.Children.Count + 1);
 
-            AssetTypeTemplateField assetFieldTemplate = assetField.GetTemplateField();
-            bool isArray = assetFieldTemplate.isArray;
+            AssetTypeTemplateField assetFieldTemplate = assetField.TemplateField;
+            bool isArray = assetFieldTemplate.IsArray;
 
             if (isArray)
             {
-                int size = assetField.GetValue().AsArray().size;
-                AssetTypeTemplateField sizeTemplate = assetFieldTemplate.children[0];
-                TreeViewItem arrayIndexTreeItem = CreateTreeItem($"{sizeTemplate.type} {sizeTemplate.name} = {size}");
+                int size = assetField.AsArray.size;
+                AssetTypeTemplateField sizeTemplate = assetFieldTemplate.Children[0];
+                TreeViewItem arrayIndexTreeItem = CreateColorTreeItem(sizeTemplate.Type, sizeTemplate.Name, " = ", size.ToString());
                 items.Add(arrayIndexTreeItem);
             }
 
-            foreach (AssetTypeValueField childField in assetField.children)
+            foreach (AssetTypeValueField childField in assetField)
             {
                 if (childField == null) return;
+                string middle = "";
                 string value = "";
-                if (childField.GetValue() != null)
+                if (childField.Value != null)
                 {
-                    EnumValueTypes evt = childField.GetValue().GetValueType();
+                    AssetValueType evt = childField.Value.ValueType;
                     string quote = "";
-                    if (evt == EnumValueTypes.String) quote = "\"";
+                    if (evt == AssetValueType.String) quote = "\"";
                     if (1 <= (int)evt && (int)evt <= 12)
                     {
-                        value = $" = {quote}{childField.GetValue().AsString()}{quote}";
+                        middle = " = ";
+                        value = $"{quote}{childField.AsString}{quote}";
                     }
-                    if (evt == EnumValueTypes.Array)
+                    if (evt == AssetValueType.Array)
                     {
-                        value = $" (size {childField.childrenCount})";
+                        middle = $" (size {childField.Children.Count})";
                     }
-                    else if (evt == EnumValueTypes.ByteArray)
+                    else if (evt == AssetValueType.ByteArray)
                     {
-                        value = $" (size {childField.GetValue().AsByteArray().size})";
+                        middle = $" (size {childField.AsByteArray.Length})";
                     }
                 }
 
@@ -185,10 +316,10 @@ namespace UABEAvalonia
                     TreeViewItem arrayIndexTreeItem = CreateTreeItem($"{arrayIdx}");
                     items.Add(arrayIndexTreeItem);
 
-                    TreeViewItem childTreeItem = CreateTreeItem($"{childField.GetFieldType()} {childField.GetName()}{value}");
+                    TreeViewItem childTreeItem = CreateColorTreeItem(childField.TypeName, childField.FieldName, middle, value);
                     arrayIndexTreeItem.Items = new AvaloniaList<TreeViewItem>() { childTreeItem };
 
-                    if (childField.childrenCount > 0)
+                    if (childField.Children.Count > 0)
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
                         childTreeItem.Items = new AvaloniaList<TreeViewItem>() { dummyItem };
@@ -199,10 +330,10 @@ namespace UABEAvalonia
                 }
                 else
                 {
-                    TreeViewItem childTreeItem = CreateTreeItem($"{childField.GetFieldType()} {childField.GetName()}{value}");
+                    TreeViewItem childTreeItem = CreateColorTreeItem(childField.TypeName, childField.FieldName, middle, value);
                     items.Add(childTreeItem);
 
-                    if (childField.childrenCount > 0)
+                    if (childField.Children.Count > 0)
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
                         childTreeItem.Items = new AvaloniaList<TreeViewItem>() { dummyItem };
@@ -211,17 +342,17 @@ namespace UABEAvalonia
                 }
             }
 
-            string templateFieldType = assetField.templateField.type;
+            string templateFieldType = assetField.TypeName;
             if (templateFieldType.StartsWith("PPtr<") && templateFieldType.EndsWith(">"))
             {
-                var fileIdField = assetField.Get("m_FileID");
-                var pathIdField = assetField.Get("m_PathID");
-                bool pptrValid = !fileIdField.IsDummy() && !pathIdField.IsDummy();
+                var fileIdField = assetField["m_FileID"];
+                var pathIdField = assetField["m_PathID"];
+                bool pptrValid = !fileIdField.IsDummy && !pathIdField.IsDummy;
 
                 if (pptrValid)
                 {
-                    int fileId = fileIdField.GetValue().AsInt();
-                    long pathId = pathIdField.GetValue().AsInt64();
+                    int fileId = fileIdField.AsInt;
+                    long pathId = pathIdField.AsLong;
 
                     AssetContainer cont = workspace.GetAssetContainer(fromFile, fileId, pathId, true);
 

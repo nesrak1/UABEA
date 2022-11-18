@@ -19,11 +19,14 @@ namespace UABEAvalonia
                 return DetectFileType(r, 0);
             }
         }
+
         public static DetectedFileType DetectFileType(AssetsFileReader r, long startAddress)
         {
             string possibleBundleHeader;
             int possibleFormat;
             string emptyVersion, fullVersion;
+
+            r.BigEndian = true;
 
             if (r.BaseStream.Length < 0x20)
             {
@@ -60,6 +63,7 @@ namespace UABEAvalonia
             return DetectedFileType.Unknown;
         }
     }
+
     public enum DetectedFileType
     {
         Unknown,

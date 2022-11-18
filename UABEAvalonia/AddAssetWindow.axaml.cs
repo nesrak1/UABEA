@@ -101,7 +101,7 @@ namespace UABEAvalonia
                 return;
             }
 
-            if (file.file.typeTree.hasTypeTree)
+            if (file.file.Metadata.TypeTreeEnabled)
             {
                 if (!TryParseTypeTree(file, typeIdText, createBlankAsset, out tempField, out typeId))
                 {
@@ -115,7 +115,7 @@ namespace UABEAvalonia
                         //has typetree but had to lookup to cldb
                         //we need to add a new typetree entry because this is
                         //probably not a type that existed in this bundle
-                        file.file.typeTree.unity5Types.Add(C2T5.Cldb2TypeTree(workspace.am.classFile, typeId));
+                        file.file.Metadata.TypeTreeTypes.Add(ClassDatabaseToTypeTree.Convert(workspace.am.classDatabase, typeId));
                     }
                 }
             }
@@ -157,12 +157,12 @@ namespace UABEAvalonia
         {
             tempField = null;
 
-            ClassDatabaseFile cldb = workspace.am.classFile;
+            ClassDatabaseFile cldb = workspace.am.classDatabase;
             ClassDatabaseType cldbType;
             bool needsTypeId;
             if (int.TryParse(typeIdText, out typeId))
             {
-                cldbType = AssetHelper.FindAssetClassByID(cldb, (uint)typeId);
+                cldbType = AssetHelper.FindAssetClassByID(cldb, typeId);
                 needsTypeId = false;
             }
             else
@@ -178,13 +178,13 @@ namespace UABEAvalonia
 
             if (needsTypeId)
             {
-                typeId = cldbType.classId;
+                typeId = cldbType.ClassId;
             }
 
             if (createBlankAsset)
             {
                 tempField = new AssetTypeTemplateField();
-                tempField.FromClassDatabase(cldb, cldbType, 0);
+                tempField.FromClassDatabase(cldb, cldbType);
             }
             return true;
         }
@@ -193,17 +193,17 @@ namespace UABEAvalonia
         {
             tempField = null;
 
-            TypeTree tt = file.file.typeTree;
-            Type_0D ttType;
+            AssetsFileMetadata meta = file.file.Metadata;
+            TypeTreeType ttType;
             bool needsTypeId;
             if (int.TryParse(typeIdText, out typeId))
             {
-                ttType = AssetHelper.FindTypeTreeTypeByID(tt, (uint)typeId);
+                ttType = AssetHelper.FindTypeTreeTypeByID(meta, typeId);
                 needsTypeId = false;
             }
             else
             {
-                ttType = AssetHelper.FindTypeTreeTypeByName(tt, typeIdText);
+                ttType = AssetHelper.FindTypeTreeTypeByName(meta, typeIdText);
                 needsTypeId = true;
             }
 
@@ -214,13 +214,13 @@ namespace UABEAvalonia
 
             if (needsTypeId)
             {
-                typeId = ttType.classId;
+                typeId = ttType.TypeId;
             }
 
             if (createBlankAsset)
             {
                 tempField = new AssetTypeTemplateField();
-                tempField.From0D(ttType, 0);
+                tempField.FromTypeTree(ttType);
             }
             return true;
         }

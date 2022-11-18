@@ -1,0 +1,793 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AssetsTools.NET</name>
+    </assembly>
+    <members>
+        <member name="T:AssetsTools.NET.Extra.LambdaAssetReplacer">
+            <summary>
+            Replacer that deserializes the specified asset, lets a delegate
+            modify the object graph, and serializes the result
+            </summary>
+        </member>
+        <member name="T:AssetsTools.NET.Extra.SerializingAssetReplacer">
+            <summary>
+            Abstract replacer that deserializes the specified asset, lets the deriving class
+            modify the object graph, and serializes the result
+            </summary>
+        </member>
+        <member name="M:AssetsTools.NET.Extra.Texture2DAssetReplacer.GetNewTextureData(System.Byte[]@,System.Int32@,System.Int32@)">
+            <summary>
+            Retrieves the new image to patch into the texture, in the format BGRA32
+            </summary>
+        </member>
+        <member name="M:AssetsTools.NET.Extra.Texture2DAssetReplacer.SetTextureData(AssetsTools.NET.TextureFile,System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Encodes the BGRA32 data returned by <see cref="M:AssetsTools.NET.Extra.Texture2DAssetReplacer.GetNewTextureData(System.Byte[]@,System.Int32@,System.Int32@)"/> and stores the result
+            in the texture. Can be overriden in case the texture uses a format that AssetsTools.NET
+            doesn't support yet; in this case, encode the image yourself and pass it to
+            <see cref="M:AssetsTools.NET.TextureFile.SetTextureDataRaw(System.Byte[],System.Int32,System.Int32)"/>.
+            </summary>
+        </member>
+        <member name="T:AssetsTools.NET.Extra.HalfHelper">
+            <summary>
+            Helper class for half-precision (16-bit) floating point numbers
+            </summary>
+            <remarks>
+            References:
+                - Code retrieved from http://sourceforge.net/p/csharp-half/code/HEAD/tree/ on 2015-12-04
+                - Fast Half Float Conversions, Jeroen van der Zijp, link: http://www.fox-toolkit.org/ftp/fasthalffloatconversion.pdf
+            </remarks>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleBlockAndDirInfo.Hash">
+            <summary>
+            Hash of this entry.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleBlockAndDirInfo.BlockInfos">
+            <summary>
+            List of blocks in this bundle.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleBlockAndDirInfo.DirectoryInfos">
+            <summary>
+            List of file infos in this bundle.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleBlockInfo.DecompressedSize">
+            <summary>
+            Decompressed size of this block.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleBlockInfo.CompressedSize">
+            <summary>
+            Compressed size of this block. If uncompressed, this is the same as DecompressedSize.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleBlockInfo.Flags">
+            <summary>
+            Flags of this block.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.AssetBundleDirectoryInfo.Offset">
+            <summary>
+            Offset from bundle's data start (header.GetFileDataOffset()).
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.AssetBundleDirectoryInfo.DecompressedSize">
+            <summary>
+            Decompressed size of this entry.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.AssetBundleDirectoryInfo.Flags">
+            <summary>
+            Flags of this entry. <br/>
+            0x04: File is serialized. Assets files should enable this, and other files like .resS or .resource(s) should disable this.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.AssetBundleDirectoryInfo.Name">
+            <summary>
+            Name of this entry.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFile.Header">
+            <summary>
+            Bundle header. Contains bundle engine version.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFile.BlockAndDirInfo">
+            <summary>
+            List of compression blocks and file info (file names, address in file, etc.)
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFile.DataReader">
+            <summary>
+            Reader for data block of bundle
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFile.DataIsCompressed">
+            <summary>
+            Is data reader reading compressed data? Only LZMA bundles set this to true.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFSHeader.TotalFileSize">
+            <summary>
+            Size of entire file.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFSHeader.CompressedSize">
+            <summary>
+            Size of the compressed data. This is the same as DecompressedSize if not compressed.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFSHeader.DecompressedSize">
+            <summary>
+            Size of the decompressed data.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleFSHeader.Flags">
+            <summary>
+            Flags of this bundle. <br/>
+            First 6 bits (0x3f mask): Compression mode. 0 for uncompressed, 1 for LZ4, 2 for LZMA. <br/>
+            0x40: Has directory info. Should always be true for 5.2+. <br/>
+            0x80: Block and directory info is at end. The Unity editor does not usually use this.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleHeader.Signature">
+            <summary>
+            Magic appearing at the beginning of all bundles. Possible options are:
+            UnityFS, UnityWeb, UnityRaw, UnityArchive
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleHeader.Version">
+            <summary>
+            Version of this file.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleHeader.GenerationVersion">
+            <summary>
+            Generation version string. For Unity 5 bundles this is always "5.x.x"
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleHeader.EngineVersion">
+            <summary>
+            Engine version. This is the specific version string being used. For example, "2019.4.2f1"
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetBundleHeader.FileStreamHeader">
+            <summary>
+            Header for bundles with a UnityFS Signature.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetFileInfo.PathId">
+            <summary>
+            Path ID of the asset.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetFileInfo.ByteStart">
+            <summary>
+            Address of the asset's data from the header's DataOffset. Use GetAbsoluteByteStart for the real file position.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetFileInfo.ByteSize">
+            <summary>
+            Byte size of the asset data.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetFileInfo.TypeIdOrIndex">
+            <summary>
+            Before version 16 this is the type ID of the asset. In version 16 and later this is the index into the type tree list.
+            In versions 15 and below, this is the same as TypeId except in MonoBehaviours where this acts as ScriptTypeIndex (negative).
+            You should use TypeId for the type ID in either version. <see cref="T:AssetsTools.NET.Extra.AssetClassID"/>
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetFileInfo.ClassId">
+            <summary>
+            Class ID of the asset. This field is only used in versions 15 and below and is the same as TypeId.
+            You should use TypeId for the type ID in either version. <see cref="T:AssetsTools.NET.Extra.AssetClassID"/>
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetFileInfo.ScriptTypeIndex">
+            <summary>
+            Script type index of the asset. Assets other than MonoBehaviours will have 0xffff for this field.
+            This value is stored in the type tree starting at version 17.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetFileInfo.Stripped">
+            <summary>
+            Marks if the type in the type tree has been stripped (?)
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetFileInfo.TypeId">
+            <summary>
+            The type ID of the asset. This field works in both versions. This field is only for convenience; modifying the type
+            ID in the type tree in later versions will not update the ID here, and modifying this field will not update the
+            type ID in previous versions.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetFileInfo.AbsoluteByteStart">
+            <summary>
+            The absolute file position of the asset from the file opened. This field is only for convenience; if you want to
+            change where this asset is read from, set the ByteStart property instead.
+            </summary>
+        </member>
+        <member name="M:AssetsTools.NET.AssetFileInfo.GetTypeId(AssetsTools.NET.AssetsFile)">
+            <summary>
+            Get the Type ID of the asset.
+            </summary>
+        </member>
+        <member name="M:AssetsTools.NET.AssetFileInfo.GetTypeId(AssetsTools.NET.AssetsFileMetadata,System.UInt32)">
+            <summary>
+            Get the Type ID of the asset.
+            </summary>
+        </member>
+        <member name="M:AssetsTools.NET.AssetFileInfo.GetTypeId(System.Collections.Generic.List{AssetsTools.NET.TypeTreeType},System.UInt32)">
+            <summary>
+            Get the Type ID of the asset.
+            </summary>
+        </member>
+        <member name="M:AssetsTools.NET.AssetFileInfo.GetAbsoluteByteStart(AssetsTools.NET.AssetsFile)">
+            <summary>
+            Address of the asset's data from the start of the file.
+            </summary>
+        </member>
+        <member name="M:AssetsTools.NET.AssetFileInfo.GetAbsoluteByteStart(AssetsTools.NET.AssetsFileHeader)">
+            <summary>
+            Address of the asset's data from the start of the file.
+            </summary>
+        </member>
+        <member name="M:AssetsTools.NET.AssetFileInfo.GetAbsoluteByteStart(System.Int64)">
+            <summary>
+            Address of the asset's data from the start of the file.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetPPtr.FilePath">
+            <summary>
+            File path of the pointer. If empty or null, FileId will be used.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetPPtr.FileId">
+            <summary>
+            File ID of the pointer.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetPPtr.PathId">
+            <summary>
+            Path ID of the pointer.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFile.Header">
+            <summary>
+            Assets file header.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFile.Metadata">
+            <summary>
+            Contains metadata about the file (TypeTree, engine version, dependencies, etc.)
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.VirtualAssetPathName">
+            <summary>
+            Unknown.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.Guid">
+            <summary>
+            GUID for dependencies used in editor. Otherwise this is 0.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.Type">
+            <summary>
+            Dependency type.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.PathName">
+            <summary>
+            Real path name to the other file.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileExternal.OriginalPathName">
+            <summary>
+            Original path name listed in the assets file (if it was changed). You shouldn't modify this.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileHeader.MetadataSize">
+            <summary>
+            Size of the metadata block (not including this header).
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileHeader.FileSize">
+            <summary>
+            Size of the entire file.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileHeader.Version">
+            <summary>
+            Version of this file. This only affects the structure of the serialized file, not asset data.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileHeader.DataOffset">
+            <summary>
+            Offset to the data of the first asset.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileHeader.Endianness">
+            <summary>
+            File endianness. Little endian is false and big endian is true.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.UnityVersion">
+            <summary>
+            Engine version this file uses.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.TargetPlatform">
+            <summary>
+            Target platform this file uses.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.TypeTreeEnabled">
+            <summary>
+            Marks whether the type info contains type tree data.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.TypeTreeTypes">
+            <summary>
+            List of type tree types.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.AssetInfos">
+            <summary>
+            List of asset infos. Do not modify this directly. Instead, use Write.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.ScriptTypes">
+            <summary>
+            List of script type pointers. This list should match up with ScriptTypeIndex in the type tree types list.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.Externals">
+            <summary>
+            List of externals (references to other files).
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.RefTypes">
+            <summary>
+            List of reference types (unknown what this is for).
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetsFileMetadata.UserInformation">
+            <summary>
+            Unknown.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.Version">
+            <summary>
+            Version of the node
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.Level">
+            <summary>
+            Level of the node (0 for root, 1 for child, etc.)
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.TypeFlags">
+            <summary>
+            1 if array
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.TypeStrOffset">
+            <summary>
+            Offset of the type string in the string table.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.NameStrOffset">
+            <summary>
+            Offset of the name string in the string table.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.ByteSize">
+            <summary>
+            Byte size of the field's type (for example, int is 4).
+            If the field isn't a value type, then this value is a sum of all children sizes.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.Index">
+            <summary>
+            Index in the type tree. This should always be the same as the index in the array.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.MetaFlags">
+            <summary>
+            0x4000 if aligned
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeNode.RefTypeHash">
+            <summary>
+            Unknown.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.TypeId">
+            <summary>
+            ID for this type.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.IsStrippedType">
+            <summary>
+            Marks whether the type is stripped or not. Stripped types do not have any fields.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.ScriptTypeIndex">
+            <summary>
+            Script index for this type. Only used in MonoBehaviours, and MonoBehaviours of the same script have the same index.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.ScriptIdHash">
+            <summary>
+            Hash of the script's fields. Two different scripts with the same fields can have the same hash.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.TypeHash">
+            <summary>
+            Hash of the type's fields.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.Nodes">
+            <summary>
+            Nodes for this type. This list will be empty if the type is stripped.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.StringBufferBytes">
+            <summary>
+            String table bytes for this type.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.TypeDependencies">
+            <summary>
+            Type dependencies for this type. Unknown purpose.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.Name">
+            <summary>
+            Name of the field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.Type">
+            <summary>
+            Type name of the field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.ValueType">
+            <summary>
+            Type of the field (as an enum).
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.IsArray">
+            <summary>
+            Is the field an array?
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.IsAligned">
+            <summary>
+            Is the field aligned? This aligns four bytes after all children have been read/written.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.HasValue">
+            <summary>
+            Does the field have value? (i.e. is the field a numeric / string / array type?)
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeTemplateField.Children">
+            <summary>
+            Children of the field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeValueField.TemplateField">
+            <summary>
+            Template field corresponding to this value field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeValueField.Value">
+            <summary>
+            Value of this field.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.AssetTypeValueField.Children">
+            <summary>
+            Children of this field.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.None">
+            <summary>
+            None of the flags apply to this class
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsAbstract">
+            <summary>
+            Is the class abstract?
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsSealed">
+            <summary>
+            Is the class sealed? Not necessarily accurate.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsEditorOnly">
+            <summary>
+            Does the class only appear in the editor?
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsReleaseOnly">
+            <summary>
+            Does the class only appear in game files? Not currently used
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.IsStripped">
+            <summary>
+            Is the class stripped?
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.Reserved">
+            <summary>
+            Not currently used
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.HasEditorRootNode">
+            <summary>
+            Does the class have an editor root node?
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.ClassFileTypeFlags.HasReleaseRootNode">
+            <summary>
+            Does the class have a release root node?
+            </summary>
+        </member>
+        <member name="T:LZ4ps.LZ4Codec">
+            <summary>Safe LZ4 codec.</summary>
+        </member>
+        <member name="F:LZ4ps.LZ4Codec.MEMORY_USAGE">
+            <summary>
+            Memory usage formula : N->2^N Bytes (examples : 10 -> 1KB; 12 -> 4KB ; 16 -> 64KB; 20 -> 1MB; etc.)
+            Increasing memory usage improves compression ratio
+            Reduced memory usage can improve speed, due to cache effect
+            Default value is 14, for 16KB, which nicely fits into Intel x86 L1 cache
+            </summary>
+        </member>
+        <member name="F:LZ4ps.LZ4Codec.NOTCOMPRESSIBLE_DETECTIONLEVEL">
+            <summary>
+            Decreasing this value will make the algorithm skip faster data segments considered "incompressible"
+            This may decrease compression ratio dramatically, but will be faster on incompressible data
+            Increasing this value will make the algorithm search more before declaring a segment "incompressible"
+            This could improve compression a bit, but will be slower on incompressible data
+            The default value (6) is recommended
+            </summary>
+        </member>
+        <member name="F:LZ4ps.LZ4Codec.BLOCK_COPY_LIMIT">
+            <summary>Buffer length when Buffer.BlockCopy becomes faster than straight loop.
+            Please note that safe implementation REQUIRES it to be greater (not even equal) than 8.</summary>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.MaximumOutputLength(System.Int32)">
+            <summary>Gets maximum the length of the output.</summary>
+            <param name="inputLength">Length of the input.</param>
+            <returns>Maximum number of bytes needed for compressed buffer.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Encode32(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32)">
+            <summary>Encodes the specified input.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <param name="output">The output.</param>
+            <param name="outputOffset">The output offset.</param>
+            <param name="outputLength">Length of the output.</param>
+            <returns>Number of bytes written.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Encode32(System.Byte[],System.Int32,System.Int32)">
+            <summary>Encodes the specified input.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <returns>Compressed buffer.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Encode64(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32)">
+            <summary>Encodes the specified input.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <param name="output">The output.</param>
+            <param name="outputOffset">The output offset.</param>
+            <param name="outputLength">Length of the output.</param>
+            <returns>Number of bytes written.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Encode64(System.Byte[],System.Int32,System.Int32)">
+            <summary>Encodes the specified input.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <returns>Compressed buffer.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Decode32(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32,System.Boolean)">
+            <summary>Decodes the specified input.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <param name="output">The output.</param>
+            <param name="outputOffset">The output offset.</param>
+            <param name="outputLength">Length of the output.</param>
+            <param name="knownOutputLength">Set it to <c>true</c> if output length is known.</param>
+            <returns>Number of bytes written.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Decode32(System.Byte[],System.Int32,System.Int32,System.Int32)">
+            <summary>Decodes the specified input.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <param name="outputLength">Length of the output.</param>
+            <returns>Decompressed buffer.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Decode64(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32,System.Boolean)">
+            <summary>Decodes the specified input.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <param name="output">The output.</param>
+            <param name="outputOffset">The output offset.</param>
+            <param name="outputLength">Length of the output.</param>
+            <param name="knownOutputLength">Set it to <c>true</c> if output length is known.</param>
+            <returns>Number of bytes written.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Decode64(System.Byte[],System.Int32,System.Int32,System.Int32)">
+            <summary>Decodes the specified input.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <param name="outputLength">Length of the output.</param>
+            <returns>Decompressed buffer.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Encode32HC(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32)">
+            <summary>Encodes the specified input using HC codec.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <param name="output">The output.</param>
+            <param name="outputOffset">The output offset.</param>
+            <param name="outputLength">Length of the output.</param>
+            <returns>Number of bytes written. NOTE: when output buffer is too small it returns negative value.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Encode32HC(System.Byte[],System.Int32,System.Int32)">
+            <summary>Encodes the specified input using HC codec.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <returns>Buffer with compressed data (NOTE: it can be bigger than input).</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Encode64HC(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32)">
+            <summary>Encodes the specified input using HC codec.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <param name="output">The output.</param>
+            <param name="outputOffset">The output offset.</param>
+            <param name="outputLength">Length of the output.</param>
+            <returns>Number of bytes written. NOTE: when output buffer is too small it returns negative value.</returns>
+        </member>
+        <member name="M:LZ4ps.LZ4Codec.Encode64HC(System.Byte[],System.Int32,System.Int32)">
+            <summary>Encodes the specified input using HC codec.</summary>
+            <param name="input">The input.</param>
+            <param name="inputOffset">The input offset.</param>
+            <param name="inputLength">Length of the input.</param>
+            <returns>Buffer with compressed data (NOTE: it can be bigger than input).</returns>
+        </member>
+        <member name="T:SevenZip.DataErrorException">
+            <summary>
+            The exception that is thrown when an error in input stream occurs during decoding.
+            </summary>
+        </member>
+        <member name="T:SevenZip.InvalidParamException">
+            <summary>
+            The exception that is thrown when the value of an argument is outside the allowable range.
+            </summary>
+        </member>
+        <member name="M:SevenZip.ICodeProgress.SetProgress(System.Int64,System.Int64)">
+            <summary>
+            Callback progress.
+            </summary>
+            <param name="inSize">
+            input size. -1 if unknown.
+            </param>
+            <param name="outSize">
+            output size. -1 if unknown.
+            </param>
+        </member>
+        <member name="M:SevenZip.ICoder.Code(System.IO.Stream,System.IO.Stream,System.Int64,System.Int64,SevenZip.ICodeProgress)">
+            <summary>
+            Codes streams.
+            </summary>
+            <param name="inStream">
+            input Stream.
+            </param>
+            <param name="outStream">
+            output Stream.
+            </param>
+            <param name="inSize">
+            input Size. -1 if unknown.
+            </param>
+            <param name="outSize">
+            output Size. -1 if unknown.
+            </param>
+            <param name="progress">
+            callback progress reference.
+            </param>
+            <exception cref="T:SevenZip.DataErrorException">
+            if input stream is not valid
+            </exception>
+        </member>
+        <member name="T:SevenZip.CoderPropID">
+            <summary>
+            Provides the fields that represent properties idenitifiers for compressing.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.DefaultProp">
+            <summary>
+            Specifies default property.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.DictionarySize">
+            <summary>
+            Specifies size of dictionary.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.UsedMemorySize">
+            <summary>
+            Specifies size of memory for PPM*.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.Order">
+            <summary>
+            Specifies order for PPM methods.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.BlockSize">
+            <summary>
+            Specifies Block Size.
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "F:SevenZip.CoderPropID.PosStateBits" -->
+        <!-- Badly formed XML comment ignored for member "F:SevenZip.CoderPropID.LitContextBits" -->
+        <!-- Badly formed XML comment ignored for member "F:SevenZip.CoderPropID.LitPosBits" -->
+        <member name="F:SevenZip.CoderPropID.NumFastBytes">
+            <summary>
+            Specifies number of fast bytes for LZ*.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.MatchFinder">
+            <summary>
+            Specifies match finder. LZMA: "BT2", "BT4" or "BT4B".
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.MatchFinderCycles">
+            <summary>
+            Specifies the number of match finder cyckes.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.NumPasses">
+            <summary>
+            Specifies number of passes.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.Algorithm">
+            <summary>
+            Specifies number of algorithm.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.NumThreads">
+            <summary>
+            Specifies the number of threads.
+            </summary>
+        </member>
+        <member name="F:SevenZip.CoderPropID.EndMarker">
+            <summary>
+            Specifies mode with end marker.
+            </summary>
+        </member>
+    </members>
+</doc>

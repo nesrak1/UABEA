@@ -11,21 +11,15 @@
   <Grid>
     <Menu Height="22" VerticalAlignment="Top" Name="menuMain">
       <MenuItem Header="File">
-        <MenuItem Header="Open" Name="menuOpen" />
-        <MenuItem Header="Load Package File" Name="menuLoadPackageFile" />
-        <MenuItem Header="Close" Name="menuClose" />
-        <MenuItem Header="Save" Name="menuSave" />
+        <MenuItem Header="Open" HotKey="Ctrl+O" InputGesture="Ctrl+O" Name="menuOpen" />
+        <MenuItem Header="Load Package File" HotKey="Ctrl+P" InputGesture="Ctrl+P" Name="menuLoadPackageFile" />
+        <MenuItem Header="Close" HotKey="Ctrl+W" InputGesture="Ctrl+W" Name="menuClose" />
+        <MenuItem Header="Save" HotKey="Ctrl+S" InputGesture="Ctrl+S" Name="menuSave" />
         <Separator />
-        <MenuItem Header="Compress" Name="menuCompress" />
-        <MenuItem Header="Mod Maker">
-          <MenuItem Header="Create standalone installer" Name="menuCreateStandaloneInstaller" />
-          <MenuItem Header="Create package file" Name="menuCreatePackageFile" />
-        </MenuItem>
-        <MenuItem Header="Exit" Name="menuExit" />
+        <MenuItem Header="Compress" HotKey="Ctrl+M" InputGesture="Ctrl+M" Name="menuCompress" />
+        <MenuItem Header="Exit" HotKey="Ctrl+Q" InputGesture="Ctrl+Q" Name="menuExit" />
       </MenuItem>
       <MenuItem Header="Options">
-        <MenuItem Header="Edit Type Database" Name="menuEditTypeDatabase" />
-        <MenuItem Header="Edit Type Package" Name="menuEditTypePackage" />
 		<MenuItem Header="Toggle Dark Theme" Name="menuToggleDarkTheme" />
       </MenuItem>
       <MenuItem Header="Help">
@@ -41,26 +35,28 @@
         <RowDefinition Height="*"></RowDefinition>
         <RowDefinition Height="*"></RowDefinition>
       </Grid.RowDefinitions>
-      <Grid Grid.Row="0">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"></ColumnDefinition>
-          <ColumnDefinition Width="*"></ColumnDefinition>
-          <ColumnDefinition Width="*"></ColumnDefinition>
-          <ColumnDefinition Width="*"></ColumnDefinition>
-        </Grid.ColumnDefinitions>
-        <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnExport">Export</Button>
-        <Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnImport">Import</Button>
-        <Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnRemove">Remove</Button>
-        <Button Grid.Column="3" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnInfo">Info</Button>
-      </Grid>
-      <Grid Grid.Row="1">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"></ColumnDefinition>
-          <ColumnDefinition Width="*"></ColumnDefinition>
-        </Grid.ColumnDefinitions>
-        <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnExportAll">Export All</Button>
-        <Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnImportAll">Import All</Button>
-      </Grid>
+		<Grid Grid.Row="0">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+			</Grid.ColumnDefinitions>
+			<Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnExport">Export</Button>
+			<Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnImport">Import</Button>
+			<Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnExportAll">Export All</Button>
+			<Button Grid.Column="3" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnImportAll">Import All</Button>
+		</Grid>
+		<Grid Grid.Row="1">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+				<ColumnDefinition Width="*"></ColumnDefinition>
+			</Grid.ColumnDefinitions>
+			<Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnRename">Rename</Button>
+			<Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnRemove">Remove</Button>
+			<Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnInfo">Info</Button>
+		</Grid>
     </Grid>
   </Grid>
 </Window>
