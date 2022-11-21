@@ -272,7 +272,7 @@ namespace UABEAvalonia
             if (BundleInst == null)
                 return;
 
-            BundleWorkspaceItem item = (BundleWorkspaceItem?)((ComboBoxItem)comboBox.SelectedItem).Tag;
+            BundleWorkspaceItem item = (BundleWorkspaceItem?)comboBox.SelectedItem;
             if (item == null)
                 return;
 
