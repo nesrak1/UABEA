@@ -56,7 +56,7 @@ namespace UABEAvalonia
             {
                 return DetectedFileType.BundleFile;
             }
-            else if (possibleFormat < 0xFF && emptyVersion.Length == 0 && fullVersion.Length >= 7)
+            else if (possibleFormat < 0xFF && emptyVersion.Length == 0 && fullVersion.Length >= 5)
             {
                 return DetectedFileType.AssetsFile;
             }
