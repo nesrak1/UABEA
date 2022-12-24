@@ -70,7 +70,10 @@ namespace UABEAvalonia
                     .Select(f => Path.GetFileName(f)).ToList();
                 gridItem.matchingFiles = matchingFiles;
                 gridItem.selectedIndex = matchingFiles.Count > 0 ? 0 : -1;
-                gridItems.Add(gridItem);
+                if (gridItem.matchingFiles.Count > 0)
+                {
+                    gridItems.Add(gridItem);
+                }
             }
             dataGrid.Items = gridItems;
         }
