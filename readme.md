@@ -14,7 +14,7 @@ I develop UABEA as more of a modding/research tool than an extracting tool. Use 
 
 ## Addressables
 
-Many games are also now using addressables. You can tell if the bundle you're opening is part of addressables because it has the path `StreamingAssets/aa/XXX/something.bundle`. ~~You will need to clear the CRC checks with the CRC cleaning tool here.~~ Not yet complete, coming soon!
+Many games are also now using addressables. You can tell if the bundle you're opening is part of addressables because it has the path `StreamingAssets/aa/XXX/something.bundle`. [You will need to clear the CRC checks with the CRC cleaning tool here](https://github.com/nesrak1/AddressablesTools/releases). Use `Example patchcrc catalog.json`, then move or rename the old catalog.json file and rename catalog.json.patched to catalog.json.
 
 ## Libraries
 
