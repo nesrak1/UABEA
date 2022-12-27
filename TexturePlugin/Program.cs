@@ -156,10 +156,12 @@ namespace TexturePlugin
                 bool success = await ImportTextures(win, batchInfos);
                 if (success)
                 {
-                    //some of the assets may not get modified, but
-                    //uabe still makes replacers for those anyway
                     foreach (AssetContainer cont in selection)
                     {
+                        if (batchInfos.Where(x => x.pathId == cont.PathId).Count() == 0)
+                        {
+                            continue;
+                        }
                         byte[] savedAsset = cont.BaseValueField.WriteToByteArray();
 
                         var replacer = new AssetsReplacerFromMemory(
