@@ -91,7 +91,7 @@ namespace AudioPlugin
                     List<FmodSample> samples = bank.Samples;
                     samples[0].RebuildAsStandardFileFormat(out byte[] sampleData, out string sampleExtension);
 
-                    if (sampleExtension.ToLower() == "wav")
+                    if (sampleExtension.ToLowerInvariant() == "wav")
                     {
                         // since fmod5sharp gives us malformed wav data, we have to correct it
                         FixWAV(ref sampleData);
@@ -144,7 +144,7 @@ namespace AudioPlugin
                 List<FmodSample> samples = bank.Samples;
                 samples[0].RebuildAsStandardFileFormat(out byte[] sampleData, out string sampleExtension);
 
-                if (sampleExtension.ToLower() == "wav")
+                if (sampleExtension.ToLowerInvariant() == "wav")
                 {
                     // since fmod5sharp gives us malformed wav data, we have to correct it
                     FixWAV(ref sampleData);
@@ -255,6 +255,18 @@ namespace AudioPlugin
             {
                 // read from file
                 AssetsFileReader reader = new AssetsFileReader(resourceFilePath);
+                reader.Position = (long)offset;
+                audioData = reader.ReadBytes((int)size);
+                return true;
+            }
+
+            // if that fails, check current directory
+            string resourceFileName = Path.Combine(assetsFileDirectory, Path.GetFileName(filepath));
+            
+            if (File.Exists(resourceFileName))
+            {
+                // read from file
+                AssetsFileReader reader = new AssetsFileReader(resourceFileName);
                 reader.Position = (long)offset;
                 audioData = reader.ReadBytes((int)size);
                 return true;

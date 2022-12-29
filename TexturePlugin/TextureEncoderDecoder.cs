@@ -1,5 +1,6 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using AssetsTools.NET.Texture;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,7 +22,7 @@ namespace TexturePlugin
                     return width * height * 4;
                 case TextureFormat.ARGB32:
                     return width * height * 4;
-                case TextureFormat.BGRA32New:
+                case TextureFormat.BGRA32:
                     return width * height * 4;
                 case TextureFormat.RGBA32:
                     return width * height * 4;
@@ -53,7 +54,7 @@ namespace TexturePlugin
                     return width * height * 8;
                 case TextureFormat.RGBAFloat:
                     return width * height * 16;
-                case TextureFormat.YUV2:
+                case TextureFormat.YUY2:
                     return width * height * 2;
                 case TextureFormat.EAC_R:
                 case TextureFormat.EAC_R_SIGNED:
@@ -285,7 +286,7 @@ namespace TexturePlugin
                 }
                 //pvrtexlib
                 case TextureFormat.ARGB32:
-                case TextureFormat.BGRA32New:
+                case TextureFormat.BGRA32:
                 case TextureFormat.RGBA32:
                 case TextureFormat.RGB24:
                 case TextureFormat.ARGB4444:
@@ -302,7 +303,7 @@ namespace TexturePlugin
                 case TextureFormat.RGFloat:
                 case TextureFormat.RGBAFloat:
                 /////////////////////////////////
-                case TextureFormat.YUV2:
+                case TextureFormat.YUY2:
                 case TextureFormat.EAC_R:
                 case TextureFormat.EAC_R_SIGNED:
                 case TextureFormat.EAC_RG:
@@ -366,7 +367,7 @@ namespace TexturePlugin
                 }
                 //pvrtexlib
                 case TextureFormat.ARGB32:
-                case TextureFormat.BGRA32New:
+                case TextureFormat.BGRA32:
                 case TextureFormat.RGBA32:
                 case TextureFormat.RGB24:
                 case TextureFormat.ARGB4444:
@@ -383,7 +384,7 @@ namespace TexturePlugin
                 case TextureFormat.RGFloat:
                 case TextureFormat.RGBAFloat:
                 /////////////////////////////////
-                case TextureFormat.YUV2: //looks like this should be YUY2 and the api has a typo
+                case TextureFormat.YUY2:
                 case TextureFormat.EAC_R:
                 case TextureFormat.EAC_R_SIGNED:
                 case TextureFormat.EAC_RG:

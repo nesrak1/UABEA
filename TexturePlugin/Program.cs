@@ -1,5 +1,6 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using AssetsTools.NET.Texture;
 using Avalonia.Controls;
 using MessageBox.Avalonia.Enums;
 using System;
@@ -336,7 +337,7 @@ namespace TexturePlugin
                 new FileDialogFilter() { Name = "PNG file", Extensions = new List<string>() { "png" } },
                 new FileDialogFilter() { Name = "TGA file", Extensions = new List<string>() { "tga" } }
             };
-            sfd.InitialFileName = $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}";
+            sfd.InitialFileName = $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.png";
 
             string file = await sfd.ShowAsync(win);
 

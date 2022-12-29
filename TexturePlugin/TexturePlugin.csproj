@@ -27,6 +27,9 @@
     <Reference Include="AssetsTools.NET">
       <HintPath>..\Libs\AssetsTools.NET.dll</HintPath>
     </Reference>
+	<Reference Include="AssetsTools.NET.Texture">
+	  <HintPath>..\Libs\AssetsTools.NET.Texture.dll</HintPath>
+	</Reference>
   </ItemGroup>
   
   <PropertyGroup>

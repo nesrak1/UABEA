@@ -1,4 +1,5 @@
 using AssetsTools.NET;
+using AssetsTools.NET.Texture;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;

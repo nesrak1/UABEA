@@ -32,6 +32,9 @@
     <Reference Include="AssetsTools.NET.Cpp2IL">
       <HintPath>..\Libs\AssetsTools.NET.Cpp2IL.dll</HintPath>
     </Reference>
+	<Reference Include="AssetsTools.NET.Texture">
+	  <HintPath>..\Libs\AssetsTools.NET.Texture.dll</HintPath>
+	</Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Update="LoadModPackageDialog.axaml.cs">

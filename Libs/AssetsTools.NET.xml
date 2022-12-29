@@ -16,29 +16,6 @@
             modify the object graph, and serializes the result
             </summary>
         </member>
-        <member name="M:AssetsTools.NET.Extra.Texture2DAssetReplacer.GetNewTextureData(System.Byte[]@,System.Int32@,System.Int32@)">
-            <summary>
-            Retrieves the new image to patch into the texture, in the format BGRA32
-            </summary>
-        </member>
-        <member name="M:AssetsTools.NET.Extra.Texture2DAssetReplacer.SetTextureData(AssetsTools.NET.TextureFile,System.Byte[],System.Int32,System.Int32)">
-            <summary>
-            Encodes the BGRA32 data returned by <see cref="M:AssetsTools.NET.Extra.Texture2DAssetReplacer.GetNewTextureData(System.Byte[]@,System.Int32@,System.Int32@)"/> and stores the result
-            in the texture. Can be overriden in case the texture uses a format that AssetsTools.NET
-            doesn't support yet; in this case, encode the image yourself and pass it to
-            <see cref="M:AssetsTools.NET.TextureFile.SetTextureDataRaw(System.Byte[],System.Int32,System.Int32)"/>.
-            </summary>
-        </member>
-        <member name="T:AssetsTools.NET.Extra.HalfHelper">
-            <summary>
-            Helper class for half-precision (16-bit) floating point numbers
-            </summary>
-            <remarks>
-            References:
-                - Code retrieved from http://sourceforge.net/p/csharp-half/code/HEAD/tree/ on 2015-12-04
-                - Fast Half Float Conversions, Jeroen van der Zijp, link: http://www.fox-toolkit.org/ftp/fasthalffloatconversion.pdf
-            </remarks>
-        </member>
         <member name="P:AssetsTools.NET.AssetBundleBlockAndDirInfo.Hash">
             <summary>
             Hash of this entry.
