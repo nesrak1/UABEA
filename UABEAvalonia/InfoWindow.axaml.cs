@@ -155,7 +155,7 @@ namespace UABEAvalonia
             Workspace.MonoTemplateLoadFailed += Workspace_MonoTemplateLoadFailed;
 
             LoadAllAssetsWithDeps(assetsFiles);
-            SetupContainers(fromBundle);
+            SetupContainers();
             MakeDataGridItems();
             dataGrid.Items = dataGridItems;
 
@@ -996,7 +996,7 @@ namespace UABEAvalonia
             return foundResult;
         }
 
-        private void SetupContainers(bool isBundle)
+        private void SetupContainers()
         {
             if (Workspace.LoadedFiles.Count == 0)
             {
@@ -1004,27 +1004,21 @@ namespace UABEAvalonia
             }
 
             UnityContainer ucont = new UnityContainer();
-            if (isBundle)
+            foreach (AssetsFileInstance file in Workspace.LoadedFiles)
             {
-                foreach (AssetsFileInstance file in Workspace.LoadedFiles)
+                AssetsFileInstance? actualFile;
+                AssetTypeValueField? ucontBaseField;
+                if (UnityContainer.TryGetContainerBaseField(Workspace, file, out actualFile, out ucontBaseField))
                 {
-                    AssetsFileInstance? actualFile;
-                    AssetTypeValueField? ucontBaseField;
-                    if (UnityContainer.TryGetContainerBaseField(Workspace, file, out actualFile, out ucontBaseField))
+                    string typeName = ucontBaseField.TemplateField.Type;
+                    if (typeName == "ResourceManager")
+                    {
+                        ucont.FromResourceManager(am, actualFile, ucontBaseField);
+                    }
+                    else
                     {
                         ucont.FromAssetBundle(am, actualFile, ucontBaseField);
                     }
-                }
-            }
-            else
-            {
-                AssetsFileInstance firstFile = Workspace.LoadedFiles[0];
-
-                AssetsFileInstance? actualFile;
-                AssetTypeValueField? ucontBaseField;
-                if (UnityContainer.TryGetContainerBaseField(Workspace, firstFile, out actualFile, out ucontBaseField))
-                {
-                    ucont.FromResourceManager(am, actualFile, ucontBaseField);
                 }
             }
 

@@ -133,7 +133,6 @@ namespace UABEAvalonia
                 else
                 {
                     ggmInst = workspace.am.LoadAssetsFile(ggmPath, true);
-                    workspace.LoadedFiles.Add(ggmInst);
                 }
 
                 List<AssetFileInfo> resourceManagerInfos = ggmInst.file.GetAssetsOfType(AssetClassID.ResourceManager);
