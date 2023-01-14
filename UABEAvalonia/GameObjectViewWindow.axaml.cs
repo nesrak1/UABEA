@@ -5,6 +5,7 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace UABEAvalonia
@@ -23,6 +24,8 @@ namespace UABEAvalonia
         private AssetWorkspace workspace;
 
         private bool ignoreDropdownEvent;
+        private AssetContainer? selectedGo;
+        private TreeViewItem? selectedTreeItem;
 
         public GameObjectViewWindow()
         {
@@ -57,6 +60,30 @@ namespace UABEAvalonia
             PopulateHierarchyTreeView();
         }
 
+        public GameObjectViewWindow(InfoWindow win, AssetWorkspace workspace, AssetContainer selectedGo) : this()
+        {
+            this.win = win;
+            this.workspace = workspace;
+            this.selectedGo = selectedGo;
+
+            ignoreDropdownEvent = true;
+
+            componentTreeView.Init(workspace);
+            PopulateFilesComboBox();
+            PopulateHierarchyTreeView();
+
+            if (selectedTreeItem != null)
+            {
+                TreeViewItem curItem = selectedTreeItem;
+                while (curItem.Parent is TreeViewItem)
+                {
+                    curItem = (TreeViewItem)curItem.Parent;
+                    curItem.IsExpanded = true;
+                }
+                gameObjectTreeView.SelectedItem = selectedTreeItem;
+            }
+        }
+
         private void GameObjectTreeView_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count == 0)
@@ -78,7 +105,7 @@ namespace UABEAvalonia
 
             foreach (AssetTypeValueField data in components)
             {
-                AssetTypeValueField component = data["component"];
+                AssetTypeValueField component = data[data.Children.Count - 1];
                 AssetContainer componentCont = workspace.GetAssetContainer(gameObjectCont.FileInstance, component, false);
                 componentTreeView.LoadComponent(componentCont);
             }
@@ -148,7 +175,7 @@ namespace UABEAvalonia
             if (fileInstance == null)
                 return;
 
-            //clear treeview
+            // clear treeview
             gameObjectTreeView.Items = new AvaloniaList<object>();
 
             foreach (var asset in workspace.LoadedAssets)
@@ -163,7 +190,7 @@ namespace UABEAvalonia
                     AssetTypeValueField transformBf = workspace.GetBaseField(assetCont);
                     AssetTypeValueField transformFatherBf = transformBf["m_Father"];
                     long pathId = transformFatherBf["m_PathID"].AsLong;
-                    //is root GameObject
+                    // is root GameObject
                     if (pathId == 0)
                     {
                         LoadGameObjectTreeItem(assetCont, transformBf, null);
@@ -206,6 +233,14 @@ namespace UABEAvalonia
                 parentItems = (AvaloniaList<object>)parentTreeItem.Items;
             }
             parentItems.Add(treeItem);
+
+            if (selectedGo != null)
+            {
+                if (gameObjectCont.FileInstance == selectedGo.FileInstance && gameObjectCont.PathId == selectedGo.PathId)
+                {
+                    selectedTreeItem = treeItem;
+                }
+            }
         }
 
         private void InitializeComponent()

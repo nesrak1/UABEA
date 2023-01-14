@@ -40,6 +40,7 @@ namespace UABEAvalonia
         private MenuItem menuScripts;
         private MenuItem menuHierarchy;
         private Button btnViewData;
+        private Button btnSceneView;
         private Button btnExportRaw;
         private Button btnExportDump;
         private Button btnPlugin;
@@ -99,6 +100,7 @@ namespace UABEAvalonia
             menuScripts = this.FindControl<MenuItem>("menuScripts")!;
             menuHierarchy = this.FindControl<MenuItem>("menuHierarchy")!;
             btnViewData = this.FindControl<Button>("btnViewData")!;
+            btnSceneView = this.FindControl<Button>("btnSceneView")!;
             btnExportRaw = this.FindControl<Button>("btnExportRaw")!;
             btnExportDump = this.FindControl<Button>("btnExportDump")!;
             btnPlugin = this.FindControl<Button>("btnPlugin")!;
@@ -125,6 +127,7 @@ namespace UABEAvalonia
             menuScripts.Click += MenuScripts_Click;
             menuHierarchy.Click += MenuHierarchy_Click;
             btnViewData.Click += BtnViewData_Click;
+            btnSceneView.Click += BtnSceneView_Click;
             btnExportRaw.Click += BtnExportRaw_Click;
             btnExportDump.Click += BtnExportDump_Click;
             btnImportRaw.Click += BtnImportRaw_Click;
@@ -300,6 +303,62 @@ namespace UABEAvalonia
             {
                 DataWindow data = new DataWindow(this, Workspace, selectedConts[0]);
                 data.Show();
+            }
+        }
+
+        private async void BtnSceneView_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (await FailIfNothingSelected())
+                return;
+
+            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
+            AssetContainer container = gridItem.assetContainer;
+            if (gridItem.TypeClass == AssetClassID.GameObject)
+            {
+                GameObjectViewWindow dialog = new GameObjectViewWindow(this, Workspace, container);
+                dialog.Show(this);
+            }
+            else
+            {
+                bool hasGameObjectParent = false;
+                if (container.HasValueField)
+                {
+                    hasGameObjectParent = container.BaseValueField!.Children.Any(c => c.FieldName == "m_GameObject");
+                }
+                else
+                {
+                    // fast method in case asset hasn't loaded yet
+                    AssetTypeTemplateField template = Workspace.GetTemplateField(container, true);
+                    hasGameObjectParent = template.Children.Any(c => c.Name == "m_GameObject");
+                }
+
+                if (!hasGameObjectParent)
+                {
+                    await MessageBoxUtil.ShowDialog(this,
+                        "Warning", "The asset you selected is not a scene asset.");
+
+                    return;
+                }
+
+                if (!container.HasValueField)
+                {
+                    try
+                    {
+                        Workspace.GetBaseField(container);
+                    }
+                    catch
+                    {
+                        await MessageBoxUtil.ShowDialog(this,
+                            "Error", "Asset failed to deserialize.");
+
+                        return;
+                    }
+                }
+
+                AssetContainer goContainer = Workspace.GetAssetContainer(
+                    container.FileInstance, container.BaseValueField["m_GameObject"], true);
+                GameObjectViewWindow dialog = new GameObjectViewWindow(this, Workspace, goContainer);
+                dialog.Show(this);
             }
         }
 

@@ -67,6 +67,7 @@
       <Label Content="Type"/>
       <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxType" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Data" Name="btnViewData" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Scene" Name="btnSceneView" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Raw" Name="btnExportRaw" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Dump" Name="btnExportDump" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Plugins" Name="btnPlugin" />
