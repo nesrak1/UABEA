@@ -14,7 +14,7 @@ namespace UABEAvalonia
 {
     public static class Extensions
     {
-        //cheap * search check
+        // cheap * search check
         public static bool WildcardMatches(string test, string pattern, bool caseSensitive = true)
         {
             RegexOptions options = 0;
@@ -24,7 +24,7 @@ namespace UABEAvalonia
             return Regex.IsMatch(test, "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$", options);
         }
 
-        //codeflow needs work but should be fine for now
+        // codeflow needs work but should be fine for now
         public static void GetUABENameFast(AssetWorkspace workspace, AssetContainer cont, bool usePrefix, out string assetName, out string typeName)
         {
             assetName = "Unnamed asset";
@@ -146,7 +146,7 @@ namespace UABEAvalonia
             }
         }
 
-        //not very fast but w/e at least it's stable
+        // not very fast but w/e at least it's stable
         public static string GetMonoBehaviourNameFast(AssetWorkspace workspace, AssetContainer cont)
         {
             try
@@ -163,7 +163,7 @@ namespace UABEAvalonia
                 {
                     // this is a bad idea. this directly calls am.GetTemplateField
                     // which won't look for new MonoScripts from UABEA.
-                    AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont);
+                    AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont, true);
                     monoBf = monoTemp.MakeValue(cont.FileReader, cont.FilePosition);
                 }
 
@@ -212,7 +212,7 @@ namespace UABEAvalonia
             }
         }
 
-        //https://stackoverflow.com/a/23182807
+        // https://stackoverflow.com/a/23182807
         public static string ReplaceInvalidPathChars(string filename)
         {
             return string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));

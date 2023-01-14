@@ -228,9 +228,9 @@ namespace UABEAvalonia
             }
         }
 
-        public AssetTypeTemplateField GetTemplateField(AssetContainer cont)
+        public AssetTypeTemplateField GetTemplateField(AssetContainer cont, bool skipMonoBehaviourFields = false)
         {
-            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId);
+            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, false, skipMonoBehaviourFields);
         }
 
         public AssetContainer? GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)

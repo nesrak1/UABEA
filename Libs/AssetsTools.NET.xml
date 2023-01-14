@@ -160,7 +160,8 @@
         </member>
         <member name="P:AssetsTools.NET.AssetFileInfo.ClassId">
             <summary>
-            Class ID of the asset. This field is only used in versions 15 and below and is the same as TypeId.
+            Class ID of the asset. This field is only used in versions 15 and below and is the same as TypeId, except when the
+            Class ID is negative, in which case the TypeId will be a MonoBehaviour and the Class ID will be the negative number.
             You should use TypeId for the type ID in either version. <see cref="T:AssetsTools.NET.Extra.AssetClassID"/>
             </summary>
         </member>
