@@ -1021,17 +1021,13 @@ namespace UABEAvalonia
             {
                 AssetsFileInstance? actualFile;
                 AssetTypeValueField? ucontBaseField;
-                if (UnityContainer.TryGetContainerBaseField(Workspace, file, out actualFile, out ucontBaseField))
+                if (UnityContainer.TryGetBundleContainerBaseField(Workspace, file, out actualFile, out ucontBaseField))
                 {
-                    string typeName = ucontBaseField.TemplateField.Type;
-                    if (typeName == "ResourceManager")
-                    {
-                        ucont.FromResourceManager(am, actualFile, ucontBaseField);
-                    }
-                    else
-                    {
-                        ucont.FromAssetBundle(am, actualFile, ucontBaseField);
-                    }
+                    ucont.FromAssetBundle(am, actualFile, ucontBaseField);
+                }
+                else if (UnityContainer.TryGetRsrcManContainerBaseField(Workspace, file, out actualFile, out ucontBaseField))
+                {
+                    ucont.FromResourceManager(am, actualFile, ucontBaseField);
                 }
             }
 

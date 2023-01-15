@@ -82,7 +82,7 @@ namespace UABEAvalonia
         }
 
         // if an assets file, file can be any opened file. if a bundle file, it should be _that_ bundle file.
-        public static bool TryGetContainerBaseField(
+        public static bool TryGetBundleContainerBaseField(
             AssetWorkspace workspace, AssetsFileInstance file,
             [MaybeNullWhen(false)] out AssetsFileInstance actualFile,
             [MaybeNullWhen(false)] out AssetTypeValueField baseField
@@ -91,71 +91,76 @@ namespace UABEAvalonia
             actualFile = null;
             baseField = null;
 
-            bool fromBundle = file.parentBundle != null;
-            if (fromBundle)
+            List<AssetFileInfo> assetBundleInfos = file.file.GetAssetsOfType(AssetClassID.AssetBundle);
+            if (assetBundleInfos.Count == 0)
             {
-                List<AssetFileInfo> assetBundleInfos = file.file.GetAssetsOfType(AssetClassID.AssetBundle);
-                if (assetBundleInfos.Count == 0)
-                {
-                    return false;
-                }
+                return false;
+            }
 
-                AssetContainer? bundleCont = workspace.GetAssetContainer(file, 0, assetBundleInfos[0].PathId, false);
-                if (bundleCont == null || bundleCont.BaseValueField == null)
-                {
-                    return false;
-                }
+            AssetContainer? bundleCont = workspace.GetAssetContainer(file, 0, assetBundleInfos[0].PathId, false);
+            if (bundleCont == null || bundleCont.BaseValueField == null)
+            {
+                return false;
+            }
 
-                actualFile = file;
-                baseField = bundleCont.BaseValueField;
+            actualFile = file;
+            baseField = bundleCont.BaseValueField;
+            return true;
+        }
+
+        public static bool TryGetRsrcManContainerBaseField(
+            AssetWorkspace workspace, AssetsFileInstance file,
+            [MaybeNullWhen(false)] out AssetsFileInstance actualFile,
+            [MaybeNullWhen(false)] out AssetTypeValueField baseField
+        )
+        {
+            actualFile = null;
+            baseField = null;
+
+            string gameDir = Extensions.GetAssetsFileDirectory(file);
+            if (gameDir == null)
+            {
+                return false;
+            }
+
+            // todo: what about mainData?
+            string ggmPath = Path.Combine(gameDir, "globalgamemanagers");
+            if (!File.Exists(ggmPath))
+            {
+                return false;
+            }
+
+            AssetsFileInstance ggmInst;
+            int ggmIndex = workspace.LoadedFiles.FindIndex(f => f.path == ggmPath);
+            if (ggmIndex != -1)
+            {
+                ggmInst = workspace.LoadedFiles[ggmIndex];
+            }
+            else
+            {
+                ggmInst = workspace.am.LoadAssetsFile(ggmPath, true);
+            }
+
+            List<AssetFileInfo> resourceManagerInfos = ggmInst.file.GetAssetsOfType(AssetClassID.ResourceManager);
+            if (resourceManagerInfos.Count == 0)
+            {
+                return false;
+            }
+                
+            AssetContainer? rsrcManCont = workspace.GetAssetContainer(ggmInst, 0, resourceManagerInfos[0].PathId, false);
+            if (rsrcManCont != null && rsrcManCont.BaseValueField != null)
+            {
+                actualFile = rsrcManCont.FileInstance;
+                baseField = rsrcManCont.BaseValueField;
                 return true;
             }
             else
             {
-                string gameDir = Extensions.GetAssetsFileDirectory(file);
-                if (gameDir == null)
-                {
-                    return false;
-                }
-
-                string ggmPath = Path.Combine(gameDir, "globalgamemanagers");
-                if (!File.Exists(ggmPath))
-                {
-                    return false;
-                }
-
-                AssetsFileInstance ggmInst;
-                int ggmIndex = workspace.LoadedFiles.FindIndex(f => f.path == ggmPath);
-                if (ggmIndex != -1)
-                {
-                    ggmInst = workspace.LoadedFiles[ggmIndex];
-                }
-                else
-                {
-                    ggmInst = workspace.am.LoadAssetsFile(ggmPath, true);
-                }
-
-                List<AssetFileInfo> resourceManagerInfos = ggmInst.file.GetAssetsOfType(AssetClassID.ResourceManager);
-                if (resourceManagerInfos.Count == 0)
-                {
-                    return false;
-                }
-                
-                AssetContainer? rsrcManCont = workspace.GetAssetContainer(ggmInst, 0, resourceManagerInfos[0].PathId, false);
-                if (rsrcManCont != null && rsrcManCont.BaseValueField != null)
-                {
-                    actualFile = rsrcManCont.FileInstance;
-                    baseField = rsrcManCont.BaseValueField;
-                    return true;
-                }
-                else
-                {
-                    // if we haven't loaded ggm into LoadedFiles yet, load it manually through AssetsManager
-                    // we don't load it into LoadedFiles now to prevent clutter
-                    actualFile = ggmInst;
-                    baseField = workspace.am.GetBaseField(ggmInst, resourceManagerInfos[0], false);
-                    return true;
-                }
+                // if we haven't loaded ggm into LoadedFiles yet, load it manually through AssetsManager
+                // we don't load it into LoadedFiles now to prevent clutter
+                actualFile = ggmInst;
+                baseField = workspace.am.GetBaseField(ggmInst, resourceManagerInfos[0], false);
+                return true;
             }
         }
     }
