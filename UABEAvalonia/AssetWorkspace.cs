@@ -248,7 +248,7 @@ namespace UABEAvalonia
                     if (!onlyInfo && !cont.HasValueField)
                     {
                         // only set mono temp generator when we open a MonoBehaviour
-                        if (cont.ClassId == (int)AssetClassID.MonoBehaviour && !setMonoTempGeneratorsYet && !fileInst.file.Metadata.TypeTreeEnabled)
+                        if ((cont.ClassId == (int)AssetClassID.MonoBehaviour || cont.ClassId < 0) && !setMonoTempGeneratorsYet && !fileInst.file.Metadata.TypeTreeEnabled)
                         {
                             string dataDir = Extensions.GetAssetsFileDirectory(fileInst);
                             bool success = SetMonoTempGenerators(dataDir);

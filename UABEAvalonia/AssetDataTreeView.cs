@@ -94,7 +94,7 @@ namespace UABEAvalonia
             }
 
             string baseItemString = $"{baseField.TypeName} {baseField.FieldName}";
-            if (container.ClassId == (uint)AssetClassID.MonoBehaviour)
+            if (container.ClassId == (uint)AssetClassID.MonoBehaviour || container.ClassId < 0)
             {
                 string monoName = Extensions.GetMonoBehaviourNameFast(workspace, container);
                 if (monoName != null)

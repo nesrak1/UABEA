@@ -23,6 +23,11 @@ namespace UABEAvalonia
                 if (assets == null)
                     return null;
 
+                if ((int)assetClass < 0)
+                {
+                    return GetBitmap(assets, "UABEAvalonia/Assets/Icons/asset-mono-behaviour.png");
+                }
+
                 switch (assetClass)
                 {
                     case AssetClassID.Animation: return GetBitmap(assets, "UABEAvalonia/Assets/Icons/asset-animation.png");

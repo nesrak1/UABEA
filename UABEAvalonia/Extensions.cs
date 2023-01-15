@@ -44,7 +44,7 @@ namespace UABEAvalonia
                 if (file.Metadata.TypeTreeEnabled)
                 {
                     TypeTreeType ttType;
-                    if (classId == 0x72)
+                    if (classId == 0x72 || classId < 0)
                         ttType = AssetHelper.FindTypeTreeTypeByScriptIndex(file.Metadata, monoId);
                     else
                         ttType = AssetHelper.FindTypeTreeTypeByID(file.Metadata, classId);
@@ -151,7 +151,7 @@ namespace UABEAvalonia
         {
             try
             {
-                if (cont.ClassId != (uint)AssetClassID.MonoBehaviour)
+                if (cont.ClassId != (uint)AssetClassID.MonoBehaviour && cont.ClassId >= 0)
                     return string.Empty;
 
                 AssetTypeValueField monoBf;
