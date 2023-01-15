@@ -340,11 +340,16 @@ namespace UABEAvalonia
                     return;
                 }
 
-                if (!container.HasValueField)
+                AssetTypeValueField componentBf;
+                if (container.HasValueField)
+                {
+                    componentBf = container.BaseValueField;
+                }
+                else
                 {
                     try
                     {
-                        Workspace.GetBaseField(container);
+                        componentBf = Workspace.GetBaseField(container);
                     }
                     catch
                     {
@@ -355,8 +360,16 @@ namespace UABEAvalonia
                     }
                 }
 
+                if (componentBf == null)
+                {
+                    await MessageBoxUtil.ShowDialog(this,
+                        "Error", "Asset failed to deserialize.");
+
+                    return;
+                }
+
                 AssetContainer goContainer = Workspace.GetAssetContainer(
-                    container.FileInstance, container.BaseValueField["m_GameObject"], true);
+                    container.FileInstance, componentBf["m_GameObject"], true);
                 GameObjectViewWindow dialog = new GameObjectViewWindow(this, Workspace, goContainer);
                 dialog.Show(this);
             }
