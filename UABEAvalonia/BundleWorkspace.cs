@@ -113,8 +113,7 @@ namespace UABEAvalonia
             
             foreach (string name in RemovedFiles)
             {
-                // hasSerializedData is ignored
-                BundleReplacer replacer = new BundleRemover(name, false);
+                BundleReplacer replacer = new BundleRemover(name);
                 replacers.Add(replacer);
             }
 
@@ -128,8 +127,7 @@ namespace UABEAvalonia
                     }
                     else if (item.Name != item.OriginalName)
                     {
-                        // hasSerializedData is ignored
-                        replacers.Add(new BundleRenamer(item.OriginalName, item.Name, false));
+                        replacers.Add(new BundleRenamer(item.OriginalName, item.Name));
                     }
                 }
             }

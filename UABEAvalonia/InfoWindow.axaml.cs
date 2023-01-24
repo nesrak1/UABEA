@@ -440,7 +440,7 @@ namespace UABEAvalonia
                 List<AssetContainer> selection = GetSelectedAssetsReplaced();
                 foreach (AssetContainer cont in selection)
                 {
-                    Workspace.AddReplacer(cont.FileInstance, new AssetsRemover(0, cont.PathId, (int)cont.ClassId));
+                    Workspace.AddReplacer(cont.FileInstance, new AssetsRemover(cont.PathId));
                 }
             }
         }
@@ -614,7 +614,8 @@ namespace UABEAvalonia
                             file.file.Reader.Close();
                             File.Delete(file.path);
                             File.Move(filePath, origFilePath);
-                            file.file = new AssetsFile(new AssetsFileReader(File.OpenRead(origFilePath)));
+                            file.file = new AssetsFile();
+                            file.file.Read(new AssetsFileReader(File.OpenRead(origFilePath)));
                         }
                     }
                     catch (Exception ex)

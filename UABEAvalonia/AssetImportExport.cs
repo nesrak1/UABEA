@@ -545,7 +545,7 @@ namespace UABEAvalonia
 
         public static AssetsReplacer CreateAssetReplacer(AssetContainer cont, byte[] data)
         {
-            return new AssetsReplacerFromMemory(0, cont.PathId, (int)cont.ClassId, cont.MonoId, data);
+            return new AssetsReplacerFromMemory(cont.PathId, cont.ClassId, cont.MonoId, data);
         }
 
         public static BundleReplacer CreateBundleReplacer(string name, bool isSerialized, byte[] data)
@@ -560,7 +560,7 @@ namespace UABEAvalonia
 
         public static BundleReplacer CreateBundleRemover(string name, bool isSerialized, int bundleListIndex = -1)
         {
-            return new BundleRemover(name, isSerialized, bundleListIndex);
+            return new BundleRemover(name, bundleListIndex);
         }
     }
 }

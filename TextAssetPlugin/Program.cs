@@ -20,7 +20,7 @@ namespace TexturePlugin
             if (action != UABEAPluginAction.Import)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "TextAsset").ClassId;
+            int classId = am.ClassDatabase.FindAssetClassByName("TextAsset").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -47,7 +47,7 @@ namespace TexturePlugin
 
             if (dir != null && dir != string.Empty)
             {
-                List<string> extensions = new List<string>() { "txt" };
+                List<string> extensions = new List<string>() { "*" };
                 ImportBatch dialog = new ImportBatch(workspace, selection, dir, extensions);
                 List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
                 foreach (ImportBatchInfo batchInfo in batchInfos)
@@ -64,7 +64,7 @@ namespace TexturePlugin
                     byte[] savedAsset = baseField.WriteToByteArray();
 
                     var replacer = new AssetsReplacerFromMemory(
-                        0, cont.PathId, (int)cont.ClassId, cont.MonoId, savedAsset);
+                        cont.PathId, cont.ClassId, cont.MonoId, savedAsset);
 
                     workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
                 }
@@ -82,7 +82,8 @@ namespace TexturePlugin
 
             ofd.Title = "Open text file";
             ofd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "TXT file", Extensions = new List<string>() { "txt" } }
+                new FileDialogFilter() { Name = "Text files (*.txt)", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = "All files (*.*)", Extensions = new List<string>() { "*.*" } },
             };
 
             string[] fileList = await ofd.ShowAsync(win);
@@ -99,7 +100,7 @@ namespace TexturePlugin
                 byte[] savedAsset = baseField.WriteToByteArray();
 
                 var replacer = new AssetsReplacerFromMemory(
-                    0, cont.PathId, (int)cont.ClassId, cont.MonoId, savedAsset);
+                    cont.PathId, cont.ClassId, cont.MonoId, savedAsset);
 
                 workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
             }
@@ -116,7 +117,7 @@ namespace TexturePlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "TextAsset").ClassId;
+            int classId = am.ClassDatabase.FindAssetClassByName("TextAsset").ClassId;
 
             foreach (AssetContainer cont in selection)
             {

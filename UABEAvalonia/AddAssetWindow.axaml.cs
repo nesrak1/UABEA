@@ -115,7 +115,7 @@ namespace UABEAvalonia
                         //has typetree but had to lookup to cldb
                         //we need to add a new typetree entry because this is
                         //probably not a type that existed in this bundle
-                        file.file.Metadata.TypeTreeTypes.Add(ClassDatabaseToTypeTree.Convert(workspace.am.classDatabase, typeId));
+                        file.file.Metadata.TypeTreeTypes.Add(ClassDatabaseToTypeTree.Convert(workspace.am.ClassDatabase, typeId));
                     }
                 }
             }
@@ -148,7 +148,7 @@ namespace UABEAvalonia
                 assetBytes = new byte[0];
             }
 
-            workspace.AddReplacer(file, new AssetsReplacerFromMemory(0, pathId, typeId, monoId, assetBytes), new MemoryStream(assetBytes));
+            workspace.AddReplacer(file, new AssetsReplacerFromMemory(pathId, typeId, monoId, assetBytes), new MemoryStream(assetBytes));
 
             Close(true);
         }
@@ -157,17 +157,17 @@ namespace UABEAvalonia
         {
             tempField = null;
 
-            ClassDatabaseFile cldb = workspace.am.classDatabase;
+            ClassDatabaseFile cldb = workspace.am.ClassDatabase;
             ClassDatabaseType cldbType;
             bool needsTypeId;
             if (int.TryParse(typeIdText, out typeId))
             {
-                cldbType = AssetHelper.FindAssetClassByID(cldb, typeId);
+                cldbType = cldb.FindAssetClassByID(typeId);
                 needsTypeId = false;
             }
             else
             {
-                cldbType = AssetHelper.FindAssetClassByName(cldb, typeIdText);
+                cldbType = cldb.FindAssetClassByName(typeIdText);
                 needsTypeId = true;
             }
 
@@ -198,12 +198,12 @@ namespace UABEAvalonia
             bool needsTypeId;
             if (int.TryParse(typeIdText, out typeId))
             {
-                ttType = AssetHelper.FindTypeTreeTypeByID(meta, typeId);
+                ttType = meta.FindTypeTreeTypeByID(typeId);
                 needsTypeId = false;
             }
             else
             {
-                ttType = AssetHelper.FindTypeTreeTypeByName(meta, typeIdText);
+                ttType = meta.FindTypeTreeTypeByName(typeIdText);
                 needsTypeId = true;
             }
 

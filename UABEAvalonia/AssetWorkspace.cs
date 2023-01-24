@@ -361,7 +361,7 @@ namespace UABEAvalonia
                 FindCpp2IlFilesResult il2cppFiles = FindCpp2IlFiles.Find(fileDir);
                 if (il2cppFiles.success)
                 {
-                    am.SetMonoTempGenerator(new Cpp2IlTempGenerator(il2cppFiles.metaPath, il2cppFiles.asmPath));
+                    am.MonoTempGenerator = new Cpp2IlTempGenerator(il2cppFiles.metaPath, il2cppFiles.asmPath);
                     return true;
                 }
                 else
@@ -369,7 +369,7 @@ namespace UABEAvalonia
                     string managedDir = Path.Combine(fileDir, "Managed");
                     if (Directory.Exists(managedDir))
                     {
-                        am.SetMonoTempGenerator(new MonoCecilTempGenerator(managedDir));
+                        am.MonoTempGenerator = new MonoCecilTempGenerator(managedDir);
                         return true;
                     }
                 }

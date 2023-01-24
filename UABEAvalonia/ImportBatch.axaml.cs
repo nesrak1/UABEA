@@ -48,7 +48,13 @@ namespace UABEAvalonia
             this.workspace = workspace;
             this.directory = directory;
 
-            List<string> filesInDir = Extensions.GetFilesInDirectory(directory, extensions);
+            bool anyExtension = extensions.Contains("*");
+
+            List<string> filesInDir;
+            if (!anyExtension)
+                filesInDir = Extensions.GetFilesInDirectory(directory, extensions);
+            else
+                filesInDir = Directory.GetFiles(directory).ToList();
 
             List<ImportBatchDataGridItem> gridItems = new List<ImportBatchDataGridItem>();
             foreach (AssetContainer cont in selection)
@@ -65,9 +71,18 @@ namespace UABEAvalonia
                         cont = cont
                     }
                 };
-                List<string> matchingFiles = filesInDir
-                    .Where(f => extensions.Any(x => f.EndsWith(gridItem.GetMatchName(x))))
-                    .Select(f => Path.GetFileName(f)).ToList();
+
+                List<string> matchingFiles;
+                
+                if (!anyExtension)
+                    matchingFiles = filesInDir
+                        .Where(f => extensions.Any(x => f.EndsWith(gridItem.GetMatchName(x))))
+                        .Select(f => Path.GetFileName(f)).ToList();
+                else
+                    matchingFiles = filesInDir
+                        .Where(f => Extensions.GetFilePathWithoutExtension(f).EndsWith(gridItem.GetMatchName("*")))
+                        .Select(f => Path.GetFileName(f)).ToList();
+
                 gridItem.matchingFiles = matchingFiles;
                 gridItem.selectedIndex = matchingFiles.Count > 0 ? 0 : -1;
                 if (gridItem.matchingFiles.Count > 0)
@@ -153,7 +168,10 @@ namespace UABEAvalonia
 
         public string GetMatchName(string ext)
         {
-            return $"-{File}-{PathID}.{ext}";
+            if (ext != "*")
+                return $"-{File}-{PathID}.{ext}";
+            else
+                return $"-{File}-{PathID}";
         }
         public void Update(string propertyName = "")
         {

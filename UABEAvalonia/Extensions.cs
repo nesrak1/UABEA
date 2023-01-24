@@ -32,22 +32,22 @@ namespace UABEAvalonia
 
             try
             {
-                ClassDatabaseFile cldb = workspace.am.classDatabase;
+                ClassDatabaseFile cldb = workspace.am.ClassDatabase;
                 AssetsFile file = cont.FileInstance.file;
                 AssetsFileReader reader = cont.FileReader;
                 long filePosition = cont.FilePosition;
                 int classId = cont.ClassId;
                 ushort monoId = cont.MonoId;
 
-                ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, classId);
+                ClassDatabaseType type = cldb.FindAssetClassByID(classId);
 
                 if (file.Metadata.TypeTreeEnabled)
                 {
                     TypeTreeType ttType;
                     if (classId == 0x72 || classId < 0)
-                        ttType = AssetHelper.FindTypeTreeTypeByScriptIndex(file.Metadata, monoId);
+                        ttType = file.Metadata.FindTypeTreeTypeByScriptIndex(monoId);
                     else
-                        ttType = AssetHelper.FindTypeTreeTypeByID(file.Metadata, classId);
+                        ttType = file.Metadata.FindTypeTreeTypeByID(classId);
 
                     if (ttType != null && ttType.Nodes.Count > 0)
                     {
@@ -235,6 +235,11 @@ namespace UABEAvalonia
                 files.AddRange(Directory.GetFiles(path, "*." + extension));
             }
             return files;
+        }
+
+        public static string GetFilePathWithoutExtension(string path)
+        {
+            return Path.Combine(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path));
         }
     }
 }

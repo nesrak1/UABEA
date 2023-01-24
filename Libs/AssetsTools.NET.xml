@@ -43,7 +43,9 @@
         </member>
         <member name="P:AssetsTools.NET.AssetBundleBlockInfo.Flags">
             <summary>
-            Flags of this block.
+            Flags of this block. <br/>
+            First 6 bits (0x3f mask): Compression mode. 0 for uncompressed, 1 for LZMA, 2/3 for LZ4/LZ4HC. <br/>
+            0x40: Streamed (will be read in blocks) <br/>
             </summary>
         </member>
         <member name="F:AssetsTools.NET.AssetBundleDirectoryInfo.Offset">
@@ -105,7 +107,7 @@
         <member name="P:AssetsTools.NET.AssetBundleFSHeader.Flags">
             <summary>
             Flags of this bundle. <br/>
-            First 6 bits (0x3f mask): Compression mode. 0 for uncompressed, 1 for LZ4, 2 for LZMA. <br/>
+            First 6 bits (0x3f mask): Compression mode. 0 for uncompressed, 1 for LZMA, 2/3 for LZ4/LZ4HC. <br/>
             0x40: Has directory info. Should always be true for 5.2+. <br/>
             0x80: Block and directory info is at end. The Unity editor does not usually use this.
             </summary>
@@ -341,7 +343,7 @@
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.Version">
             <summary>
-            Version of the node
+            Version of the node.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.Level">
@@ -351,7 +353,7 @@
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.TypeFlags">
             <summary>
-            1 if array
+            1 if array.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.TypeStrOffset">
@@ -377,7 +379,7 @@
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.MetaFlags">
             <summary>
-            0x4000 if aligned
+            0x4000 if aligned.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.RefTypeHash">

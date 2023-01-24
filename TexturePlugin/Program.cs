@@ -66,7 +66,7 @@ namespace TexturePlugin
             if (selection.Count <= 1)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "Texture2D").ClassId;
+            int classId = am.ClassDatabase.FindAssetClassByName("Texture2D").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -166,7 +166,7 @@ namespace TexturePlugin
                         byte[] savedAsset = cont.BaseValueField.WriteToByteArray();
 
                         var replacer = new AssetsReplacerFromMemory(
-                            0, cont.PathId, (int)cont.ClassId, cont.MonoId, savedAsset);
+                            cont.PathId, cont.ClassId, cont.MonoId, savedAsset);
 
                         workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
                     }
@@ -193,7 +193,7 @@ namespace TexturePlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "Texture2D").ClassId;
+            int classId = am.ClassDatabase.FindAssetClassByName("Texture2D").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -386,7 +386,7 @@ namespace TexturePlugin
             if (selection.Count != 1)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "Texture2D").ClassId;
+            int classId = am.ClassDatabase.FindAssetClassByName("Texture2D").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -409,7 +409,7 @@ namespace TexturePlugin
                 byte[] savedAsset = texBaseField.WriteToByteArray();
 
                 var replacer = new AssetsReplacerFromMemory(
-                    0, cont.PathId, (int)cont.ClassId, cont.MonoId, savedAsset);
+                    cont.PathId, cont.ClassId, cont.MonoId, savedAsset);
 
                 workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
                 return true;

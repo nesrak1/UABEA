@@ -155,7 +155,7 @@ namespace UABEAvalonia
 
                 if (replacerType == 0) //remover
                 {
-                    AssetsReplacer replacer = new AssetsRemover(fileId, pathId, classId, monoScriptIndex);
+                    AssetsReplacer replacer = new AssetsRemover(pathId);
                     if (preloadDependencyCount != 0)
                         replacer.SetPreloadDependencies(preloadDependencies);
 
@@ -197,7 +197,7 @@ namespace UABEAvalonia
                     if (prefReplacersInMemory)
                     {
                         byte[] buf = reader.ReadBytes((int)bufLength);
-                        replacer = new AssetsReplacerFromMemory(fileId, pathId, classId, monoScriptIndex, buf);
+                        replacer = new AssetsReplacerFromMemory(pathId, classId, monoScriptIndex, buf);
                     }
                     else
                     {

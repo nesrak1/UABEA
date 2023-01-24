@@ -36,7 +36,7 @@ namespace AudioPlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "AudioClip").ClassId;
+            int classId = am.ClassDatabase.FindAssetClassByName("AudioClip").ClassId;
 
             foreach (AssetContainer cont in selection)
             {

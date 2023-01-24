@@ -317,7 +317,8 @@ namespace UABEAvalonia
 
                     FileStream afs = File.OpenRead(affectedFilePath);
                     AssetsFileReader ar = new AssetsFileReader(afs);
-                    AssetsFile assets = new AssetsFile(ar);
+                    AssetsFile assets = new AssetsFile();
+                    assets.Read(ar);
                     List<AssetsReplacer> reps = new List<AssetsReplacer>();
 
                     foreach (var rep in affectedFile.replacers)
