@@ -531,7 +531,7 @@ namespace UABEAvalonia
             }
         }
 
-
+        // todo, if stripped load from header (needed for adding new assets)
         private async Task<bool> LoadOrAskTypeData(AssetsFileInstance fileInst)
         {
             string uVer = fileInst.file.Metadata.UnityVersion;

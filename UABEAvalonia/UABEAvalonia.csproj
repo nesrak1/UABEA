@@ -10,6 +10,7 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="AssetRipper.TextureDecoder" Version="1.2.0" />
     <PackageReference Include="Avalonia" Version="11.0.0-preview3" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.0.0-preview3" />
     <PackageReference Include="Avalonia.Desktop" Version="11.0.0-preview3" />

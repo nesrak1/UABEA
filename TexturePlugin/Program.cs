@@ -24,6 +24,12 @@ namespace TexturePlugin
                 return null;
             image_data.ValueType = AssetValueType.ByteArray;
 
+            AssetTypeTemplateField m_PlatformBlob = textureTemp.Children.FirstOrDefault(f => f.Name == "m_PlatformBlob").Children[0];
+            if (m_PlatformBlob != null)
+            {
+                m_PlatformBlob.ValueType = AssetValueType.ByteArray;
+            }
+
             AssetTypeValueField baseField = textureTemp.MakeValue(tex.FileReader, tex.FilePosition);
             return baseField;
         }
@@ -300,7 +306,14 @@ namespace TexturePlugin
                             continue;
                         }
 
-                        bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
+                        AssetTypeValueField m_PlatformBlob = texBaseField["m_PlatformBlob"];
+                        byte[] platformBlob = null;
+                        if (!m_PlatformBlob.IsDummy)
+                        {
+                            platformBlob = m_PlatformBlob["Array"].AsByteArray;
+                        }
+
+                        bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat, platformBlob);
                         if (!success)
                         {
                             string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
@@ -362,7 +375,14 @@ namespace TexturePlugin
                     return false;
                 }
 
-                bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat);
+                AssetTypeValueField m_PlatformBlob = texBaseField["m_PlatformBlob"];
+                byte[] platformBlob = null;
+                if (!m_PlatformBlob.IsDummy)
+                {
+                    platformBlob = m_PlatformBlob.AsByteArray;
+                }
+
+                bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat, platformBlob);
                 if (!success)
                 {
                     string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();

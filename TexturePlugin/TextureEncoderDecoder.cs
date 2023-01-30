@@ -99,17 +99,19 @@ namespace TexturePlugin
             }
         }
 
-        private static byte[] DecodeDetex(byte[] data, int width, int height, TextureFormat format)
+        private static byte[] DecodeAssetRipperTex(byte[] data, int width, int height, TextureFormat format)
         {
             byte[] dest;
 
-            if (format == TextureFormat.DXT1)
-                dest = DXTDecoders.ReadDXT1(data, width, height);
-            else if (format == TextureFormat.DXT5)
-                dest = DXTDecoders.ReadDXT5(data, width, height);
-            else //if (format == TextureFormat.BC7)
-                dest = BC7Decoder.ReadBC7(data, width, height);
-            
+            //if (format == TextureFormat.DXT1)
+            //    dest = DXTDecoders.ReadDXT1(data, width, height);
+            //else if (format == TextureFormat.DXT5)
+            //    dest = DXTDecoders.ReadDXT5(data, width, height);
+            //else //if (format == TextureFormat.BC7)
+            //    dest = BC7Decoder.ReadBC7(data, width, height);
+
+            dest = TextureFile.DecodeManaged(data, format, width, height);
+
             for (int i = 0; i < dest.Length; i += 4)
             {
                 byte temp = dest[i];
@@ -278,7 +280,7 @@ namespace TexturePlugin
 
                     byte[] res;
                     if (format == TextureFormat.DXT1 || format == TextureFormat.DXT5)
-                        res = DecodeDetex(uncrunch, width, height, format);
+                        res = DecodeAssetRipperTex(uncrunch, width, height, format);
                     else //if (format == TextureFormat.ETC_RGB4 || format == TextureFormat.ETC2_RGBA8)
                         res = DecodePVRTexLib(uncrunch, width, height, format);
 
@@ -333,20 +335,19 @@ namespace TexturePlugin
                     byte[] res = DecodePVRTexLib(data, width, height, format);
                     return res;
                 }
-                //detex
+                //assetripper.texture
                 case TextureFormat.DXT1:
                 case TextureFormat.DXT5:
                 case TextureFormat.BC7:
-                {
-                    byte[] res = DecodeDetex(data, width, height, format);
-                    return res;
-                }
-                case TextureFormat.BC6H: //pls don't use
+                case TextureFormat.BC6H:
                 case TextureFormat.BC4:
                 case TextureFormat.BC5:
-                    return null;
-                case TextureFormat.RGB9e5Float: //pls don't use
-                    return null;
+                case TextureFormat.RGB9e5Float:
+                case TextureFormat.RGBA64:
+                {
+                    byte[] res = DecodeAssetRipperTex(data, width, height, format);
+                    return res;
+                }
                 default:
                     return null;
             }
