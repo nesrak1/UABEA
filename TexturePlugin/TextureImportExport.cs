@@ -31,14 +31,14 @@ namespace TexturePlugin
             return encData;
         }
 
-        public static bool Export(byte[] encData, string file, int width, int height, TextureFormat format, byte[] platformBlob = null)
+        public static bool Export(byte[] encData, string file, int width, int height, TextureFormat format, uint platform = 0, byte[] platformBlob = null)
         {
             int originalWidth = width;
             int originalHeight = height;
 
             bool unswizzleSwitch = false;
             int gobsPerBlock = 1;
-            if (platformBlob != null && platformBlob.Length != 0)
+            if (platform == 38 && platformBlob != null && platformBlob.Length != 0)
             {
                 unswizzleSwitch = true;
 

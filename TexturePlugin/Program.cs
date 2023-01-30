@@ -313,7 +313,9 @@ namespace TexturePlugin
                             platformBlob = m_PlatformBlob["Array"].AsByteArray;
                         }
 
-                        bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat, platformBlob);
+                        uint platform = cont.FileInstance.file.Metadata.TargetPlatform;
+
+                        bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat, platform, platformBlob);
                         if (!success)
                         {
                             string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
@@ -379,10 +381,12 @@ namespace TexturePlugin
                 byte[] platformBlob = null;
                 if (!m_PlatformBlob.IsDummy)
                 {
-                    platformBlob = m_PlatformBlob.AsByteArray;
+                    platformBlob = m_PlatformBlob["Array"].AsByteArray;
                 }
 
-                bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat, platformBlob);
+                uint platform = cont.FileInstance.file.Metadata.TargetPlatform;
+
+                bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat, platform, platformBlob);
                 if (!success)
                 {
                     string texFormat = ((TextureFormat)texFile.m_TextureFormat).ToString();
