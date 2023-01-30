@@ -9,8 +9,22 @@ using System.Threading.Tasks;
 using UABEAvalonia;
 using UABEAvalonia.Plugins;
 
-namespace TexturePlugin
+namespace TextAssetPlugin
 {
+    public static class TextAssetHelper
+    {
+        public static string GetUContainerExtension(AssetContainer item)
+        {
+            string ucont = item.Container;
+            if (Path.GetFileName(ucont) != Path.GetFileNameWithoutExtension(ucont))
+            {
+                return Path.GetExtension(ucont);
+            }
+
+            return string.Empty;
+        }
+    }
+
     public class ImportTextAssetOption : UABEAPluginOption
     {
         public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
@@ -83,8 +97,17 @@ namespace TexturePlugin
             ofd.Title = "Open text file";
             ofd.Filters = new List<FileDialogFilter>() {
                 new FileDialogFilter() { Name = "Text files (*.txt)", Extensions = new List<string>() { "txt" } },
-                new FileDialogFilter() { Name = "All files (*.*)", Extensions = new List<string>() { "*.*" } },
+                new FileDialogFilter() { Name = "All types (*.*)", Extensions = new List<string>() { "*.*" } }
             };
+
+            string ucontExt = TextAssetHelper.GetUContainerExtension(cont);
+            if (ucontExt != string.Empty)
+            {
+                string ucontExtNoDot = ucontExt[1..];
+                string displayName = $"{ucontExtNoDot} files (*{ucontExt})";
+                List<string> extensions = new List<string>() { ucontExtNoDot };
+                ofd.Filters.Insert(0, new FileDialogFilter() { Name = displayName, Extensions = extensions });
+            }
 
             string[] fileList = await ofd.ShowAsync(win);
             if (fileList == null || fileList.Length == 0)
@@ -152,7 +175,15 @@ namespace TexturePlugin
                     byte[] byteData = baseField["m_Script"].AsByteArray;
 
                     name = Extensions.ReplaceInvalidPathChars(name);
-                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.txt");
+
+                    string extension = ".txt";
+                    string ucontExt = TextAssetHelper.GetUContainerExtension(cont);
+                    if (ucontExt != string.Empty)
+                    {
+                        extension = ucontExt;
+                    }
+
+                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}{extension}");
 
                     File.WriteAllBytes(file, byteData);
                 }
@@ -172,9 +203,23 @@ namespace TexturePlugin
 
             sfd.Title = "Save text file";
             sfd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "TXT file", Extensions = new List<string>() { "txt" } }
+                new FileDialogFilter() { Name = "TXT file", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = "All types (*.*)", Extensions = new List<string>() { "*.*" } }
             };
-            sfd.InitialFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.txt";
+
+            string defaultExtension = ".txt";
+
+            string ucontExt = TextAssetHelper.GetUContainerExtension(cont);
+            if (ucontExt != string.Empty)
+            {
+                string ucontExtNoDot = ucontExt[1..];
+                string displayName = $"{ucontExtNoDot} files (*{ucontExt})";
+                List<string> extensions = new List<string>() { ucontExtNoDot };
+                sfd.Filters.Insert(0, new FileDialogFilter() { Name = displayName, Extensions = extensions });
+                defaultExtension = ucontExt;
+            }
+
+            sfd.InitialFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}{defaultExtension}";
 
             string file = await sfd.ShowAsync(win);
 
