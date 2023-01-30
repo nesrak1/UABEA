@@ -6,7 +6,7 @@
 
 ## UABEAvalonia
 
-Cross-platform Asset Bundle/Serialized File reader and writer. Originally based on [UABE](https://github.com/SeriousCache/UABE).
+Cross-platform Asset Bundle/Serialized File reader and writer. Originally based on (but not a fork of) [UABE](https://github.com/SeriousCache/UABE).
 
 ## Extracting assets
 
@@ -14,7 +14,7 @@ I develop UABEA as more of a modding/research tool than an extracting tool. Use 
 
 ## Addressables
 
-Many games are also now using addressables. You can tell if the bundle you're opening is part of addressables because it has the path `StreamingAssets/aa/XXX/something.bundle`. [You will need to clear the CRC checks with the CRC cleaning tool here](https://github.com/nesrak1/AddressablesTools/releases). Use `Example patchcrc catalog.json`, then move or rename the old catalog.json file and rename catalog.json.patched to catalog.json.
+Many games are also now using addressables. You can tell if the bundle you're opening is part of addressables because it has the path `StreamingAssets/aa/XXX/something.bundle`. [If you want to edit these bundles, you will need to clear the CRC checks with the CRC cleaning tool here](https://github.com/nesrak1/AddressablesTools/releases). Use `Example patchcrc catalog.json`, then move or rename the old catalog.json file and rename catalog.json.patched to catalog.json.
 
 ## Libraries
 
