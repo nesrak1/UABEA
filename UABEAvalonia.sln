@@ -13,7 +13,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TexToolWrap", "TexToolWrap\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextAssetPlugin", "TextAssetPlugin\TextAssetPlugin.csproj", "{B334A509-14E0-4413-83C7-BA2439A40394}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AudioClipPlugin", "AudioClipPlugin\AudioClipPlugin.csproj", "{57B84056-BCA6-4D18-BBE1-59305F7ED5B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AudioClipPlugin", "AudioClipPlugin\AudioClipPlugin.csproj", "{57B84056-BCA6-4D18-BBE1-59305F7ED5B3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MeshPlugin", "..\..\..\My Documents\Desktop\UABEA\UABEA-master\MeshPlugin\MeshPlugin.csproj", "{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -97,6 +99,18 @@ Global
 		{57B84056-BCA6-4D18-BBE1-59305F7ED5B3}.Release|x64.Build.0 = Release|Any CPU
 		{57B84056-BCA6-4D18-BBE1-59305F7ED5B3}.Release|x86.ActiveCfg = Release|Any CPU
 		{57B84056-BCA6-4D18-BBE1-59305F7ED5B3}.Release|x86.Build.0 = Release|Any CPU
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Debug|x64.ActiveCfg = Debug|x64
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Debug|x64.Build.0 = Debug|x64
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Debug|x86.ActiveCfg = Debug|x86
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Debug|x86.Build.0 = Debug|x86
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Release|x64.ActiveCfg = Release|x64
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Release|x64.Build.0 = Release|x64
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Release|x86.ActiveCfg = Release|x86
+		{94FA1A67-BD8A-4CBB-BD6C-BB0FF2462527}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
