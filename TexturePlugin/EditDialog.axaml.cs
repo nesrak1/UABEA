@@ -36,8 +36,9 @@ namespace TexturePlugin
 
         private TextureFile tex;
         private AssetTypeValueField baseField;
+        private uint platform;
 
-        private byte[] modImageBytes;
+        private string imagePath;
 
         public EditDialog()
         {
@@ -72,12 +73,13 @@ namespace TexturePlugin
             ddColorSpace.Items = Enum.GetValues(typeof(ColorSpace));
         }
 
-        public EditDialog(string name, TextureFile tex, AssetTypeValueField baseField) : this()
+        public EditDialog(string name, TextureFile tex, AssetTypeValueField baseField, uint platform) : this()
         {
             this.tex = tex;
             this.baseField = baseField;
+            this.platform = platform;
 
-            modImageBytes = null;
+            imagePath = null;
 
             boxName.Text = name;
             ddTextureFmt.SelectedIndex = tex.m_TextureFormat - 1;
@@ -108,16 +110,19 @@ namespace TexturePlugin
 
             if (file != null && file != string.Empty)
             {
-                ImportTexture(file); //lol thanks span
+                imagePath = file;
             }
         }
 
         private async void BtnSave_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (modImageBytes != null)
+            if (imagePath != null)
             {
                 TextureFormat fmt = (TextureFormat)(ddTextureFmt.SelectedIndex + 1);
-                byte[] encImageBytes = TextureEncoderDecoder.Encode(modImageBytes, tex.m_Width, tex.m_Height, fmt);
+                //byte[] encImageBytes = TextureEncoderDecoder.Encode(modImageBytes, tex.m_Width, tex.m_Height, fmt);
+
+                byte[] platformBlob = TextureHelper.GetPlatformBlob(baseField);
+                byte[] encImageBytes = TextureImportExport.Import(imagePath, fmt, out int width, out int height, platform, platformBlob);
 
                 if (encImageBytes == null)
                 {
@@ -196,20 +201,6 @@ namespace TexturePlugin
         private void BtnCancel_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(false);
-        }
-
-        private void ImportTexture(string file)
-        {
-            using (Image<Rgba32> image = Image.Load<Rgba32>(file))
-            {
-                tex.m_Width = image.Width;
-                tex.m_Height = image.Height;
-
-                image.Mutate(i => i.Flip(FlipMode.Vertical));
-
-                modImageBytes = new byte[tex.m_Width * tex.m_Height * 4];
-                image.CopyPixelDataTo(modImageBytes);
-            }
         }
 
         private void InitializeComponent()

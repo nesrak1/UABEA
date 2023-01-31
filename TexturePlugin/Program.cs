@@ -58,6 +58,17 @@ namespace TexturePlugin
             }
             return texFile.pictureData;
         }
+
+        public static byte[] GetPlatformBlob(AssetTypeValueField texBaseField)
+        {
+            AssetTypeValueField m_PlatformBlob = texBaseField["m_PlatformBlob"];
+            byte[] platformBlob = null;
+            if (!m_PlatformBlob.IsDummy)
+            {
+                platformBlob = m_PlatformBlob["Array"].AsByteArray;
+            }
+            return platformBlob;
+        }
     }
 
     public class ImportTextureOption : UABEAPluginOption
@@ -99,7 +110,10 @@ namespace TexturePlugin
                 AssetTypeValueField baseField = cont.BaseValueField;
                 TextureFormat fmt = (TextureFormat)baseField["m_TextureFormat"].AsInt;
 
-                byte[] encImageBytes = TextureImportExport.Import(selectedFilePath, fmt, out int width, out int height);
+                byte[] platformBlob = TextureHelper.GetPlatformBlob(baseField);
+                uint platform = cont.FileInstance.file.Metadata.TargetPlatform;
+
+                byte[] encImageBytes = TextureImportExport.Import(selectedFilePath, fmt, out int width, out int height, platform, platformBlob);
 
                 if (encImageBytes == null)
                 {
@@ -306,13 +320,7 @@ namespace TexturePlugin
                             continue;
                         }
 
-                        AssetTypeValueField m_PlatformBlob = texBaseField["m_PlatformBlob"];
-                        byte[] platformBlob = null;
-                        if (!m_PlatformBlob.IsDummy)
-                        {
-                            platformBlob = m_PlatformBlob["Array"].AsByteArray;
-                        }
-
+                        byte[] platformBlob = TextureHelper.GetPlatformBlob(texBaseField);
                         uint platform = cont.FileInstance.file.Metadata.TargetPlatform;
 
                         bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat, platform, platformBlob);
@@ -377,13 +385,7 @@ namespace TexturePlugin
                     return false;
                 }
 
-                AssetTypeValueField m_PlatformBlob = texBaseField["m_PlatformBlob"];
-                byte[] platformBlob = null;
-                if (!m_PlatformBlob.IsDummy)
-                {
-                    platformBlob = m_PlatformBlob["Array"].AsByteArray;
-                }
-
+                byte[] platformBlob = TextureHelper.GetPlatformBlob(texBaseField);
                 uint platform = cont.FileInstance.file.Metadata.TargetPlatform;
 
                 bool success = TextureImportExport.Export(data, file, texFile.m_Width, texFile.m_Height, (TextureFormat)texFile.m_TextureFormat, platform, platformBlob);
@@ -423,10 +425,11 @@ namespace TexturePlugin
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             AssetContainer cont = selection[0];
+            uint platform = cont.FileInstance.file.Metadata.TargetPlatform;
 
             AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, cont);
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
-            EditDialog dialog = new EditDialog(texFile.m_Name, texFile, texBaseField);
+            EditDialog dialog = new EditDialog(texFile.m_Name, texFile, texBaseField, platform);
             bool saved = await dialog.ShowDialog<bool>(win);
             if (saved)
             {

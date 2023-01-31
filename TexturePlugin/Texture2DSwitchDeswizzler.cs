@@ -46,20 +46,6 @@ namespace TexturePlugin
             }
         }
 
-        private static int ToNextNearestPo2(int x)
-        {
-            if (x < 0)
-                return 0;
-
-            --x;
-            x |= x >> 1;
-            x |= x >> 2;
-            x |= x >> 4;
-            x |= x >> 8;
-            x |= x >> 16;
-            return x + 1;
-        }
-
         private static int CeilDivide(int a, int b)
         {
             return (a + b - 1) / b;
@@ -100,6 +86,50 @@ namespace TexturePlugin
                             {
                                 srcX = 0;
                                 srcY++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return dstImage;
+        }
+
+        internal static Image<Rgba32> SwitchSwizzle(Image<Rgba32> srcImage, Size blockSize, int gobsPerBlock)
+        {
+            Image<Rgba32> dstImage = new Image<Rgba32>(srcImage.Width, srcImage.Height);
+
+            int width = srcImage.Width;
+            int height = srcImage.Height;
+
+            int blockCountX = CeilDivide(width, blockSize.Width);
+            int blockCountY = CeilDivide(height, blockSize.Height);
+
+            int gobCountX = blockCountX / GOB_X_BLOCK_COUNT;
+            int gobCountY = blockCountY / GOB_Y_BLOCK_COUNT;
+
+            int dstX = 0;
+            int dstY = 0;
+            for (int i = 0; i < gobCountY / gobsPerBlock; i++)
+            {
+                for (int j = 0; j < gobCountX; j++)
+                {
+                    for (int k = 0; k < gobsPerBlock; k++)
+                    {
+                        for (int l = 0; l < BLOCKS_IN_GOB; l++)
+                        {
+                            // todo: use table for speedy boi
+                            int gobX = ((l >> 3) & 0b10) | ((l >> 1) & 0b1);
+                            int gobY = ((l >> 1) & 0b110) | (l & 0b1);
+                            int gobSrcX = j * GOB_X_BLOCK_COUNT + gobX;
+                            int gobSrcY = (i * gobsPerBlock + k) * GOB_Y_BLOCK_COUNT + gobY;
+                            CopyBlock(srcImage, dstImage, gobSrcX, gobSrcY, dstX, dstY, blockSize.Width, blockSize.Height);
+
+                            dstX++;
+                            if (dstX >= blockCountX)
+                            {
+                                dstX = 0;
+                                dstY++;
                             }
                         }
                     }
@@ -152,6 +182,14 @@ namespace TexturePlugin
             width = CeilDivide(width, blockWidth * GOB_X_BLOCK_COUNT) * blockWidth * GOB_X_BLOCK_COUNT;
             height = CeilDivide(height, blockHeight * GOB_Y_BLOCK_COUNT * gobsPerBlock) * blockHeight * GOB_Y_BLOCK_COUNT * gobsPerBlock;
             return new Size(width, height);
+        }
+
+        internal static int GetSwitchGobsPerBlock(byte[] platformBlob)
+        {
+            // apparently there is another value to worry about, but seeing as it's
+            // always 0 and I have nothing else to test against, this will probably
+            // work fine for now
+            return 1 << BitConverter.ToInt32(platformBlob, 8);
         }
     }
 }
