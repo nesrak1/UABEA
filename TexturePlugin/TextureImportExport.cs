@@ -38,6 +38,7 @@ namespace TexturePlugin
 
             bool unswizzleSwitch = false;
             int gobsPerBlock = 1;
+            Size blockSize = new Size(1, 1);
             if (platform == 38 && platformBlob != null && platformBlob.Length != 0)
             {
                 unswizzleSwitch = true;
@@ -47,15 +48,22 @@ namespace TexturePlugin
                 // always 0 and I have nothing else to test against, this will probably
                 // work fine for now
 
-                var newSize = Texture2DSwitchDeswizzler.SwitchGetPaddedTextureSize(format, width, height);
+                // in older versions of unity, rgb24 has a platformblob which shouldn't
+                // be possible. it turns out in this case, the image is just rgba32.
+                if (format == TextureFormat.RGB24)
+                {
+                    format = TextureFormat.RGBA32;
+                }
+                else if (format == TextureFormat.BGR24)
+                {
+                    format = TextureFormat.BGRA32;
+                }
+
+                blockSize = Texture2DSwitchDeswizzler.TextureFormatToBlockSize(format);
+                Size newSize = Texture2DSwitchDeswizzler.GetPaddedTextureSize(width, height, blockSize.Width, blockSize.Height, gobsPerBlock);
                 width = newSize.Width;
                 height = newSize.Height;
             }
-            //bool unswizzlePs5 = false;
-            //if (unswizzlePs5)
-            //{
-            //    height = CeilDivide(height, 128) * 128;
-            //}
 
             string ext = Path.GetExtension(file);
             byte[] decData = TextureEncoderDecoder.Decode(encData, width, height, format);
@@ -65,7 +73,7 @@ namespace TexturePlugin
             Image<Rgba32> image = Image.LoadPixelData<Rgba32>(decData, width, height);
             if (unswizzleSwitch)
             {
-                Size blockSize = Texture2DSwitchDeswizzler.TextureFormatToBlockSize(format);
+                blockSize = Texture2DSwitchDeswizzler.TextureFormatToBlockSize(format);
                 image = Texture2DSwitchDeswizzler.SwitchUnswizzle(image, blockSize, gobsPerBlock);
                 image.Mutate(i => i.Crop(originalWidth, originalHeight));
             }
@@ -85,10 +93,5 @@ namespace TexturePlugin
 
             return true;
         }
-
-        //public static int CeilDivide(int a, int b)
-        //{
-        //    return (a + b - 1) / b;
-        //}
     }
 }

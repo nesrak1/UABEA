@@ -109,104 +109,48 @@ namespace TexturePlugin
             return dstImage;
         }
 
+        // this should be the amount of pixels that can fit 16 bytes
         internal static Size TextureFormatToBlockSize(TextureFormat m_TextureFormat)
         {
             switch (m_TextureFormat)
             {
-                case TextureFormat.Alpha8: return new Size(1, 1);
-                case TextureFormat.ARGB4444: return new Size(8, 1);
-                case TextureFormat.RGB24: return new Size(1, 1);
-                case TextureFormat.RGBA32: return new Size(1, 1);
-                case TextureFormat.ARGB32: return new Size(1, 1);
-                case TextureFormat.ARGBFloat: return new Size(1, 1);
-                case TextureFormat.RGB565: return new Size(8, 1);
-                case TextureFormat.BGR24: return new Size(1, 1);
-                case TextureFormat.R16: return new Size(8, 1);
-                case TextureFormat.DXT1: return new Size(8, 4);
-                case TextureFormat.DXT5: return new Size(4, 4);
-                case TextureFormat.RGBA4444: return new Size(1, 1);
-                case TextureFormat.BGRA32: return new Size(1, 1);
-                case TextureFormat.BC6H: return new Size(4, 4);
-                case TextureFormat.BC7: return new Size(4, 4);
-                case TextureFormat.BC4: return new Size(8, 4);
-                case TextureFormat.BC5: return new Size(4, 4);
-                case TextureFormat.ASTC_RGB_4x4: return new Size(4, 4);
-                case TextureFormat.ASTC_RGB_5x5: return new Size(5, 5);
-                case TextureFormat.ASTC_RGB_6x6: return new Size(6, 6);
-                case TextureFormat.ASTC_RGB_8x8: return new Size(8, 8);
-                case TextureFormat.ASTC_RGB_10x10: return new Size(10, 10);
-                case TextureFormat.ASTC_RGB_12x12: return new Size(12, 12);
-                case TextureFormat.ASTC_RGBA_4x4: return new Size(4, 4);
-                case TextureFormat.ASTC_RGBA_5x5: return new Size(5, 5);
-                case TextureFormat.ASTC_RGBA_6x6: return new Size(6, 6);
-                case TextureFormat.ASTC_RGBA_8x8: return new Size(8, 8);
-                case TextureFormat.ASTC_RGBA_10x10: return new Size(10, 10);
-                case TextureFormat.ASTC_RGBA_12x12: return new Size(12, 12);
-                case TextureFormat.RG16: return new Size(16, 1);
-                case TextureFormat.R8: return new Size(16, 1);
+                case TextureFormat.Alpha8: return new Size(16, 1); // 1 byte per pixel
+                case TextureFormat.ARGB4444: return new Size(8, 1); // 2 bytes per pixel
+                case TextureFormat.RGBA32: return new Size(4, 1); // 4 bytes per pixel
+                case TextureFormat.ARGB32: return new Size(4, 1); // 4 bytes per pixel
+                case TextureFormat.ARGBFloat: return new Size(1, 1); // 16 bytes per pixel (?)
+                case TextureFormat.RGB565: return new Size(8, 1); // 2 bytes per pixel
+                case TextureFormat.R16: return new Size(8, 1); // 2 bytes per pixel
+                case TextureFormat.DXT1: return new Size(8, 4); // 8 bytes per 4x4=16 pixels
+                case TextureFormat.DXT5: return new Size(4, 4); // 16 bytes per 4x4=16 pixels
+                case TextureFormat.RGBA4444: return new Size(8, 1); // 2 bytes per pixel
+                case TextureFormat.BGRA32: return new Size(4, 1); // 4 bytes per pixel
+                case TextureFormat.BC6H: return new Size(4, 4); // 16 bytes per 4x4=16 pixels
+                case TextureFormat.BC7: return new Size(4, 4); // 16 bytes per 4x4=16 pixels
+                case TextureFormat.BC4: return new Size(8, 4); // 8 bytes per 4x4=16 pixels
+                case TextureFormat.BC5: return new Size(4, 4); // 16 bytes per 4x4=16 pixels
+                case TextureFormat.ASTC_RGB_4x4: return new Size(4, 4); // 16 bytes per 4x4=16 pixels
+                case TextureFormat.ASTC_RGB_5x5: return new Size(5, 5); // 16 bytes per 5x5=25 pixels
+                case TextureFormat.ASTC_RGB_6x6: return new Size(6, 6); // 16 bytes per 6x6=36 pixels
+                case TextureFormat.ASTC_RGB_8x8: return new Size(8, 8); // 16 bytes per 8x8=64 pixels
+                case TextureFormat.ASTC_RGB_10x10: return new Size(10, 10); // 16 bytes per 10x10=100 pixels
+                case TextureFormat.ASTC_RGB_12x12: return new Size(12, 12); // 16 bytes per 12x12=144 pixels
+                case TextureFormat.ASTC_RGBA_4x4: return new Size(4, 4); // 16 bytes per 4x4=16 pixels
+                case TextureFormat.ASTC_RGBA_5x5: return new Size(5, 5); // 16 bytes per 5x5=25 pixels
+                case TextureFormat.ASTC_RGBA_6x6: return new Size(6, 6); // 16 bytes per 6x6=36 pixels
+                case TextureFormat.ASTC_RGBA_8x8: return new Size(8, 8); // 16 bytes per 8x8=64 pixels
+                case TextureFormat.ASTC_RGBA_10x10: return new Size(10, 10); // 16 bytes per 10x10=100 pixels
+                case TextureFormat.ASTC_RGBA_12x12: return new Size(12, 12); // 16 bytes per 12x12=144 pixels
+                case TextureFormat.RG16: return new Size(8, 1); // 2 bytes per pixel
+                case TextureFormat.R8: return new Size(16, 1); // 1 byte per pixel
                 default: throw new NotImplementedException();
             };
         }
 
-        internal static Size SwitchGetPaddedTextureSize(TextureFormat textureFormat, int width, int height)
+        internal static Size GetPaddedTextureSize(int width, int height, int blockWidth, int blockHeight, int gobsPerBlock)
         {
-            if (textureFormat != TextureFormat.R8 &&
-                textureFormat != TextureFormat.R16 &&
-                textureFormat != TextureFormat.RGB565 &&
-                textureFormat != TextureFormat.ARGB4444 &&
-                textureFormat != TextureFormat.Alpha8)
-            {
-                // this is bad code
-                if (textureFormat == TextureFormat.ASTC_RGB_5x5)
-                {
-                    height = CeilDivide(height, 5);
-                }
-                else if (textureFormat == TextureFormat.ASTC_RGB_6x6)
-                {
-                    height = CeilDivide(height, 6);
-                }
-                else if (textureFormat == TextureFormat.ASTC_RGB_8x8)
-                {
-                    height = CeilDivide(height, 8);
-                }
-                else if (textureFormat == TextureFormat.ASTC_RGB_10x10)
-                {
-                    height = CeilDivide(height, 10);
-                }
-                else if (textureFormat == TextureFormat.ASTC_RGB_12x12)
-                {
-                    height = CeilDivide(height, 12);
-                }
-
-                height = ToNextNearestPo2(height);
-
-                if (textureFormat == TextureFormat.ASTC_RGB_5x5)
-                {
-                    height = height * 5;
-                    width = CeilDivide(width, 5 * 4) * 5 * 4;
-                }
-                else if (textureFormat == TextureFormat.ASTC_RGB_6x6)
-                {
-                    height = height * 6;
-                    width = CeilDivide(width, 6 * 4) * 6 * 4;
-                }
-                else if (textureFormat == TextureFormat.ASTC_RGB_8x8)
-                {
-                    height = height * 8;
-                    width = CeilDivide(width, 8 * 4) * 8 * 4;
-                }
-                else if (textureFormat == TextureFormat.ASTC_RGB_10x10)
-                {
-                    height = height * 10;
-                    width = CeilDivide(width, 10 * 4) * 10 * 4;
-                }
-                else if (textureFormat == TextureFormat.ASTC_RGB_12x12)
-                {
-                    height = height * 12;
-                    width = CeilDivide(width, 12 * 4) * 12 * 4;
-                }
-            }
-
+            width = CeilDivide(width, blockWidth * GOB_X_BLOCK_COUNT) * blockWidth * GOB_X_BLOCK_COUNT;
+            height = CeilDivide(height, blockHeight * GOB_Y_BLOCK_COUNT * gobsPerBlock) * blockHeight * GOB_Y_BLOCK_COUNT * gobsPerBlock;
             return new Size(width, height);
         }
     }
