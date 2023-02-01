@@ -9,10 +9,12 @@
         x:Class="UABEAvalonia.DataWindow"
         Title="View Data">
   <uabea:AssetDataTreeView Name="treeView">
-    <TreeView.ContextMenu>
+	  <!--
+	  <TreeView.ContextMenu>
       <ContextMenu>
         <MenuItem Header="Visit Asset" Name="menuVisitAsset"/>
       </ContextMenu>
-    </TreeView.ContextMenu>
+      </TreeView.ContextMenu>
+	  -->
   </uabea:AssetDataTreeView>
 </Window>

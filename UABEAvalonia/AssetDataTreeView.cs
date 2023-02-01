@@ -16,6 +16,7 @@ namespace UABEAvalonia
     public class AssetDataTreeView : TreeView
     {
         private AssetWorkspace workspace;
+        private InfoWindow win;
 
         private AvaloniaList<TreeViewItem> ListItems => (AvaloniaList<TreeViewItem>)Items;
 
@@ -27,6 +28,10 @@ namespace UABEAvalonia
         private static SolidColorBrush StringBrushLight = SolidColorBrush.Parse("#a31515");
         private static SolidColorBrush ValueBrushDark = SolidColorBrush.Parse("#b5cea8");
         private static SolidColorBrush ValueBrushLight = SolidColorBrush.Parse("#5b2da8");
+
+        private MenuItem menuVisitAsset;
+        private MenuItem menuExpandSel;
+        private MenuItem menuCollapseSel;
 
         private SolidColorBrush PrimNameBrush
         {
@@ -65,9 +70,65 @@ namespace UABEAvalonia
             }
         }
 
-        public void Init(AssetWorkspace workspace)
+        public AssetDataTreeView() : base()
+        {
+            menuVisitAsset = new MenuItem() { Header = "Visit Asset" };
+            menuExpandSel = new MenuItem() { Header = "Expand Selection" };
+            menuCollapseSel = new MenuItem() { Header = "Collapse Selection" };
+
+            DoubleTapped += AssetDataTreeView_DoubleTapped;
+            menuVisitAsset.Click += MenuVisitAsset_Click;
+            menuExpandSel.Click += MenuExpandSel_Click;
+            menuCollapseSel.Click += MenuCollapseSel_Click;
+
+            ContextMenu = new ContextMenu();
+            ContextMenu.Items = new AvaloniaList<MenuItem>()
+            {
+                menuVisitAsset,
+                menuExpandSel,
+                menuCollapseSel
+            };
+        }
+
+        private void AssetDataTreeView_DoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+        {
+            if (SelectedItem != null)
+            {
+                TreeViewItem item = (TreeViewItem)SelectedItem;
+                item.IsExpanded = !item.IsExpanded;
+            }
+        }
+
+        private void MenuVisitAsset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            TreeViewItem item = (TreeViewItem)SelectedItem;
+            if (item != null && item.Tag != null)
+            {
+                AssetDataTreeViewItem info = (AssetDataTreeViewItem)item.Tag;
+                win.SelectAsset(info.fromFile, info.fromPathId);
+            }
+        }
+
+        private void MenuExpandSel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (SelectedItem != null)
+            {
+                ExpandAllChildren((TreeViewItem)SelectedItem);
+            }
+        }
+
+        private void MenuCollapseSel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (SelectedItem != null)
+            {
+                CollapseAllChildren((TreeViewItem)SelectedItem);
+            }
+        }
+
+        public void Init(InfoWindow win, AssetWorkspace workspace)
         {
             this.workspace = workspace;
+            this.win = win;
             Reset();
         }
 
@@ -115,33 +176,47 @@ namespace UABEAvalonia
 
         public void ExpandAllChildren(TreeViewItem treeItem)
         {
+            string? text = null;
             if (treeItem.Header is string header)
             {
-                if (header != "[view asset]")
-                {
-                    treeItem.IsExpanded = true;
+                text = header;
+            }
+            else if (treeItem.Header is RichTextBlock rtb)
+            {
+                text = rtb.Text;
+            }
 
-                    foreach (TreeViewItem treeItemChild in treeItem.Items)
-                    {
-                        ExpandAllChildren(treeItemChild);
-                    }
+            if (text != "[view asset]")
+            {
+                treeItem.IsExpanded = true;
+
+                foreach (TreeViewItem treeItemChild in treeItem.Items)
+                {
+                    ExpandAllChildren(treeItemChild);
                 }
             }
         }
 
         public void CollapseAllChildren(TreeViewItem treeItem)
         {
+            string? text = null;
             if (treeItem.Header is string header)
             {
-                if (header != "[view asset]")
-                {
-                    foreach (TreeViewItem treeItemChild in treeItem.Items)
-                    {
-                        CollapseAllChildren(treeItemChild);
-                    }
+                text = header;
+            }
+            else if (treeItem.Header is RichTextBlock rtb)
+            {
+                text = rtb.Text;
+            }
 
-                    treeItem.IsExpanded = false;
+            if (text != "[view asset]")
+            {
+                foreach (TreeViewItem treeItemChild in treeItem.Items)
+                {
+                    CollapseAllChildren(treeItemChild);
                 }
+
+                treeItem.IsExpanded = false;
             }
         }
 
