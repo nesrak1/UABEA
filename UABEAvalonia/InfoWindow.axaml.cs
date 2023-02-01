@@ -46,6 +46,7 @@ namespace UABEAvalonia
         private Button btnPlugin;
         private Button btnImportRaw;
         private Button btnImportDump;
+        private Button btnEditData;
         private Button btnRemove;
         private DataGrid dataGrid;
         private TextBox boxName;
@@ -106,6 +107,7 @@ namespace UABEAvalonia
             btnPlugin = this.FindControl<Button>("btnPlugin")!;
             btnImportRaw = this.FindControl<Button>("btnImportRaw")!;
             btnImportDump = this.FindControl<Button>("btnImportDump")!;
+            btnEditData = this.FindControl<Button>("btnEditData")!;
             btnRemove = this.FindControl<Button>("btnRemove")!;
             dataGrid = this.FindControl<DataGrid>("dataGrid")!;
             boxName = this.FindControl<TextBox>("boxName")!;
@@ -132,6 +134,7 @@ namespace UABEAvalonia
             btnExportDump.Click += BtnExportDump_Click;
             btnImportRaw.Click += BtnImportRaw_Click;
             btnImportDump.Click += BtnImportDump_Click;
+            btnEditData.Click += BtnEditData_Click;
             btnRemove.Click += BtnRemove_Click;
             btnPlugin.Click += BtnPlugin_Click;
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
@@ -425,6 +428,26 @@ namespace UABEAvalonia
                 await BatchImportDump(selection);
             else
                 await SingleImportDump(selection);
+        }
+
+        private async void BtnEditData_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (await FailIfNothingSelected())
+                return;
+
+            AssetContainer? selection = GetSelectedAssetsReplaced()[0];
+            if (selection != null && !selection.HasValueField)
+            {
+                selection = Workspace.GetAssetContainer(selection.FileInstance, 0, selection.PathId, false);
+            }
+            if (selection == null)
+            {
+                await MessageBoxUtil.ShowDialog(this,
+                    "Error", "Asset failed to deserialize.");
+                return;
+            }
+
+            await ShowEditAssetWindow(selection);
         }
 
         private async void BtnRemove_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -929,6 +952,26 @@ namespace UABEAvalonia
                     Workspace.AddReplacer(selectedInst, replacer, new MemoryStream(bytes));
                 }
             }
+        }
+
+        public async Task ShowEditAssetWindow(AssetContainer cont)
+        {
+            AssetTypeValueField baseField = cont.BaseValueField;
+            if (baseField == null)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Error", "Something went wrong deserializing this asset.");
+                return;
+            }
+
+            EditDataWindow editWin = new EditDataWindow(baseField);
+            byte[]? data = await editWin.ShowDialog<byte[]?>(this);
+            if (data == null)
+            {
+                return;
+            }
+
+            AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(cont, data);
+            Workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(data));
         }
 
         private async void NextNameSearch()

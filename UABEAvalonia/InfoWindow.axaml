@@ -73,6 +73,7 @@
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Plugins" Name="btnPlugin" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Raw" Name="btnImportRaw" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Dump" Name="btnImportDump" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Edit Data" Name="btnEditData" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Remove" Name="btnRemove" />
     </StackPanel>
   </Grid>

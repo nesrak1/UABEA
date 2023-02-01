@@ -4,12 +4,16 @@ using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.WebRequestMethods;
 
 namespace UABEAvalonia
 {
@@ -29,6 +33,7 @@ namespace UABEAvalonia
         private static SolidColorBrush ValueBrushDark = SolidColorBrush.Parse("#b5cea8");
         private static SolidColorBrush ValueBrushLight = SolidColorBrush.Parse("#5b2da8");
 
+        private MenuItem menuEditAsset;
         private MenuItem menuVisitAsset;
         private MenuItem menuExpandSel;
         private MenuItem menuCollapseSel;
@@ -72,11 +77,13 @@ namespace UABEAvalonia
 
         public AssetDataTreeView() : base()
         {
+            menuEditAsset = new MenuItem() { Header = "Edit Asset" };
             menuVisitAsset = new MenuItem() { Header = "Visit Asset" };
             menuExpandSel = new MenuItem() { Header = "Expand Selection" };
             menuCollapseSel = new MenuItem() { Header = "Collapse Selection" };
 
             DoubleTapped += AssetDataTreeView_DoubleTapped;
+            menuEditAsset.Click += MenuEditAsset_Click;
             menuVisitAsset.Click += MenuVisitAsset_Click;
             menuExpandSel.Click += MenuExpandSel_Click;
             menuCollapseSel.Click += MenuCollapseSel_Click;
@@ -84,10 +91,32 @@ namespace UABEAvalonia
             ContextMenu = new ContextMenu();
             ContextMenu.Items = new AvaloniaList<MenuItem>()
             {
+                menuEditAsset,
                 menuVisitAsset,
                 menuExpandSel,
                 menuCollapseSel
             };
+        }
+
+        private async void MenuEditAsset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (SelectedItem != null)
+            {
+                TreeViewItem item = (TreeViewItem)SelectedItem;
+                if (item.Tag != null)
+                {
+                    AssetDataTreeViewItem info = (AssetDataTreeViewItem)item.Tag;
+
+                    AssetContainer? cont = workspace.GetAssetContainer(info.fromFile, 0, info.fromPathId, false);
+                    if (cont == null || !cont.HasValueField)
+                    {
+                        return;
+                    }
+
+                    await win.ShowEditAssetWindow(cont);
+                    await MessageBoxUtil.ShowDialog(win, "Note", "Asset updated. Changes will be shown next time you open this asset.");
+                }
+            }
         }
 
         private void AssetDataTreeView_DoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
@@ -101,11 +130,14 @@ namespace UABEAvalonia
 
         private void MenuVisitAsset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            TreeViewItem item = (TreeViewItem)SelectedItem;
-            if (item != null && item.Tag != null)
+            if (SelectedItem != null)
             {
-                AssetDataTreeViewItem info = (AssetDataTreeViewItem)item.Tag;
-                win.SelectAsset(info.fromFile, info.fromPathId);
+                TreeViewItem item = (TreeViewItem)SelectedItem;
+                if (item != null && item.Tag != null)
+                {
+                    AssetDataTreeViewItem info = (AssetDataTreeViewItem)item.Tag;
+                    win.SelectAsset(info.fromFile, info.fromPathId);
+                }
             }
         }
 

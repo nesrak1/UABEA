@@ -8,13 +8,5 @@
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.DataWindow"
         Title="View Data">
-  <uabea:AssetDataTreeView Name="treeView">
-	  <!--
-	  <TreeView.ContextMenu>
-      <ContextMenu>
-        <MenuItem Header="Visit Asset" Name="menuVisitAsset"/>
-      </ContextMenu>
-      </TreeView.ContextMenu>
-	  -->
-  </uabea:AssetDataTreeView>
+  <uabea:AssetDataTreeView Name="treeView" />
 </Window>
