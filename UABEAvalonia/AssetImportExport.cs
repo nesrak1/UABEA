@@ -358,7 +358,16 @@ namespace UABEAvalonia
                     JToken? childToken = token[childTempField.Name];
 
                     if (childToken == null)
-                        throw new Exception($"Missing field {childTempField.Name} in json.");
+                    {
+                        if (tempField != null)
+                        {
+                            throw new Exception($"Missing field {childTempField.Name} in JSON. Parent field is {tempField.Type} {tempField.Name}.");
+                        }
+                        else
+                        {
+                            throw new Exception($"Missing field {childTempField.Name} in JSON.");
+                        }
+                    }
                         
                     RecurseJsonImport(childTempField, childToken);
                 }
