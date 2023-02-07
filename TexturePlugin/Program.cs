@@ -24,10 +24,11 @@ namespace TexturePlugin
                 return null;
             image_data.ValueType = AssetValueType.ByteArray;
 
-            AssetTypeTemplateField m_PlatformBlob = textureTemp.Children.FirstOrDefault(f => f.Name == "m_PlatformBlob").Children[0];
+            AssetTypeTemplateField m_PlatformBlob = textureTemp.Children.FirstOrDefault(f => f.Name == "m_PlatformBlob");
             if (m_PlatformBlob != null)
             {
-                m_PlatformBlob.ValueType = AssetValueType.ByteArray;
+                AssetTypeTemplateField m_PlatformBlob_Array = m_PlatformBlob.Children[0];
+                m_PlatformBlob_Array.ValueType = AssetValueType.ByteArray;
             }
 
             AssetTypeValueField baseField = textureTemp.MakeValue(tex.FileReader, tex.FilePosition);
@@ -351,6 +352,13 @@ namespace TexturePlugin
 
             AssetTypeValueField texBaseField = TextureHelper.GetByteArrayTexture(workspace, cont);
             TextureFile texFile = TextureFile.ReadTextureFile(texBaseField);
+
+            // 0x0 texture, usually called like Font Texture or smth
+            if (texFile.m_Width == 0 && texFile.m_Height == 0)
+            {
+                await MessageBoxUtil.ShowDialog(win, "Error", $"Texture size is 0x0. Texture cannot be exported.");
+                return false;
+            }
 
             string assetName = Extensions.ReplaceInvalidPathChars(texFile.m_Name);
 
