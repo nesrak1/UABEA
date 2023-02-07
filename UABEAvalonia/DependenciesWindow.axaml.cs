@@ -415,7 +415,7 @@ namespace UABEAvalonia
                     if (dependency.PathName != string.Empty)
                         return $"{index} - {dependency.PathName}";
                     else
-                        return $"{index} - {dependency.Guid.mostSignificant:x16}{dependency.Guid.leastSignificant:x16}";
+                        return $"{index} - {dependency.Guid}";
                 }
                 else if (!isDependency && file != null)
                     return $"{index} - {file.name}";

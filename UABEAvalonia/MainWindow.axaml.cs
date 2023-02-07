@@ -94,6 +94,7 @@ namespace UABEAvalonia
             btnRemove.Click += BtnRemove_Click;
             btnInfo.Click += BtnInfo_Click;
             btnExportAll.Click += BtnExportAll_Click;
+            btnImportAll.Click += BtnImportAll_Click;
             btnRename.Click += BtnRename_Click;
             Closing += MainWindow_Closing;
 
@@ -433,6 +434,13 @@ namespace UABEAvalonia
                 bundleReader.Position = dirInf.Offset;
                 bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.DecompressedSize);
             }
+        }
+
+        private async void BtnImportAll_Click(object? sender, RoutedEventArgs e)
+        {
+            if (BundleInst == null)
+                return;
+
         }
 
         private async void BtnRename_Click(object? sender, RoutedEventArgs e)
