@@ -414,7 +414,32 @@ namespace UABEAvalonia
                     }
                     else if (evt == AssetValueType.ByteArray)
                     {
-                        middle = $" (size {childField.AsByteArray.Length})";
+                        byte[] bytes = childField.AsByteArray;
+                        int byteArraySize = childField.AsByteArray.Length;
+                        middle = $" (size {byteArraySize}) = ";
+
+                        const int MAX_PREVIEW_BYTES = 20;
+                        int previewSize = Math.Min(byteArraySize, MAX_PREVIEW_BYTES);
+
+                        StringBuilder valueBuilder = new StringBuilder();
+                        for (int i = 0; i < previewSize; i++)
+                        {
+                            if (i == 0)
+                            {
+                                valueBuilder.Append(bytes[i].ToString("X2"));
+                            }
+                            else
+                            {
+                                valueBuilder.Append(" " + bytes[i].ToString("X2"));
+                            }
+                        }
+
+                        if (byteArraySize > MAX_PREVIEW_BYTES)
+                        {
+                            valueBuilder.Append(" ...");
+                        }
+
+                        value = valueBuilder.ToString();
                     }
                 }
 
