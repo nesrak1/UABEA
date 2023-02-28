@@ -156,7 +156,7 @@
         <member name="P:AssetsTools.NET.AssetFileInfo.TypeIdOrIndex">
             <summary>
             Before version 16 this is the type ID of the asset. In version 16 and later this is the index into the type tree list.
-            In versions 15 and below, this is the same as TypeId except in MonoBehaviours where this acts as ScriptTypeIndex (negative).
+            In versions 15 and below, this is the same as TypeId except in MonoBehaviours where this acts similar to ScriptTypeIndex (negative).
             You should use TypeId for the type ID in either version. <see cref="T:AssetsTools.NET.Extra.AssetClassID"/>
             </summary>
         </member>
@@ -422,9 +422,19 @@
             String table bytes for this type.
             </summary>
         </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.IsRefType">
+            <summary>
+            Is the type a reference type?
+            </summary>
+        </member>
         <member name="P:AssetsTools.NET.TypeTreeType.TypeDependencies">
             <summary>
             Type dependencies for this type. Unknown purpose.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.TypeReference">
+            <summary>
+            Type reference. Unknown purpose.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.AssetTypeTemplateField.Name">
