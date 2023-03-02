@@ -231,13 +231,13 @@ namespace UABEAvalonia
 
         public AssetTypeTemplateField GetTemplateField(AssetContainer cont, bool forceCldb = false, bool skipMonoBehaviourFields = false)
         {
-            bool hasTypeTree;
-            if (!forceCldb)
-                hasTypeTree = cont.FileInstance.file.Metadata.TypeTreeEnabled;
-            else
-                hasTypeTree = false;
+            AssetReadFlags readFlags = AssetReadFlags.None;
+            if (forceCldb)
+                readFlags |= AssetReadFlags.ForceFromCldb;
+            if (skipMonoBehaviourFields)
+                readFlags |= AssetReadFlags.SkipMonoBehaviourFields;
 
-            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, hasTypeTree, false, skipMonoBehaviourFields);
+            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, readFlags);
         }
 
         public AssetContainer? GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)

@@ -4,6 +4,32 @@
         <name>AssetsTools.NET</name>
     </assembly>
     <members>
+        <member name="F:AssetsTools.NET.Extra.AssetReadFlags.None">
+            <summary>
+            No flags.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.Extra.AssetReadFlags.PreferEditor">
+            <summary>
+            Use the editor version of the TPK instead of the
+            the player version. Use this if you are generating
+            new assets for an editor project.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.Extra.AssetReadFlags.SkipMonoBehaviourFields">
+            <summary>
+            If the file doesn't have a type tree, decide whether
+            to skip calling AssetsManager.MonoTempGenerator to add the
+            MonoBehaviour fields to the end of the base MonoBehaviour
+            field or not.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.Extra.AssetReadFlags.ForceFromCldb">
+            <summary>
+            If the file is using a type tree, force it to use
+            the loaded class database instead.
+            </summary>
+        </member>
         <member name="T:AssetsTools.NET.Extra.LambdaAssetReplacer">
             <summary>
             Replacer that deserializes the specified asset, lets a delegate
@@ -333,7 +359,7 @@
         </member>
         <member name="P:AssetsTools.NET.AssetsFileMetadata.RefTypes">
             <summary>
-            List of reference types (unknown what this is for).
+            List of reference types.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.AssetsFileMetadata.UserInformation">
