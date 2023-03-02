@@ -130,7 +130,8 @@ namespace UABEAvalonia
 
         public void LoadAssetsFile(AssetsFileInstance fromFile, bool loadDependencies)
         {
-            if (LoadedFiles.Contains(fromFile))
+            string fromFilePath = fromFile.path.ToLower();
+            if (LoadedFileNames.Contains(fromFilePath))
                 return;
 
             fromFile.file.GenerateQuickLookupTree();
@@ -228,9 +229,15 @@ namespace UABEAvalonia
             }
         }
 
-        public AssetTypeTemplateField GetTemplateField(AssetContainer cont, bool skipMonoBehaviourFields = false)
+        public AssetTypeTemplateField GetTemplateField(AssetContainer cont, bool forceCldb = false, bool skipMonoBehaviourFields = false)
         {
-            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, false, skipMonoBehaviourFields);
+            bool hasTypeTree;
+            if (!forceCldb)
+                hasTypeTree = cont.FileInstance.file.Metadata.TypeTreeEnabled;
+            else
+                hasTypeTree = false;
+
+            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, hasTypeTree, false, skipMonoBehaviourFields);
         }
 
         public AssetContainer? GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)
@@ -248,7 +255,8 @@ namespace UABEAvalonia
                     if (!onlyInfo && !cont.HasValueField)
                     {
                         // only set mono temp generator when we open a MonoBehaviour
-                        if ((cont.ClassId == (int)AssetClassID.MonoBehaviour || cont.ClassId < 0) && !setMonoTempGeneratorsYet && !fileInst.file.Metadata.TypeTreeEnabled)
+                        bool isMonoBehaviour = cont.ClassId == (int)AssetClassID.MonoBehaviour || cont.ClassId < 0;
+                        if (isMonoBehaviour && !setMonoTempGeneratorsYet && !fileInst.file.Metadata.TypeTreeEnabled)
                         {
                             string dataDir = Extensions.GetAssetsFileDirectory(fileInst);
                             bool success = SetMonoTempGenerators(dataDir);
@@ -261,7 +269,13 @@ namespace UABEAvalonia
                         AssetTypeTemplateField tempField = GetTemplateField(cont);
                         try
                         {
-                            AssetTypeValueField baseField = tempField.MakeValue(cont.FileReader, cont.FilePosition);
+                            RefTypeManager? refMan = null;
+                            if (isMonoBehaviour)
+                            {
+                                refMan = am.GetRefTypeManager(fileInst, cont.ClassId, cont.MonoId);
+                            }
+
+                            AssetTypeValueField baseField = tempField.MakeValue(cont.FileReader, cont.FilePosition, refMan);
                             cont = new AssetContainer(cont, baseField);
                         }
                         catch

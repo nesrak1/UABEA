@@ -44,14 +44,15 @@ namespace UABEAvalonia
             string fieldName = template.Name;
             bool isArray = template.IsArray;
 
-            //string's field isn't aligned but its array is
+            // string's field isn't aligned but its array is
             if (template.ValueType == AssetValueType.String)
                 align = "1";
 
-            //mainly to handle enum fields not having the int type name
+            // mainly to handle enum fields not having the int type name
             if (template.ValueType != AssetValueType.None &&
                 template.ValueType != AssetValueType.Array &&
                 template.ValueType != AssetValueType.ByteArray &&
+                template.ValueType != AssetValueType.ReferencedObject &&
                 !isArray)
             {
                 typeName = CorrectTypeName(template.ValueType);
@@ -97,12 +98,7 @@ namespace UABEAvalonia
                     AssetValueType evt = field.Value.ValueType;
                     if (evt == AssetValueType.String)
                     {
-                        //only replace \ with \\ but not " with \" lol
-                        //you just have to find the last "
-                        string fixedStr = field.AsString
-                            .Replace("\\", "\\\\")
-                            .Replace("\r", "\\r")
-                            .Replace("\n", "\\n");
+                        string fixedStr = TextDumpEscapeString(field.AsString);
                         value = $" = \"{fixedStr}\"";
                     }
                     else if (1 <= (int)evt && (int)evt <= 12)
@@ -112,9 +108,22 @@ namespace UABEAvalonia
                 }
                 sw.WriteLine($"{new string(' ', depth)}{align} {typeName} {fieldName}{value}");
 
-                for (int i = 0; i < field.Children.Count; i++)
+                if (field.Value != null && field.Value.ValueType == AssetValueType.ReferencedObject)
                 {
-                    RecurseTextDump(field.Children[i], depth + 1);
+                    // todo
+                    AssetTypeReferencedObject refObject = field.Value.AsReferencedObject;
+                    sw.WriteLine($"{new string(' ', depth + 1)}0 SInt64 rid = {refObject.rid}");
+                    AssetTypeReference type = refObject.type;
+                    sw.WriteLine($"{new string(' ', depth + 1)}0 ReferencedManagedType type");
+                    sw.WriteLine($"{new string(' ', depth + 2)}1 string class = \"{TextDumpEscapeString(type.ClassName)}\"");
+                    sw.WriteLine($"{new string(' ', depth + 2)}1 string ns = \"{TextDumpEscapeString(type.Namespace)}\"");
+                    sw.WriteLine($"{new string(' ', depth + 2)}1 string asm = \"{TextDumpEscapeString(type.AsmName)}\"");
+                }
+                List<AssetTypeValueField> children = GetChildrenWithRefObject(field);
+
+                for (int i = 0; i < children.Count; i++)
+                {
+                    RecurseTextDump(children[i], depth + 1);
                 }
             }
         }
@@ -156,7 +165,7 @@ namespace UABEAvalonia
             }
             else
             {
-                if (field.Value != null)
+                if (field.Value != null && field.Value.ValueType != AssetValueType.ReferencedObject)
                 {
                     AssetValueType evt = field.Value.ValueType;
                     
@@ -183,9 +192,10 @@ namespace UABEAvalonia
                 {
                     JObject jObject = new JObject();
 
-                    for (int i = 0; i < field.Children.Count; i++)
+                    List<AssetTypeValueField> children = GetChildrenWithRefObject(field);
+                    for (int i = 0; i < children.Count; i++)
                     {
-                        jObject.Add(field.Children[i].FieldName, RecurseJsonDump(field.Children[i], uabeFlavor));
+                        jObject.Add(children[i].FieldName, RecurseJsonDump(children[i], uabeFlavor));
                     }
 
                     return jObject;
@@ -236,7 +246,7 @@ namespace UABEAvalonia
                 while (line[thisDepth] == ' ')
                     thisDepth++;
 
-                if (line[thisDepth] == '[') //array index, ignore
+                if (line[thisDepth] == '[') // array index, ignore
                     continue;
 
                 if (thisDepth < alignStack.Count)
@@ -377,6 +387,10 @@ namespace UABEAvalonia
                     aw.Align();
                 }
             }
+            else if (tempField.HasValue && tempField.ValueType == AssetValueType.ReferencedObject)
+            {
+                throw new NotImplementedException("SerializeReference not supported in JSON import yet!");
+            }
             else
             {
                 switch (tempField.ValueType)
@@ -456,10 +470,10 @@ namespace UABEAvalonia
                     }
                 }
 
-                //have to do this because of bug in MonoDeserializer
+                // have to do this because of bug in MonoDeserializer
                 if (tempField.IsArray && tempField.ValueType != AssetValueType.ByteArray)
                 {
-                    //children[0] is size field, children[1] is the data field
+                    // children[0] is size field, children[1] is the data field
                     AssetTypeTemplateField childTempField = tempField.Children[1];
 
                     JArray? tokenArray = (JArray?)token;
@@ -550,6 +564,24 @@ namespace UABEAvalonia
                     return "string";
             }
             return "UnknownBaseType";
+        }
+
+        // only replace \ with \\ but not " with \" lol
+        // you just have to find the last "
+        private string TextDumpEscapeString(string str)
+        {
+            return str
+                .Replace("\\", "\\\\")
+                .Replace("\r", "\\r")
+                .Replace("\n", "\\n");
+        }
+
+        private List<AssetTypeValueField> GetChildrenWithRefObject(AssetTypeValueField field)
+        {
+            if (field.Value != null && field.Value.ValueType == AssetValueType.ReferencedObject)
+                return new List<AssetTypeValueField>() { field.Value.AsReferencedObject.data };
+            else
+                return field.Children;
         }
 
         public static AssetsReplacer CreateAssetReplacer(AssetContainer cont, byte[] data)

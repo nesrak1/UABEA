@@ -331,7 +331,7 @@ namespace UABEAvalonia
                 else
                 {
                     // fast method in case asset hasn't loaded yet
-                    AssetTypeTemplateField template = Workspace.GetTemplateField(container, true);
+                    AssetTypeTemplateField template = Workspace.GetTemplateField(container, false, true);
                     hasGameObjectParent = template.Children.Any(c => c.Name == "m_GameObject");
                 }
 

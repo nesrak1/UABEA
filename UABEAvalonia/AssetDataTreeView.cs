@@ -377,10 +377,16 @@ namespace UABEAvalonia
 
         private void TreeLoad(AssetsFileInstance fromFile, AssetTypeValueField assetField, long fromPathId, TreeViewItem treeItem)
         {
-            if (assetField.Children.Count == 0) return;
+            List<AssetTypeValueField> children;
+            if (assetField.Value != null && assetField.Value.ValueType == AssetValueType.ReferencedObject)
+                children = new List<AssetTypeValueField>() { assetField.Value.AsReferencedObject.data };
+            else
+                children = assetField.Children;
+
+            if (children.Count == 0) return;
 
             int arrayIdx = 0;
-            AvaloniaList<TreeViewItem> items = new AvaloniaList<TreeViewItem>(assetField.Children.Count + 1);
+            AvaloniaList<TreeViewItem> items = new AvaloniaList<TreeViewItem>(children.Count + 1);
 
             AssetTypeTemplateField assetFieldTemplate = assetField.TemplateField;
             bool isArray = assetFieldTemplate.IsArray;
@@ -393,7 +399,7 @@ namespace UABEAvalonia
                 items.Add(arrayIndexTreeItem);
             }
 
-            foreach (AssetTypeValueField childField in assetField)
+            foreach (AssetTypeValueField childField in children)
             {
                 if (childField == null) return;
                 string middle = "";
@@ -411,6 +417,10 @@ namespace UABEAvalonia
                     if (evt == AssetValueType.Array)
                     {
                         middle = $" (size {childField.Children.Count})";
+                    }
+                    else if (evt == AssetValueType.ReferencedObject)
+                    {
+                        middle = $" (rid {childField.AsReferencedObject.rid})";
                     }
                     else if (evt == AssetValueType.ByteArray)
                     {
@@ -443,6 +453,9 @@ namespace UABEAvalonia
                     }
                 }
 
+                bool hasChildren = childField.Children.Count > 0 ||
+                    (childField.Value != null && childField.Value.ValueType == AssetValueType.ReferencedObject);
+
                 if (isArray)
                 {
                     TreeViewItem arrayIndexTreeItem = CreateTreeItem($"{arrayIdx}");
@@ -451,7 +464,7 @@ namespace UABEAvalonia
                     TreeViewItem childTreeItem = CreateColorTreeItem(childField.TypeName, childField.FieldName, middle, value);
                     arrayIndexTreeItem.Items = new AvaloniaList<TreeViewItem>() { childTreeItem };
 
-                    if (childField.Children.Count > 0)
+                    if (hasChildren)
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
                         childTreeItem.Items = new AvaloniaList<TreeViewItem>() { dummyItem };
@@ -464,8 +477,8 @@ namespace UABEAvalonia
                 {
                     TreeViewItem childTreeItem = CreateColorTreeItem(childField.TypeName, childField.FieldName, middle, value);
                     items.Add(childTreeItem);
-
-                    if (childField.Children.Count > 0)
+                    
+                    if (hasChildren)
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
                         childTreeItem.Items = new AvaloniaList<TreeViewItem>() { dummyItem };

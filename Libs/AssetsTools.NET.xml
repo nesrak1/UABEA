@@ -429,12 +429,12 @@
         </member>
         <member name="P:AssetsTools.NET.TypeTreeType.TypeDependencies">
             <summary>
-            Type dependencies for this type. Unknown purpose.
+            Type dependencies for this type. Used by MonoBehaviours referencing ref types. Only used when IsRefType is false.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeType.TypeReference">
             <summary>
-            Type reference. Unknown purpose.
+            Type reference information. Only used when IsRefType is true.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.AssetTypeTemplateField.Name">
