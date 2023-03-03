@@ -53,7 +53,8 @@
 			  <DataGridTextColumn Header="File ID" Binding="{Binding FileID}"/>
 			  <DataGridTextColumn Header="Path ID" Binding="{Binding PathID}"/>
 			  <DataGridTextColumn Header="Size" Binding="{Binding Size}"/>
-			  <DataGridTextColumn Header="Modified" Binding="{Binding Modified}"/>
+			  <DataGridCheckBoxColumn Header="Modified" Binding="{Binding Modified}"/>
+			  <DataGridTextColumn Header="Offset" Binding="{Binding OffsetStr}"/>
 		  </DataGrid.Columns>
 	  </DataGrid>
     </Border>
@@ -66,6 +67,9 @@
       <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxFileId" />
       <Label Content="Type"/>
       <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxType" />
+	  <Label Content="Offset"/>
+      <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxOffset" />	
+		
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Data" Name="btnViewData" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Scene" Name="btnSceneView" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Raw" Name="btnExportRaw" />

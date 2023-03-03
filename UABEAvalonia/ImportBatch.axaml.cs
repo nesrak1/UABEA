@@ -59,7 +59,7 @@ namespace UABEAvalonia
             List<ImportBatchDataGridItem> gridItems = new List<ImportBatchDataGridItem>();
             foreach (AssetContainer cont in selection)
             {
-                Extensions.GetUABENameFast(workspace, cont, true, out string assetName, out string _);
+                Extensions.GetUABENameFast(workspace, cont, true, out string assetName, out string _, out long _);
 
                 ImportBatchDataGridItem gridItem = new ImportBatchDataGridItem()
                 {

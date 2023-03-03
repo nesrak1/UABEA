@@ -97,7 +97,7 @@ namespace UABEAvalonia
 
             foreach (var newAsset in assetWs.NewAssets)
             {
-                string file = newAsset.Key.fileName;
+                string file = newAsset.Key.FilePath;
                 if (!fileToTvi.ContainsKey(file))
                 {
                     ModMakerTreeFileInfo newFileItem = new ModMakerTreeFileInfo(file, rootPath);
@@ -254,7 +254,7 @@ namespace UABEAvalonia
 
                             foreach (AssetsReplacer replacer in affectedFile.replacers)
                             {
-                                AssetID assetId = new AssetID(file, replacer.GetPathID());
+                                AssetPPtr assetId = new AssetPPtr(file, replacer.GetPathID());
 
                                 var obsItems = fileItem.Replacers;
                                 obsItems.Add(new ModMakerTreeReplacerInfo(assetId, replacer));
@@ -357,13 +357,13 @@ namespace UABEAvalonia
     public class ModMakerTreeReplacerInfo
     {
         public bool isBundle;
-        public AssetID assetId;
+        public AssetPPtr assetId;
         public AssetsReplacer assetsReplacer;
         //public BundleReplacer bundleReplacer;
 
         public string DisplayText { get => ToString(); }
 
-        public ModMakerTreeReplacerInfo(AssetID assetId, AssetsReplacer assetsReplacer)
+        public ModMakerTreeReplacerInfo(AssetPPtr assetId, AssetsReplacer assetsReplacer)
         {
             isBundle = false;
             this.assetId = assetId;

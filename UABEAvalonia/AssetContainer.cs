@@ -19,9 +19,9 @@ namespace UABEAvalonia
 
         public long FilePosition { get; }
         public AssetsFileReader FileReader { get; }
-        public AssetID AssetId
+        public AssetPPtr AssetId
         {
-            get => new AssetID(FileInstance.path, PathId);
+            get => new AssetPPtr(FileInstance.path, PathId);
         }
         public bool HasValueField
         {

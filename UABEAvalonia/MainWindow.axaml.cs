@@ -477,13 +477,10 @@ namespace UABEAvalonia
             Close();
         }
 
-        private async void MenuToggleDarkTheme_Click(object? sender, RoutedEventArgs e)
+        private void MenuToggleDarkTheme_Click(object? sender, RoutedEventArgs e)
         {
             ConfigurationManager.Settings.UseDarkTheme = !ConfigurationManager.Settings.UseDarkTheme;
-
-            // thanks avalonia
-            await MessageBoxUtil.ShowDialog(this, "Note",
-                "Themes will be updated when you restart.");
+            ThemeHandler.UseDarkTheme = ConfigurationManager.Settings.UseDarkTheme;
         }
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)

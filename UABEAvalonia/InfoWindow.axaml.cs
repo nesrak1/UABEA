@@ -53,6 +53,7 @@ namespace UABEAvalonia
         private TextBox boxPathId;
         private TextBox boxFileId;
         private TextBox boxType;
+        private TextBox boxOffset;
 
         //todo, rework all this
         public AssetWorkspace Workspace { get; }
@@ -114,6 +115,8 @@ namespace UABEAvalonia
             boxPathId = this.FindControl<TextBox>("boxPathId")!;
             boxFileId = this.FindControl<TextBox>("boxFileId")!;
             boxType = this.FindControl<TextBox>("boxType")!;
+            boxOffset = this.FindControl<TextBox>("boxOffset")!;
+
             //generated events
             KeyDown += InfoWindow_KeyDown;
             menuAdd.Click += MenuAdd_Click;
@@ -161,8 +164,15 @@ namespace UABEAvalonia
             SetupContainers();
             MakeDataGridItems();
             dataGrid.Items = dataGridItems;
+            dgcv = new DataGridCollectionView(dataGridItems);
 
-            dgcv = GetDataGridCollectionView(dataGrid);
+            if (!TryGetDataGridCollection(dataGrid, out dgcv))
+            {
+                MessageBox mb = new MessageBox("Data grid init failed", "Unable to populate data grid", MessageBoxType.OK);
+                mb.Show();
+                this.Close();
+                return;
+            }
 
             pluginManager = new PluginManager();
             pluginManager.LoadPluginsInDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins"));
@@ -487,6 +497,7 @@ namespace UABEAvalonia
                 boxPathId.Text = string.Empty;
                 boxFileId.Text = string.Empty;
                 boxType.Text = string.Empty;
+                boxOffset.Text = string.Empty;
             }
             else
             {
@@ -494,6 +505,7 @@ namespace UABEAvalonia
                 boxPathId.Text = gridItem.PathID.ToString();
                 boxFileId.Text = gridItem.FileID.ToString();
                 boxType.Text = $"0x{gridItem.TypeID:X8} ({gridItem.Type})";
+                boxOffset.Text = $"0x{gridItem.Offset:X8}";
             }
         }
 
@@ -535,9 +547,9 @@ namespace UABEAvalonia
 
             foreach (var newAsset in Workspace.NewAssets)
             {
-                AssetID assetId = newAsset.Key;
+                AssetPPtr assetId = newAsset.Key;
                 AssetsReplacer replacer = newAsset.Value;
-                string fileName = assetId.fileName;
+                string fileName = assetId.FilePath;
 
                 if (Workspace.LoadedFileLookup.TryGetValue(fileName.ToLower(), out AssetsFileInstance? file))
                 {
@@ -669,7 +681,7 @@ namespace UABEAvalonia
                 {
                     AssetsFileInstance selectedInst = selectedCont.FileInstance;
 
-                    Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _);
+                    Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _, out long _);
                     string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.dat");
 
                     using (FileStream fs = File.OpenWrite(file))
@@ -686,7 +698,7 @@ namespace UABEAvalonia
             AssetContainer selectedCont = selection[0];
             AssetsFileInstance selectedInst = selectedCont.FileInstance;
 
-            Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _);
+            Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _, out long _);
 
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Title = "Save As";
@@ -724,7 +736,7 @@ namespace UABEAvalonia
 
                 foreach (AssetContainer selectedCont in selection)
                 {
-                    Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _);
+                    Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _, out long _);
                     assetName = Extensions.ReplaceInvalidPathChars(assetName);
                     string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedCont.FileInstance.path)}-{selectedCont.PathId}.{extension}");
 
@@ -748,7 +760,7 @@ namespace UABEAvalonia
             AssetContainer selectedCont = selection[0];
             AssetsFileInstance selectedInst = selectedCont.FileInstance;
 
-            Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _);
+            Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _, out long _);
             assetName = Extensions.ReplaceInvalidPathChars(assetName);
 
             SaveFileDialog sfd = new SaveFileDialog();
@@ -1077,7 +1089,7 @@ namespace UABEAvalonia
 
             foreach (var asset in Workspace.LoadedAssets)
             {
-                AssetPPtr pptr = new AssetPPtr(asset.Key.fileName, 0, asset.Key.pathID);
+                AssetPPtr pptr = new AssetPPtr(asset.Key.FilePath, 0, asset.Key.PathId);
                 string? path = ucont.GetContainerPath(pptr);
                 if (path != null)
                 {
@@ -1109,15 +1121,16 @@ namespace UABEAvalonia
             int fileId;
             long pathId;
             int size;
-            string modified;
+            bool modified;
+            long offset;
 
             container = cont.Container;
             fileId = Workspace.LoadedFiles.IndexOf(thisFileInst);
             pathId = cont.PathId;
             size = (int)cont.Size;
-            modified = "";
+            modified = false;
 
-            Extensions.GetUABENameFast(Workspace, cont, true, out name, out type);
+            Extensions.GetUABENameFast(Workspace, cont, true, out name, out type, out offset);
 
             if (name.Length > 100)
                 name = name[..100];
@@ -1135,6 +1148,7 @@ namespace UABEAvalonia
                 PathID = pathId,
                 Size = size,
                 Modified = modified,
+                Offset = offset,
                 assetContainer = cont
             };
 
@@ -1186,7 +1200,7 @@ namespace UABEAvalonia
 
         private void SetFieldModified(AssetInfoDataGridItem gridItem)
         {
-            gridItem.Modified = "*";
+            gridItem.Modified = true;
             gridItem.Update();
         }
 
@@ -1194,18 +1208,18 @@ namespace UABEAvalonia
         {
             foreach (AssetInfoDataGridItem gridItem in dataGrid.Items)
             {
-                if (gridItem.Modified != "")
+                if (gridItem.Modified)
                 {
-                    gridItem.Modified = "";
+                    gridItem.Modified = false;
                     gridItem.Update();
                 }
             }
         }
 
-        private void Workspace_ItemUpdated(AssetsFileInstance file, AssetID assetId)
+        private void Workspace_ItemUpdated(AssetsFileInstance file, AssetPPtr assetId)
         {
             int fileId = Workspace.LoadedFiles.IndexOf(file);
-            long pathId = assetId.pathID;
+            long pathId = assetId.PathId;
 
             var gridItem = dataGridItems.FirstOrDefault(i => i.FileID == fileId && i.PathID == pathId);
 
@@ -1214,7 +1228,7 @@ namespace UABEAvalonia
                 //added/modified entry
                 if (file != null)
                 {
-                    AssetContainer? cont = Workspace.GetAssetContainer(file, 0, assetId.pathID);
+                    AssetContainer? cont = Workspace.GetAssetContainer(file, 0, assetId.PathId);
                     if (cont != null)
                     {
                         if (gridItem != null)
@@ -1225,7 +1239,7 @@ namespace UABEAvalonia
                         else
                         {
                             gridItem = AddDataGridItem(cont, true);
-                            gridItem.Modified = "*";
+                            gridItem.Modified = true;
                         }
                     }
                 }
@@ -1250,7 +1264,7 @@ namespace UABEAvalonia
         }
 
         // TEMPORARY DATAGRID HACKS
-        private DataGridCollectionView GetDataGridCollectionView(DataGrid dg)
+        /*private DataGridCollectionView GetDataGridCollectionView(DataGrid dg)
         {
             object dgdc = typeof(DataGrid)
                 .GetProperty("DataConnection", BindingFlags.NonPublic | BindingFlags.Instance)
@@ -1265,6 +1279,25 @@ namespace UABEAvalonia
                 return dgcv;
             }
             return null;
+        }*/
+
+        private bool TryGetDataGridCollection(DataGrid dg, out DataGridCollectionView? dgcv)
+        {
+            object? dgdc = typeof(DataGrid)
+               ?.GetProperty("DataConnection", BindingFlags.NonPublic | BindingFlags.Instance)
+               ?.GetValue(dg);
+
+            object? dgds = dgdc?.GetType()
+                ?.GetProperty("DataSource", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(dgdc);
+
+            if (dgds is DataGridCollectionView gotdgcv)
+            {
+                dgcv = gotdgcv;
+                return true;
+            }
+            dgcv = null;
+            return false;
         }
 
         private List<AssetInfoDataGridItem> GetDataGridItemsSorted(DataGridCollectionView dgcv)
@@ -1273,7 +1306,11 @@ namespace UABEAvalonia
             List<AssetInfoDataGridItem> items = new List<AssetInfoDataGridItem>();
             for (int i = 0; i < itemCount; i++)
             {
-                items.Add(dgcv.GetItemAt(i) as AssetInfoDataGridItem);
+                AssetInfoDataGridItem? item = dgcv.GetItemAt(i) as AssetInfoDataGridItem;
+                if (item != null)
+                {
+                    items.Add(item);
+                }
             }
             return items;
         }
@@ -1295,7 +1332,9 @@ namespace UABEAvalonia
         public int FileID { get; set; }
         public long PathID { get; set; }
         public int Size { get; set; }
-        public string Modified { get; set; }
+        public bool Modified { get; set; }
+        public long Offset { get; set; }
+        public string OffsetStr { get => $"0x{Offset:X8}"; }
 
         public AssetContainer assetContainer;
 

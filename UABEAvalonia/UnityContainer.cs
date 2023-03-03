@@ -159,7 +159,7 @@ namespace UABEAvalonia
                 // if we haven't loaded ggm into LoadedFiles yet, load it manually through AssetsManager
                 // we don't load it into LoadedFiles now to prevent clutter
                 actualFile = ggmInst;
-                baseField = workspace.am.GetBaseField(ggmInst, resourceManagerInfos[0], false);
+                baseField = workspace.am.GetBaseField(ggmInst, resourceManagerInfos[0], AssetReadFlags.None);
                 return true;
             }
         }

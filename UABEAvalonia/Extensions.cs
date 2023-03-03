@@ -25,10 +25,11 @@ namespace UABEAvalonia
         }
 
         // codeflow needs work but should be fine for now
-        public static void GetUABENameFast(AssetWorkspace workspace, AssetContainer cont, bool usePrefix, out string assetName, out string typeName)
+        public static void GetUABENameFast(AssetWorkspace workspace, AssetContainer cont, bool usePrefix, out string assetName, out string typeName, out long filePos)
         {
             assetName = "Unnamed asset";
             typeName = "Unknown type";
+            filePos = 0x0;
 
             try
             {
@@ -36,6 +37,8 @@ namespace UABEAvalonia
                 AssetsFile file = cont.FileInstance.file;
                 AssetsFileReader reader = cont.FileReader;
                 long filePosition = cont.FilePosition;
+                filePos = reader.Position;
+
                 int classId = cont.ClassId;
                 ushort monoId = cont.MonoId;
 
@@ -55,6 +58,8 @@ namespace UABEAvalonia
                         if (ttType.Nodes.Count > 1 && ttType.Nodes[1].GetNameString(ttType.StringBuffer) == "m_Name")
                         {
                             reader.Position = filePosition;
+                            filePos = reader.Position;
+
                             assetName = reader.ReadCountStringInt32();
                             if (assetName == "")
                                 assetName = "Unnamed asset";
@@ -63,6 +68,8 @@ namespace UABEAvalonia
                         else if (typeName == "GameObject")
                         {
                             reader.Position = filePosition;
+                            filePos = reader.Position;
+
                             int size = reader.ReadInt32();
                             int componentSize = file.Header.Version > 0x10 ? 0x0c : 0x10;
                             reader.Position += size * componentSize;
@@ -75,6 +82,8 @@ namespace UABEAvalonia
                         else if (typeName == "MonoBehaviour")
                         {
                             reader.Position = filePosition;
+                            filePos = reader.Position;
+
                             reader.Position += 0x1c;
                             assetName = reader.ReadCountStringInt32();
                             if (assetName == "")
