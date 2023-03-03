@@ -4,6 +4,7 @@ using AssetsTools.NET.Extra.Decompressors.LZ4;
 using SevenZip.Compression.LZMA;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -34,9 +35,16 @@ namespace UABEAvalonia
             try
             {
                 ClassDatabaseFile cldb = workspace.am.ClassDatabase;
+
                 AssetsFile file = cont.FileInstance.file;
+                
                 AssetsFileReader reader = cont.FileReader;
                 long filePosition = cont.FilePosition;
+
+                // wtf are the offsets
+                //Debug.WriteLine($"{cont.FileInstance.name} FilePos: 0x{cont.FilePosition:X8} FileBytePos: 0x{cont.FileBytePosition:X8} Header: 0x{file.Header.DataOffset:X8}");
+               
+                //long fileOffset = file.Header.DataOffset;
                 filePos = reader.Position;
 
                 int classId = cont.ClassId;
@@ -55,10 +63,10 @@ namespace UABEAvalonia
                     if (ttType != null && ttType.Nodes.Count > 0)
                     {
                         typeName = ttType.Nodes[0].GetTypeString(ttType.StringBuffer);
+                        filePos = filePosition;
                         if (ttType.Nodes.Count > 1 && ttType.Nodes[1].GetNameString(ttType.StringBuffer) == "m_Name")
                         {
                             reader.Position = filePosition;
-                            filePos = reader.Position;
 
                             assetName = reader.ReadCountStringInt32();
                             if (assetName == "")
@@ -68,7 +76,6 @@ namespace UABEAvalonia
                         else if (typeName == "GameObject")
                         {
                             reader.Position = filePosition;
-                            filePos = reader.Position;
 
                             int size = reader.ReadInt32();
                             int componentSize = file.Header.Version > 0x10 ? 0x0c : 0x10;
@@ -82,7 +89,6 @@ namespace UABEAvalonia
                         else if (typeName == "MonoBehaviour")
                         {
                             reader.Position = filePosition;
-                            filePos = reader.Position;
 
                             reader.Position += 0x1c;
                             assetName = reader.ReadCountStringInt32();

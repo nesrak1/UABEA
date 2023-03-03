@@ -1123,12 +1123,16 @@ namespace UABEAvalonia
             int size;
             bool modified;
             long offset;
+            string fileName;
+            long fileOffset;
 
             container = cont.Container;
             fileId = Workspace.LoadedFiles.IndexOf(thisFileInst);
             pathId = cont.PathId;
             size = (int)cont.Size;
             modified = false;
+            fileName = cont.FileInstance.name;
+            fileOffset = cont.FileInstance.file.Header.DataOffset;
 
             Extensions.GetUABENameFast(Workspace, cont, true, out name, out type, out offset);
 
@@ -1149,6 +1153,8 @@ namespace UABEAvalonia
                 Size = size,
                 Modified = modified,
                 Offset = offset,
+                FileName = fileName,
+                FileOffset = fileOffset,
                 assetContainer = cont
             };
 
@@ -1335,6 +1341,9 @@ namespace UABEAvalonia
         public bool Modified { get; set; }
         public long Offset { get; set; }
         public string OffsetStr { get => $"0x{Offset:X8}"; }
+        public string FileName { get; set; }
+        public long FileOffset { get; set; }
+        public string FileOffsetStr { get => $"0x{FileOffset:X8}"; }
 
         public AssetContainer assetContainer;
 

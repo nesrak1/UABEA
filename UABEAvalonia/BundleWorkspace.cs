@@ -50,7 +50,7 @@ namespace UABEAvalonia
                 long startAddress = dirInf.Offset;
                 long length = dirInf.DecompressedSize;
                 SegmentStream stream = new SegmentStream(BundleInst.file.DataReader.BaseStream, startAddress, length);
-                BundleWorkspaceItem wsItem = new BundleWorkspaceItem(name, name, false, (dirInf.Flags & 0x04) != 0, false, stream);
+                BundleWorkspaceItem wsItem = new BundleWorkspaceItem(name, name, false, (dirInf.Flags & 0x04) != 0, false, stream, startAddress);
                 Files.Add(wsItem);
                 FileLookup[name] = wsItem;
             }
@@ -135,7 +135,7 @@ namespace UABEAvalonia
             return replacers;
         }
     }
-    
+
     public class BundleWorkspaceItem
     {
         public string Name { get; set; }
@@ -149,6 +149,15 @@ namespace UABEAvalonia
         public bool IsModified { get; }
         public Stream Stream { get; }
         //public BundleReplacer? Replacer { get; }
+        public long StartAddress { get; }
+
+        public BundleWorkspaceItem(
+           string name, string originalName, bool isNew,
+           bool isSerialized, bool isModified, Stream stream, long startAddress
+       ) : this(name, originalName, isNew, isSerialized, isModified, stream)
+        {
+            this.StartAddress = startAddress;
+        }
 
         public BundleWorkspaceItem(
             string name, string originalName, bool isNew,

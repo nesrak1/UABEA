@@ -18,6 +18,8 @@ namespace UABEAvalonia
         public AssetTypeValueField? BaseValueField { get; }
 
         public long FilePosition { get; }
+        public long FileBytePosition { get; }
+
         public AssetsFileReader FileReader { get; }
         public AssetPPtr AssetId
         {
@@ -32,6 +34,8 @@ namespace UABEAvalonia
         public AssetContainer(AssetFileInfo info, AssetsFileInstance fileInst, AssetTypeValueField? baseField = null)
         {
             FilePosition = info.AbsoluteByteStart;
+            FileBytePosition = info.ByteStart;
+
             FileReader = fileInst.file.Reader;
 
             PathId = info.PathId;

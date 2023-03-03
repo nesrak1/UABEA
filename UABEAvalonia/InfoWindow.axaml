@@ -50,11 +50,13 @@
 			  <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
 			  <DataGridTextColumn Header="Container" Binding="{Binding Container}"/>
 			  <DataGridTextColumn Header="Type" Binding="{Binding Type}"/>
-			  <DataGridTextColumn Header="File ID" Binding="{Binding FileID}"/>
-			  <DataGridTextColumn Header="Path ID" Binding="{Binding PathID}"/>
 			  <DataGridTextColumn Header="Size" Binding="{Binding Size}"/>
 			  <DataGridCheckBoxColumn Header="Modified" Binding="{Binding Modified}"/>
 			  <DataGridTextColumn Header="Offset" Binding="{Binding OffsetStr}"/>
+			  <DataGridTextColumn Header="File ID" Binding="{Binding FileID}"/>
+			  <DataGridTextColumn Header="Path ID" Binding="{Binding PathID}"/>
+			  <DataGridTextColumn Header="File" Binding="{Binding FileName}"/>
+			  <DataGridTextColumn Header="File Offset" Binding="{Binding FileOffsetStr}"/>
 		  </DataGrid.Columns>
 	  </DataGrid>
     </Border>
