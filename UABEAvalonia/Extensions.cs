@@ -4,7 +4,6 @@ using AssetsTools.NET.Extra.Decompressors.LZ4;
 using SevenZip.Compression.LZMA;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,27 +25,35 @@ namespace UABEAvalonia
         }
 
         // codeflow needs work but should be fine for now
-        public static void GetUABENameFast(AssetWorkspace workspace, AssetContainer cont, bool usePrefix, out string assetName, out string typeName, out long filePos)
+<<<<<<< Updated upstream
+        public static void GetUABENameFast(AssetWorkspace workspace, AssetContainer cont, bool usePrefix, out string assetName, out string typeName)
         {
             assetName = "Unnamed asset";
             typeName = "Unknown type";
-            filePos = 0x0;
+=======
+        public static void GetUABENameFast(AssetWorkspace workspace, AssetContainer cont, bool usePrefix, out string assetName, out string typeName/*, out long filePos*/)
+        {
+            assetName = "Unnamed asset";
+            typeName = "Unknown type";
+            //filePos = 0x0;
+>>>>>>> Stashed changes
 
             try
             {
                 ClassDatabaseFile cldb = workspace.am.ClassDatabase;
-
                 AssetsFile file = cont.FileInstance.file;
-                
                 AssetsFileReader reader = cont.FileReader;
                 long filePosition = cont.FilePosition;
+<<<<<<< Updated upstream
+=======
 
-                // wtf are the offsets
+                // Trying to get offsets that can be carried across into IDA
                 //Debug.WriteLine($"{cont.FileInstance.name} FilePos: 0x{cont.FilePosition:X8} FileBytePos: 0x{cont.FileBytePosition:X8} Header: 0x{file.Header.DataOffset:X8}");
                
                 //long fileOffset = file.Header.DataOffset;
-                filePos = reader.Position;
+                //filePos = reader.Position;
 
+>>>>>>> Stashed changes
                 int classId = cont.ClassId;
                 ushort monoId = cont.MonoId;
 
@@ -63,11 +70,13 @@ namespace UABEAvalonia
                     if (ttType != null && ttType.Nodes.Count > 0)
                     {
                         typeName = ttType.Nodes[0].GetTypeString(ttType.StringBuffer);
-                        filePos = filePosition;
+<<<<<<< Updated upstream
+=======
+                        //filePos = filePosition;
+>>>>>>> Stashed changes
                         if (ttType.Nodes.Count > 1 && ttType.Nodes[1].GetNameString(ttType.StringBuffer) == "m_Name")
                         {
                             reader.Position = filePosition;
-
                             assetName = reader.ReadCountStringInt32();
                             if (assetName == "")
                                 assetName = "Unnamed asset";
@@ -76,7 +85,6 @@ namespace UABEAvalonia
                         else if (typeName == "GameObject")
                         {
                             reader.Position = filePosition;
-
                             int size = reader.ReadInt32();
                             int componentSize = file.Header.Version > 0x10 ? 0x0c : 0x10;
                             reader.Position += size * componentSize;
@@ -89,7 +97,6 @@ namespace UABEAvalonia
                         else if (typeName == "MonoBehaviour")
                         {
                             reader.Position = filePosition;
-
                             reader.Position += 0x1c;
                             assetName = reader.ReadCountStringInt32();
                             if (assetName == "")

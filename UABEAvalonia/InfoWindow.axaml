@@ -50,13 +50,16 @@
 			  <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
 			  <DataGridTextColumn Header="Container" Binding="{Binding Container}"/>
 			  <DataGridTextColumn Header="Type" Binding="{Binding Type}"/>
+<<<<<<< Updated upstream
+=======
 			  <DataGridTextColumn Header="Size" Binding="{Binding Size}"/>
 			  <DataGridCheckBoxColumn Header="Modified" Binding="{Binding Modified}"/>
-			  <DataGridTextColumn Header="Offset" Binding="{Binding OffsetStr}"/>
+			 <!-- <DataGridTextColumn Header="Offset" Binding="{Binding OffsetStr}"/> -->
+>>>>>>> Stashed changes
 			  <DataGridTextColumn Header="File ID" Binding="{Binding FileID}"/>
 			  <DataGridTextColumn Header="Path ID" Binding="{Binding PathID}"/>
-			  <DataGridTextColumn Header="File" Binding="{Binding FileName}"/>
-			  <DataGridTextColumn Header="File Offset" Binding="{Binding FileOffsetStr}"/>
+			  <DataGridTextColumn Header="Size" Binding="{Binding Size}"/>
+			  <DataGridTextColumn Header="Modified" Binding="{Binding Modified}"/>
 		  </DataGrid.Columns>
 	  </DataGrid>
     </Border>
@@ -69,9 +72,12 @@
       <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxFileId" />
       <Label Content="Type"/>
       <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxType" />
-	  <Label Content="Offset"/>
-      <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxOffset" />	
+<<<<<<< Updated upstream
+=======
+		<!--<Label Content="Offset"/>
+      <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxOffset" />	-->
 		
+>>>>>>> Stashed changes
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Data" Name="btnViewData" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Scene" Name="btnSceneView" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Raw" Name="btnExportRaw" />

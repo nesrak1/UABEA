@@ -43,7 +43,11 @@ namespace UABEAvalonia
 
         private void SetWindowTitle(AssetWorkspace workspace, AssetContainer cont)
         {
-            Extensions.GetUABENameFast(workspace, cont, false, out string assetName, out string typeName, out long _);
+<<<<<<< Updated upstream
+            Extensions.GetUABENameFast(workspace, cont, false, out string assetName, out string typeName);
+=======
+            Extensions.GetUABENameFast(workspace, cont, false, out string assetName, out string typeName/*, out long _*/);
+>>>>>>> Stashed changes
             if (assetName == "Unnamed asset")
                 Title += $": {typeName} ({cont.FileInstance.name}/{cont.PathId})";
             else
