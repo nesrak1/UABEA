@@ -266,9 +266,10 @@ namespace UABEAvalonia
                             }
                         }
 
-                        AssetTypeTemplateField tempField = GetTemplateField(cont);
                         try
                         {
+                            AssetTypeTemplateField tempField = GetTemplateField(cont);
+
                             RefTypeManager? refMan = null;
                             if (isMonoBehaviour)
                             {
@@ -373,7 +374,7 @@ namespace UABEAvalonia
             {
                 setMonoTempGeneratorsYet = true;
                 FindCpp2IlFilesResult il2cppFiles = FindCpp2IlFiles.Find(fileDir);
-                if (il2cppFiles.success)
+                if (il2cppFiles.success && ConfigurationManager.Settings.UseCpp2Il)
                 {
                     am.MonoTempGenerator = new Cpp2IlTempGenerator(il2cppFiles.metaPath, il2cppFiles.asmPath);
                     return true;

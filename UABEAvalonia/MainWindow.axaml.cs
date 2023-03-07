@@ -29,6 +29,7 @@ namespace UABEAvalonia
         private MenuItem menuEditTypeDatabase;
         private MenuItem menuEditTypePackage;
         private MenuItem menuToggleDarkTheme;
+        private MenuItem menuToggleCpp2Il;
         private MenuItem menuAbout;
         private TextBlock lblFileName;
         private ComboBox comboBox;
@@ -70,6 +71,7 @@ namespace UABEAvalonia
             menuCompress = this.FindControl<MenuItem>("menuCompress")!;
             menuExit = this.FindControl<MenuItem>("menuExit")!;
             menuToggleDarkTheme = this.FindControl<MenuItem>("menuToggleDarkTheme")!;
+            menuToggleCpp2Il = this.FindControl<MenuItem>("menuToggleCpp2Il")!;
             menuAbout = this.FindControl<MenuItem>("menuAbout")!;
             lblFileName = this.FindControl<TextBlock>("lblFileName")!;
             comboBox = this.FindControl<ComboBox>("comboBox")!;
@@ -88,6 +90,7 @@ namespace UABEAvalonia
             menuCompress.Click += MenuCompress_Click;
             menuExit.Click += MenuExit_Click;
             menuToggleDarkTheme.Click += MenuToggleDarkTheme_Click;
+            menuToggleCpp2Il.Click += MenuToggleCpp2Il_Click;
             menuAbout.Click += MenuAbout_Click;
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
@@ -484,6 +487,15 @@ namespace UABEAvalonia
             // thanks avalonia
             await MessageBoxUtil.ShowDialog(this, "Note",
                 "Themes will be updated when you restart.");
+        }
+
+        private async void MenuToggleCpp2Il_Click(object? sender, RoutedEventArgs e)
+        {
+            bool useCpp2Il = !ConfigurationManager.Settings.UseCpp2Il;
+            ConfigurationManager.Settings.UseCpp2Il = useCpp2Il;
+
+            await MessageBoxUtil.ShowDialog(this, "Note",
+                $"Use Cpp2Il is set to: {useCpp2Il.ToString().ToLower()}");
         }
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)

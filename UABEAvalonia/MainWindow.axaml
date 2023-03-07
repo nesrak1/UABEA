@@ -21,6 +21,7 @@
       </MenuItem>
       <MenuItem Header="Options">
 		<MenuItem Header="Toggle Dark Theme" Name="menuToggleDarkTheme" />
+		<MenuItem Header="Enable/Disable Cpp2Il" Name="menuToggleCpp2Il" />
       </MenuItem>
       <MenuItem Header="Help">
         <MenuItem Header="About..." Name="menuAbout" />

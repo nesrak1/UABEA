@@ -16,7 +16,11 @@ namespace UABEAvalonia
         {
             if (!File.Exists(CONFIG_FILENAME))
             {
-                Settings = new ConfigurationSettings();
+                Settings = new ConfigurationSettings()
+                {
+                    UseDarkTheme = false,
+                    UseCpp2Il = true
+                };
             }
             else
             {
@@ -24,6 +28,7 @@ namespace UABEAvalonia
                 Settings = JsonConvert.DeserializeObject<ConfigurationSettings>(configText) ?? new ConfigurationSettings();
             }
         }
+
         public static void SaveConfig()
         {
             if (Settings != null) // ConfigLoaded
@@ -33,6 +38,7 @@ namespace UABEAvalonia
             }
         }
     }
+
     public class ConfigurationSettings
     {
         private bool _useDarkTheme;
@@ -42,6 +48,17 @@ namespace UABEAvalonia
             set
             {
                 _useDarkTheme = value;
+                ConfigurationManager.SaveConfig();
+            }
+        }
+
+        private bool _useCpp2Il;
+        public bool UseCpp2Il
+        {
+            get => _useCpp2Il;
+            set
+            {
+                _useCpp2Il = value;
                 ConfigurationManager.SaveConfig();
             }
         }
