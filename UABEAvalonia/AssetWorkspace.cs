@@ -273,7 +273,7 @@ namespace UABEAvalonia
                             RefTypeManager? refMan = null;
                             if (isMonoBehaviour)
                             {
-                                refMan = am.GetRefTypeManager(fileInst, cont.ClassId, cont.MonoId);
+                                refMan = am.GetRefTypeManager(fileInst);
                             }
 
                             AssetTypeValueField baseField = tempField.MakeValue(cont.FileReader, cont.FilePosition, refMan);

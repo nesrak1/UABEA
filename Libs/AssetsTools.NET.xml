@@ -379,7 +379,7 @@
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.TypeFlags">
             <summary>
-            1 if array.
+            Information about whether the node is an array, registry, etc.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.TypeStrOffset">
@@ -396,6 +396,7 @@
             <summary>
             Byte size of the field's type (for example, int is 4).
             If the field isn't a value type, then this value is a sum of all children sizes.
+            If the size is variable, this is set to -1.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.Index">
@@ -411,6 +412,29 @@
         <member name="P:AssetsTools.NET.TypeTreeNode.RefTypeHash">
             <summary>
             Unknown.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.TypeTreeNodeFlags.Array">
+            <summary>
+            Type tree node is an array.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.TypeTreeNodeFlags.Ref">
+            <summary>
+            Type tree node is a ref type. For example, "managedRefArrayItem" would be an
+            array item that is a reference to an object in the registry.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.TypeTreeNodeFlags.Registry">
+            <summary>
+            Type tree node is a registry. Should just be "ManagedReferencesRegistry references".
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.TypeTreeNodeFlags.ArrayOfRefs">
+            <summary>
+            Type tree node is an array of ref types. This occurs if the SerializeReference was
+            added to a list or array instead of just a single field. This is not applied to the
+            Array child of the field, just the field itself.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeType.TypeId">

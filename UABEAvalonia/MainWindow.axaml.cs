@@ -638,6 +638,13 @@ namespace UABEAvalonia
                 if (file == null)
                     return;
 
+                if (Path.GetFullPath(file) == Path.GetFullPath(BundleInst.path))
+                {
+                    await MessageBoxUtil.ShowDialog(this,
+                        "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
+                    return;
+                }
+
                 const string lz4Option = "LZ4";
                 const string lzmaOption = "LZMA";
                 const string cancelOption = "Cancel";
