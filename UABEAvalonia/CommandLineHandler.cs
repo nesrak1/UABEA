@@ -192,13 +192,13 @@ namespace UABEAvalonia
                 for (int i = 0; i < entryCount; i++)
                 {
                     string name = bun.BlockAndDirInfo.DirectoryInfos[i].Name;
-                    string matchName = Path.Combine(file, $"{Path.GetFileName(file)}_{name}.assets");
+                    string matchName = Path.Combine(importDirectory, $"{Path.GetFileName(file)}_{name}.assets");
 
                     if (File.Exists(matchName))
                     {
                         FileStream fs = File.OpenRead(matchName);
                         long length = fs.Length;
-                        reps.Add(new BundleReplacerFromStream(matchName, matchName, true, fs, 0, length));
+                        reps.Add(new BundleReplacerFromStream(name, name, true, fs, 0, length));
                         streams.Add(fs);
                         Console.WriteLine($"Importing {matchName}...");
                     }
