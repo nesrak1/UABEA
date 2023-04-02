@@ -21,7 +21,7 @@ namespace MeshPlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = AssetHelper.FindAssetClassByName(am.classDatabase, "Mesh").ClassId;
+            int classId = am.ClassDatabase.FindAssetClassByName("Mesh").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
