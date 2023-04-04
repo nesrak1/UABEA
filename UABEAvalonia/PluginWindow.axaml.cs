@@ -2,6 +2,7 @@ using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using System;
 using System.Collections.Generic;
 using UABEAvalonia.Plugins;
 
@@ -47,7 +48,14 @@ namespace UABEAvalonia
             }
 
             var plugOpt = menuPlugInf.pluginOpt;
-            await plugOpt.ExecutePlugin(win, workspace, selection);
+            try
+            {
+                await plugOpt.ExecutePlugin(win, workspace, selection);
+            }
+            catch (Exception ex)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Plugin Exception!", $"Plugin {menuPlugInf.displayName} has crashed. Stacktrace:\n" + ex.ToString());
+            }
             Close(true);
         }
 

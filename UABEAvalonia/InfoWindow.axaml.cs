@@ -560,7 +560,7 @@ namespace UABEAvalonia
 
                     try
                     {
-                        using (FileStream fs = File.OpenWrite(filePath))
+                        using (FileStream fs = File.Open(filePath, FileMode.Create))
                         using (AssetsFileWriter w = new AssetsFileWriter(fs))
                         {
                             file.file.Write(w, 0, replacers);
@@ -609,7 +609,7 @@ namespace UABEAvalonia
                     Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _);
                     string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.dat");
 
-                    using (FileStream fs = File.OpenWrite(file))
+                    using (FileStream fs = File.Open(file, FileMode.Create))
                     {
                         AssetImportExport dumper = new AssetImportExport();
                         dumper.DumpRawAsset(fs, selectedCont.FileReader, selectedCont.FilePosition, selectedCont.Size);
@@ -636,7 +636,7 @@ namespace UABEAvalonia
 
             if (file != null && file != string.Empty)
             {
-                using (FileStream fs = File.OpenWrite(file))
+                using (FileStream fs = File.Open(file, FileMode.Create))
                 {
                     AssetImportExport dumper = new AssetImportExport();
                     dumper.DumpRawAsset(fs, selectedCont.FileReader, selectedCont.FilePosition, selectedCont.Size);
@@ -665,7 +665,7 @@ namespace UABEAvalonia
                     assetName = Extensions.ReplaceInvalidPathChars(assetName);
                     string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedCont.FileInstance.path)}-{selectedCont.PathId}.{extension}");
 
-                    using (FileStream fs = File.OpenWrite(file))
+                    using (FileStream fs = File.Open(file, FileMode.Create))
                     using (StreamWriter sw = new StreamWriter(fs))
                     {
                         AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);
@@ -700,7 +700,7 @@ namespace UABEAvalonia
 
             if (file != null && file != string.Empty)
             {
-                using (FileStream fs = File.OpenWrite(file))
+                using (FileStream fs = File.Open(file, FileMode.Create))
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
                     AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);

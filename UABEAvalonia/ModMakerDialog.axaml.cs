@@ -157,7 +157,7 @@ namespace UABEAvalonia
                 emip.affectedFiles.Add(desc);
             }
 
-            using (FileStream fs = File.OpenWrite(path))
+            using (FileStream fs = File.Open(path, FileMode.Create))
             using (AssetsFileWriter writer = new AssetsFileWriter(fs))
             {
                 emip.Write(writer);

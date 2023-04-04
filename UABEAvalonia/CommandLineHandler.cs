@@ -291,7 +291,7 @@ namespace UABEAvalonia
                     }
 
                     Console.WriteLine($"Writing {modFile}...");
-                    FileStream mfs = File.OpenWrite(modFile);
+                    FileStream mfs = File.Open(modFile, FileMode.Create);
                     AssetsFileWriter mw = new AssetsFileWriter(mfs);
                     bun.Write(mw, reps, instPkg.addedTypes); //addedTypes does nothing atm
                     
@@ -328,7 +328,7 @@ namespace UABEAvalonia
                     }
 
                     Console.WriteLine($"Writing {modFile}...");
-                    FileStream mfs = File.OpenWrite(modFile);
+                    FileStream mfs = File.Open(modFile, FileMode.Create);
                     AssetsFileWriter mw = new AssetsFileWriter(mfs);
                     assets.Write(mw, 0, reps, instPkg.addedTypes);
 

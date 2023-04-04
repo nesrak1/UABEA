@@ -244,7 +244,7 @@ namespace UABEAvalonia
             if (file == null)
                 return;
 
-            using FileStream fileStream = File.OpenWrite(file);
+            using FileStream fileStream = File.Open(file, FileMode.Create);
 
             Stream stream = item.Stream;
             stream.Position = 0;
@@ -387,7 +387,7 @@ namespace UABEAvalonia
                     }    
                 }
 
-                using FileStream fileStream = File.OpenWrite(bunAssetPath);
+                using FileStream fileStream = File.Open(bunAssetPath, FileMode.Create);
 
                 AssetsFileReader bundleReader = BundleInst.file.DataReader;
                 bundleReader.Position = dirInf.Offset;
@@ -652,7 +652,7 @@ namespace UABEAvalonia
                 if (splitFilePath == null || splitFilePath == string.Empty)
                     return null;
 
-                using (FileStream mergeFile = File.OpenWrite(splitFilePath))
+                using (FileStream mergeFile = File.Open(splitFilePath, FileMode.Create))
                 {
                     int idx = 0;
                     string thisSplitFileNoNum = selectedFile.Substring(0, selectedFile.Length - 1);
@@ -782,7 +782,7 @@ namespace UABEAvalonia
         private void SaveBundle(BundleFileInstance bundleInst, string path)
         {
             List<BundleReplacer> replacers = Workspace.GetReplacers();
-            using (FileStream fs = File.OpenWrite(path))
+            using (FileStream fs = File.Open(path, FileMode.Create))
             using (AssetsFileWriter w = new AssetsFileWriter(fs))
             {
                 bundleInst.file.Write(w, replacers.ToList());
@@ -799,7 +799,7 @@ namespace UABEAvalonia
             var compType = (AssetBundleCompressionType)argsArr[2];
             var progress = (IAssetBundleCompressProgress)argsArr[3];
 
-            using (FileStream fs = File.OpenWrite(path))
+            using (FileStream fs = File.Open(path, FileMode.Create))
             using (AssetsFileWriter w = new AssetsFileWriter(fs))
             {
                 bundleInst.file.Pack(bundleInst.file.Reader, w, compType, true, progress);

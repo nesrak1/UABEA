@@ -297,6 +297,43 @@ namespace UABEAvalonia
             return GetAssetContainer(fileInst, fileId, pathId, onlyInfo);
         }
 
+        public AssetContainer GetAssetContainer(AssetsFileInstance fileInst, AssetPPtr pptr, bool onlyInfo = true)
+        {
+            int fileId = pptr.FileId;
+            long pathId = pptr.PathId;
+            return GetAssetContainer(fileInst, fileId, pathId, onlyInfo);
+        }
+
+        // todo: just overwrite original container values
+        public AssetContainer GetAssetContainer(AssetContainer cont)
+        {
+            return GetAssetContainer(cont.FileInstance, 0, cont.PathId, false);
+        }
+
+        public List<AssetContainer> GetAssetsOfType(int classId)
+        {
+            List<AssetContainer> filteredAssets = new List<AssetContainer>();
+
+            var allConts = LoadedAssets.Values;
+            foreach (AssetContainer cont in allConts)
+            {
+                if (cont == null)
+                    continue;
+
+                if (cont.ClassId == classId)
+                {
+                    filteredAssets.Add(cont);
+                }
+            }
+
+            return filteredAssets;
+        }
+
+        public List<AssetContainer> GetAssetsOfType(AssetClassID classId)
+        {
+            return GetAssetsOfType((int)classId);
+        }
+
         public AssetTypeValueField? GetBaseField(AssetContainer cont)
         {
             if (cont.HasValueField)

@@ -19,9 +19,14 @@ namespace UABEAvalonia
 
         public long FilePosition { get; }
         public AssetsFileReader FileReader { get; }
+        // deprecated
         public AssetID AssetId
         {
             get => new AssetID(FileInstance.path, PathId);
+        }
+        public AssetPPtr AssetPPtr
+        {
+            get => new AssetPPtr(FileInstance.path, 0, PathId);
         }
         public bool HasValueField
         {
