@@ -11,54 +11,6 @@ namespace UABEAvalonia
 {
     public static class ThemeHandler
     {
-        public static Styles DefaultLight = new Styles
-        {
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Fluent/Accents/AccentColors.xaml")
-            },
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Fluent/Accents/Base.xaml")
-            },
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Fluent/Accents/BaseLight.xaml")
-            },
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Simple/Accents/BaseLight.xaml")
-            },
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Simple/Controls/SimpleControls.xaml")
-            }
-        };
-
-        public static Styles DefaultDark = new Styles
-        {
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Fluent/Accents/AccentColors.xaml")
-            },
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Fluent/Accents/Base.xaml")
-            },
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Fluent/Accents/BaseDark.xaml")
-            },
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Simple/Accents/BaseDark.xaml")
-            },
-            new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-            {
-                Source = new Uri("avares://Avalonia.Themes.Simple/Controls/SimpleControls.xaml")
-            }
-        };
-
         private static bool _useDarkTheme;
         public static bool UseDarkTheme
         {
@@ -71,7 +23,7 @@ namespace UABEAvalonia
                 if (Application.Current == null)
                     return;
 
-                Application.Current.Styles[1] = value ? DefaultDark : DefaultLight;
+                Application.Current.RequestedThemeVariant = value ? ThemeVariant.Dark : ThemeVariant.Light;
                 _useDarkTheme = value;
             }
         }

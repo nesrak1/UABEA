@@ -4,7 +4,7 @@
              xmlns:uabea="clr-namespace:UABEAvalonia"
              x:Class="UABEAvalonia.App">
 	<Application.Styles>
-	<SimpleTheme Mode="Light"></SimpleTheme>
+	<SimpleTheme/>
 	<StyleInclude Source="avares://Avalonia.Themes.Simple/Controls/SimpleControls.xaml"/>
 	<StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Simple.xaml"/>
 		<StyleInclude Source="/ExtendedControlStyles.axaml"/>

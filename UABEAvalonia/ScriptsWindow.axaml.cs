@@ -10,12 +10,6 @@ namespace UABEAvalonia
 {
     public partial class ScriptsWindow : Window
     {
-        //controls
-        private ListBox boxScriptsList;
-        private ComboBox cbxFiles;
-        private Button btnCancel;
-        private Button btnOk;
-
         private AssetWorkspace workspace;
 
         public ScriptsWindow()
@@ -24,11 +18,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated controls
-            boxScriptsList = this.FindControl<ListBox>("boxScriptsList");
-            cbxFiles = this.FindControl<ComboBox>("cbxFiles");
-            btnCancel = this.FindControl<Button>("btnCancel");
-            btnOk = this.FindControl<Button>("btnOk");
             //generated events
             btnCancel.Click += BtnCancel_Click;
             btnOk.Click += BtnOk_Click;
@@ -107,11 +96,6 @@ namespace UABEAvalonia
             AssetsFileInstance? selectedFile = selectedItem?.file;
 
             return selectedFile;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
 
         private class ScriptComboBoxItem

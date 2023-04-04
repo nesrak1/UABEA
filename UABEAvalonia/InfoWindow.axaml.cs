@@ -5,10 +5,6 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
-using MessageBox.Avalonia;
-using MessageBox.Avalonia.DTO;
-using MessageBox.Avalonia.Enums;
-using MessageBox.Avalonia.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,38 +18,8 @@ using UABEAvalonia.Plugins;
 
 namespace UABEAvalonia
 {
-    public class InfoWindow : Window
+    public partial class InfoWindow : Window
     {
-        //controls
-        private MenuItem menuAdd;
-        private MenuItem menuSave;
-        private MenuItem menuSaveAs;
-        private MenuItem menuCreateStandaloneInstaller;
-        private MenuItem menuCreatePackageFile;
-        private MenuItem menuClose;
-        private MenuItem menuSearchByName;
-        private MenuItem menuContinueSearch;
-        private MenuItem menuGoToAsset;
-        private MenuItem menuFilter;
-        private MenuItem menuDependencies;
-        private MenuItem menuContainers;
-        private MenuItem menuScripts;
-        private MenuItem menuHierarchy;
-        private Button btnViewData;
-        private Button btnSceneView;
-        private Button btnExportRaw;
-        private Button btnExportDump;
-        private Button btnPlugin;
-        private Button btnImportRaw;
-        private Button btnImportDump;
-        private Button btnEditData;
-        private Button btnRemove;
-        private DataGrid dataGrid;
-        private TextBox boxName;
-        private TextBox boxPathId;
-        private TextBox boxFileId;
-        private TextBox boxType;
-
         //todo, rework all this
         public AssetWorkspace Workspace { get; }
         public AssetsManager am { get => Workspace.am; }
@@ -85,35 +51,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            menuAdd = this.FindControl<MenuItem>("menuAdd")!;
-            menuSave = this.FindControl<MenuItem>("menuSave")!;
-            menuSaveAs = this.FindControl<MenuItem>("menuSaveAs")!;
-            menuCreateStandaloneInstaller = this.FindControl<MenuItem>("menuCreateStandaloneInstaller")!;
-            menuCreatePackageFile = this.FindControl<MenuItem>("menuCreatePackageFile")!;
-            menuClose = this.FindControl<MenuItem>("menuClose")!;
-            menuSearchByName = this.FindControl<MenuItem>("menuSearchByName")!;
-            menuContinueSearch = this.FindControl<MenuItem>("menuContinueSearch")!;
-            menuGoToAsset = this.FindControl<MenuItem>("menuGoToAsset")!;
-            menuFilter = this.FindControl<MenuItem>("menuFilter")!;
-            menuDependencies = this.FindControl<MenuItem>("menuDependencies")!;
-            menuContainers = this.FindControl<MenuItem>("menuContainers")!;
-            menuScripts = this.FindControl<MenuItem>("menuScripts")!;
-            menuHierarchy = this.FindControl<MenuItem>("menuHierarchy")!;
-            btnViewData = this.FindControl<Button>("btnViewData")!;
-            btnSceneView = this.FindControl<Button>("btnSceneView")!;
-            btnExportRaw = this.FindControl<Button>("btnExportRaw")!;
-            btnExportDump = this.FindControl<Button>("btnExportDump")!;
-            btnPlugin = this.FindControl<Button>("btnPlugin")!;
-            btnImportRaw = this.FindControl<Button>("btnImportRaw")!;
-            btnImportDump = this.FindControl<Button>("btnImportDump")!;
-            btnEditData = this.FindControl<Button>("btnEditData")!;
-            btnRemove = this.FindControl<Button>("btnRemove")!;
-            dataGrid = this.FindControl<DataGrid>("dataGrid")!;
-            boxName = this.FindControl<TextBox>("boxName")!;
-            boxPathId = this.FindControl<TextBox>("boxPathId")!;
-            boxFileId = this.FindControl<TextBox>("boxFileId")!;
-            boxType = this.FindControl<TextBox>("boxType")!;
             //generated events
             KeyDown += InfoWindow_KeyDown;
             menuAdd.Click += MenuAdd_Click;
@@ -1278,11 +1215,6 @@ namespace UABEAvalonia
             return items;
         }
         // END TEMPORARY DATAGRID HACKS
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
     }
 
     public class AssetInfoDataGridItem : INotifyPropertyChanged

@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using Avalonia.Reactive;
 using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
@@ -214,7 +215,7 @@ namespace UABEAvalonia
             {
                 text = header;
             }
-            else if (treeItem.Header is RichTextBlock rtb)
+            else if (treeItem.Header is TextBlock rtb)
             {
                 text = rtb.Text;
             }
@@ -237,7 +238,7 @@ namespace UABEAvalonia
             {
                 text = header;
             }
-            else if (treeItem.Header is RichTextBlock rtb)
+            else if (treeItem.Header is TextBlock rtb)
             {
                 text = rtb.Text;
             }
@@ -267,7 +268,7 @@ namespace UABEAvalonia
         {
             bool isString = value.StartsWith("\"");
 
-            RichTextBlock tb = new RichTextBlock();
+            TextBlock tb = new TextBlock();
 
             bool primitiveType = AssetTypeValueField.GetValueTypeByTypeName(typeName) != AssetValueType.None;
 
@@ -308,7 +309,7 @@ namespace UABEAvalonia
             item.Tag = new AssetDataTreeViewItem(fromFile, fromPathId);
             //avalonia's treeviews have no Expanded event so this is all we can do
             var expandObs = item.GetObservable(TreeViewItem.IsExpandedProperty);
-            expandObs.Subscribe(isExpanded =>
+            expandObs.Subscribe(new AnonymousObserver<bool>(isExpanded =>
             {
                 AssetDataTreeViewItem itemInfo = (AssetDataTreeViewItem)item.Tag;
                 if (isExpanded && !itemInfo.loaded)
@@ -316,14 +317,14 @@ namespace UABEAvalonia
                     itemInfo.loaded = true; //don't load this again
                     TreeLoad(fromFile, field, fromPathId, item);
                 }
-            });
+            }));
         }
 
         private void SetPPtrEvents(TreeViewItem item, AssetsFileInstance fromFile, long fromPathId, AssetContainer cont)
         {
             item.Tag = new AssetDataTreeViewItem(fromFile, fromPathId);
             var expandObs = item.GetObservable(TreeViewItem.IsExpandedProperty);
-            expandObs.Subscribe(isExpanded =>
+            expandObs.Subscribe(new AnonymousObserver<bool>(isExpanded =>
             {
                 AssetDataTreeViewItem itemInfo = (AssetDataTreeViewItem)item.Tag;
                 if (isExpanded && !itemInfo.loaded)
@@ -345,7 +346,7 @@ namespace UABEAvalonia
                         item.Items = new AvaloniaList<TreeViewItem>() { CreateTreeItem("[null asset]") };
                     }
                 }
-            });
+            }));
         }
 
         private void TreeLoad(AssetsFileInstance fromFile, AssetTypeValueField assetField, long fromPathId, TreeViewItem treeItem)

@@ -7,14 +7,6 @@ namespace UABEAvalonia
 {
     public partial class MessageBox : Window
     {
-        //controls
-        private Label titleLbl;
-        private TextBox msgTextBox;
-        private StackPanel stackPanel;
-        private Button btn1;
-        private Button btn2;
-        private Button btn3;
-
         private MessageBoxType type;
 
         public MessageBox()
@@ -23,13 +15,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            titleLbl = this.FindControl<Label>("titleLbl")!;
-            msgTextBox = this.FindControl<TextBox>("msgTextBox")!;
-            stackPanel = this.FindControl<StackPanel>("stackPanel")!;
-            btn1 = this.FindControl<Button>("btn1")!;
-            btn2 = this.FindControl<Button>("btn2")!;
-            btn3 = this.FindControl<Button>("btn3")!;
             //generated events
             btn1.Click += Btn1_Click;
             btn2.Click += Btn2_Click;
@@ -157,11 +142,6 @@ namespace UABEAvalonia
                 Close(MessageBoxResult.CustomButtonC);
             }
             Close(MessageBoxResult.Unknown);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 

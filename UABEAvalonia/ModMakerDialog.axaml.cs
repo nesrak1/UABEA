@@ -16,18 +16,6 @@ namespace UABEAvalonia
 {
     public partial class ModMakerDialog : Window
     {
-        //controls
-        private TextBox boxModName;
-        private TextBox boxCredits;
-        private TextBox boxDesc;
-        private TextBox boxBaseFolder;
-        private Button btnBaseFolder;
-        private TreeView treeView;
-        private Button btnImport;
-        private Button btnRemove;
-        private Button btnOk;
-        private Button btnCancel;
-
         private bool isBundle;
         private bool builtTree;
         private TreeViewItem affectedBundles;
@@ -45,25 +33,12 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            boxModName = this.FindControl<TextBox>("boxModName");
-            boxCredits = this.FindControl<TextBox>("boxCredits");
-            boxDesc = this.FindControl<TextBox>("boxDesc");
-            boxBaseFolder = this.FindControl<TextBox>("boxBaseFolder");
-            btnBaseFolder = this.FindControl<Button>("btnBaseFolder");
-            treeView = this.FindControl<TreeView>("treeView");
-            btnImport = this.FindControl<Button>("btnImport");
-            btnRemove = this.FindControl<Button>("btnRemove");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
             //generated events
             btnBaseFolder.Click += BtnBaseFolder_Click;
             btnImport.Click += BtnImport_Click;
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
-
-            //workaround since there is no textchanged event
-            boxBaseFolder.GetObservable(TextBox.TextProperty).Subscribe(text => UpdateTree());
+            boxBaseFolder.TextChanged += BoxBaseFolder_TextChanged;
         }
 
         //for assets files
@@ -289,9 +264,9 @@ namespace UABEAvalonia
             Close(false);
         }
 
-        private void InitializeComponent()
+        private void BoxBaseFolder_TextChanged(object? sender, TextChangedEventArgs e)
         {
-            AvaloniaXamlLoader.Load(this);
+            UpdateTree();
         }
     }
 

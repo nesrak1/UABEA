@@ -10,11 +10,8 @@ using System.Collections.Generic;
 
 namespace UABEAvalonia
 {
-    public class DataWindow : Window
+    public partial class DataWindow : Window
     {
-        //controls
-        private AssetDataTreeView treeView;
-
         private InfoWindow win;
         private AssetWorkspace workspace;
 
@@ -24,8 +21,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            treeView = this.FindControl<AssetDataTreeView>("treeView")!;
             //generated events
             Closing += DataWindow_Closing;
         }
@@ -53,11 +48,6 @@ namespace UABEAvalonia
         private void DataWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             treeView.Items = null;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

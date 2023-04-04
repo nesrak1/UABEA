@@ -12,11 +12,6 @@ namespace UABEAvalonia
 {
     public partial class FilterAssetTypeDialog : Window
     {
-        //controls
-        private ListBox listBox;
-        private Button selectBtn;
-        private Button deselectBtn;
-
         private bool reallyClosing;
 
         public FilterAssetTypeDialog()
@@ -25,10 +20,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            listBox = this.FindControl<ListBox>("listBox")!;
-            selectBtn = this.FindControl<Button>("selectBtn")!;
-            deselectBtn = this.FindControl<Button>("deselectBtn")!;
             //generated events
             Closing += FilterAssetTypeDialog_Closing;
             selectBtn.Click += SelectBtn_Click;
@@ -83,11 +74,6 @@ namespace UABEAvalonia
                 item.Enabled = false;
                 item.Update("Enabled");
             }
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 

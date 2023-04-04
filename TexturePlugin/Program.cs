@@ -2,7 +2,6 @@
 using AssetsTools.NET.Extra;
 using AssetsTools.NET.Texture;
 using Avalonia.Controls;
-using MessageBox.Avalonia.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;

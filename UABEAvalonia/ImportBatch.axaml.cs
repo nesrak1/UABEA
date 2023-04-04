@@ -13,12 +13,6 @@ namespace UABEAvalonia
 {
     public partial class ImportBatch : Window
     {
-        //controls
-        private DataGrid dataGrid;
-        private ListBox boxMatchingFiles;
-        private Button btnOk;
-        private Button btnCancel;
-
         private AssetWorkspace workspace;
         private string directory;
         private bool ignoreListEvents;
@@ -29,11 +23,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            dataGrid = this.FindControl<DataGrid>("dataGrid");
-            boxMatchingFiles = this.FindControl<ListBox>("boxMatchingFiles");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
             //generated events
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
             boxMatchingFiles.SelectionChanged += BoxMatchingFiles_SelectionChanged;
@@ -136,11 +125,6 @@ namespace UABEAvalonia
         private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(null);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 

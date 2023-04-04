@@ -7,13 +7,8 @@ using UABEAvalonia.Plugins;
 
 namespace UABEAvalonia
 {
-    public class PluginWindow : Window
+    public partial class PluginWindow : Window
     {
-        //controls
-        private ListBox boxPluginList;
-        private Button btnOk;
-        private Button btnCancel;
-
         private Window win;
         private AssetWorkspace workspace;
         private List<AssetContainer> selection;
@@ -26,10 +21,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated controls
-            boxPluginList = this.FindControl<ListBox>("boxPluginList");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
             //generated events
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -63,11 +54,6 @@ namespace UABEAvalonia
         private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(false);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

@@ -1,7 +1,7 @@
 using AssetsTools.NET;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
-using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Text;
 
@@ -9,20 +9,14 @@ namespace UABEAvalonia
 {
     public partial class EditDataWindow : Window
     {
-        //controls
-        private TextBox textBox;
-        private Button btnOk;
-        private Button btnCancel;
-
         private AssetImportExport impexp;
 
         public EditDataWindow()
         {
             InitializeComponent();
-            //generated items
-            textBox = this.FindControl<TextBox>("textBox")!;
-            btnOk = this.FindControl<Button>("btnOk")!;
-            btnCancel = this.FindControl<Button>("btnCancel")!;
+#if DEBUG
+            this.AttachDevTools();
+#endif
             //generated events
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -58,11 +52,6 @@ namespace UABEAvalonia
         private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(null);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

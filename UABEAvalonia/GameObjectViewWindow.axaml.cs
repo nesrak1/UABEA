@@ -12,11 +12,6 @@ namespace UABEAvalonia
 {
     public partial class GameObjectViewWindow : Window
     {
-        //controls
-        private TreeView gameObjectTreeView;
-        private AssetDataTreeView componentTreeView;
-        private ComboBox cbxFiles;
-
         private InfoWindow win;
         private AssetWorkspace workspace;
 
@@ -30,10 +25,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated controls
-            gameObjectTreeView = this.FindControl<TreeView>("gameObjectTreeView")!;
-            componentTreeView = this.FindControl<AssetDataTreeView>("componentTreeView")!;
-            cbxFiles = this.FindControl<ComboBox>("cbxFiles")!;
             //generated events
             gameObjectTreeView.SelectionChanged += GameObjectTreeView_SelectionChanged;
             gameObjectTreeView.DoubleTapped += GameObjectTreeView_DoubleTapped;
@@ -127,7 +118,6 @@ namespace UABEAvalonia
 
         private void PopulateFilesComboBox()
         {
-            AvaloniaList<object> comboBoxItems = (AvaloniaList<object>)cbxFiles.Items;
             foreach (AssetsFileInstance fileInstance in workspace.LoadedFiles)
             {
                 ComboBoxItem comboItem = new ComboBoxItem()
@@ -135,7 +125,7 @@ namespace UABEAvalonia
                     Content = fileInstance.name,
                     Tag = fileInstance
                 };
-                comboBoxItems.Add(comboItem);
+                cbxFiles.Items?.Add(comboItem);
             }
             cbxFiles.SelectedIndex = 0;
         }
@@ -198,16 +188,14 @@ namespace UABEAvalonia
                 LoadGameObjectTreeItem(childTransformCont, childTransformBf, treeItem);
             }
 
-            AvaloniaList<object> parentItems;
             if (parentTreeItem == null)
             {
-                parentItems = (AvaloniaList<object>)gameObjectTreeView.Items;
+                gameObjectTreeView.Items?.Add(treeItem);
             }
             else
             {
-                parentItems = (AvaloniaList<object>)parentTreeItem.Items;
+                parentTreeItem.Items?.Add(treeItem);
             }
-            parentItems.Add(treeItem);
 
             if (selectedGo != null)
             {
@@ -216,11 +204,6 @@ namespace UABEAvalonia
                     selectedTreeItem = treeItem;
                 }
             }
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

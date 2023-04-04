@@ -4,7 +4,7 @@ using Avalonia.Markup.Xaml;
 
 namespace TexturePluginPreview
 {
-    public class MainWindow : Window
+    public partial class MainWindow : Window
     {
         public MainWindow()
         {
@@ -12,11 +12,6 @@ namespace TexturePluginPreview
 #if DEBUG
             this.AttachDevTools();
 #endif
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

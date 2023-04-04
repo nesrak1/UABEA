@@ -5,7 +5,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
-using MessageBox.Avalonia.Enums;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,31 +15,8 @@ using System.Threading.Tasks;
 
 namespace UABEAvalonia
 {
-    public class MainWindow : Window
+    public partial class MainWindow : Window
     {
-        //controls
-        private Menu menuMain;
-        private MenuItem menuOpen;
-        private MenuItem menuLoadPackageFile;
-        private MenuItem menuClose;
-        private MenuItem menuSave;
-        private MenuItem menuCompress;
-        private MenuItem menuExit;
-        private MenuItem menuEditTypeDatabase;
-        private MenuItem menuEditTypePackage;
-        private MenuItem menuToggleDarkTheme;
-        private MenuItem menuToggleCpp2Il;
-        private MenuItem menuAbout;
-        private TextBlock lblFileName;
-        private ComboBox comboBox;
-        private Button btnExport;
-        private Button btnImport;
-        private Button btnRemove;
-        private Button btnInfo;
-        private Button btnExportAll;
-        private Button btnImportAll;
-        private Button btnRename;
-
         public BundleWorkspace Workspace { get; }
         public AssetsManager am { get => Workspace.am; }
         public BundleFileInstance BundleInst { get => Workspace.BundleInst; }
@@ -62,26 +38,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            menuMain = this.FindControl<Menu>("menuMain")!;
-            menuOpen = this.FindControl<MenuItem>("menuOpen")!;
-            menuLoadPackageFile = this.FindControl<MenuItem>("menuLoadPackageFile")!;
-            menuClose = this.FindControl<MenuItem>("menuClose")!;
-            menuSave = this.FindControl<MenuItem>("menuSave")!;
-            menuCompress = this.FindControl<MenuItem>("menuCompress")!;
-            menuExit = this.FindControl<MenuItem>("menuExit")!;
-            menuToggleDarkTheme = this.FindControl<MenuItem>("menuToggleDarkTheme")!;
-            menuToggleCpp2Il = this.FindControl<MenuItem>("menuToggleCpp2Il")!;
-            menuAbout = this.FindControl<MenuItem>("menuAbout")!;
-            lblFileName = this.FindControl<TextBlock>("lblFileName")!;
-            comboBox = this.FindControl<ComboBox>("comboBox")!;
-            btnExport = this.FindControl<Button>("btnExport")!;
-            btnImport = this.FindControl<Button>("btnImport")!;
-            btnRemove = this.FindControl<Button>("btnRemove")!;
-            btnInfo = this.FindControl<Button>("btnInfo")!;
-            btnExportAll = this.FindControl<Button>("btnExportAll")!;
-            btnImportAll = this.FindControl<Button>("btnImportAll")!;
-            btnRename = this.FindControl<Button>("btnRename")!;
             //generated events
             menuOpen.Click += MenuOpen_Click;
             menuLoadPackageFile.Click += MenuLoadPackageFile_Click;
@@ -483,10 +439,7 @@ namespace UABEAvalonia
         private async void MenuToggleDarkTheme_Click(object? sender, RoutedEventArgs e)
         {
             ConfigurationManager.Settings.UseDarkTheme = !ConfigurationManager.Settings.UseDarkTheme;
-
-            // thanks avalonia
-            await MessageBoxUtil.ShowDialog(this, "Note",
-                "Themes will be updated when you restart.");
+            ThemeHandler.UseDarkTheme = ConfigurationManager.Settings.UseDarkTheme;
         }
 
         private async void MenuToggleCpp2Il_Click(object? sender, RoutedEventArgs e)
@@ -895,11 +848,6 @@ namespace UABEAvalonia
                 totalSize += dirInf.DecompressedSize;
             }
             return totalSize;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }
