@@ -191,16 +191,16 @@ EXPORT unsigned int EncodeByISPC(void* data, void* outBuf, int mode, int level, 
 	}
 	else if (mode == 26) { // BC4
 		CompressBlocksBC4(&surface, (uint8_t*)outBuf);
-		blockByteSize = 16; // todo: check
+		blockByteSize = 8;
 	}
 	else if (mode == 27) { // BC5
 		CompressBlocksBC5(&surface, (uint8_t*)outBuf);
-		blockByteSize = 16; // todo: check
+		blockByteSize = 16;
 	} else if (mode == 24) { // BC6H
 		bc6h_enc_settings bc6hsettings;
 		GetProfile_bc6h_basic(&bc6hsettings);
 		CompressBlocksBC6H(&surface, (uint8_t*)outBuf, &bc6hsettings);
-		blockByteSize = 16; // todo: check
+		blockByteSize = 16;
 	} else if (mode == 25) { //BC7
 		bc7_enc_settings bc7settings;
 		GetProfile_alpha_basic(&bc7settings); //GetProfile_alpha_slow
