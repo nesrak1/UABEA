@@ -5,7 +5,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
-using MessageBox.Avalonia.Enums;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,30 +15,8 @@ using System.Threading.Tasks;
 
 namespace UABEAvalonia
 {
-    public class MainWindow : Window
+    public partial class MainWindow : Window
     {
-        //controls
-        private Menu menuMain;
-        private MenuItem menuOpen;
-        private MenuItem menuLoadPackageFile;
-        private MenuItem menuClose;
-        private MenuItem menuSave;
-        private MenuItem menuCompress;
-        private MenuItem menuExit;
-        private MenuItem menuEditTypeDatabase;
-        private MenuItem menuEditTypePackage;
-        private MenuItem menuToggleDarkTheme;
-        private MenuItem menuAbout;
-        private TextBlock lblFileName;
-        private ComboBox comboBox;
-        private Button btnExport;
-        private Button btnImport;
-        private Button btnRemove;
-        private Button btnInfo;
-        private Button btnExportAll;
-        private Button btnImportAll;
-        private Button btnRename;
-
         public BundleWorkspace Workspace { get; }
         public AssetsManager am { get => Workspace.am; }
         public BundleFileInstance BundleInst { get => Workspace.BundleInst; }
@@ -61,25 +38,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            menuMain = this.FindControl<Menu>("menuMain")!;
-            menuOpen = this.FindControl<MenuItem>("menuOpen")!;
-            menuLoadPackageFile = this.FindControl<MenuItem>("menuLoadPackageFile")!;
-            menuClose = this.FindControl<MenuItem>("menuClose")!;
-            menuSave = this.FindControl<MenuItem>("menuSave")!;
-            menuCompress = this.FindControl<MenuItem>("menuCompress")!;
-            menuExit = this.FindControl<MenuItem>("menuExit")!;
-            menuToggleDarkTheme = this.FindControl<MenuItem>("menuToggleDarkTheme")!;
-            menuAbout = this.FindControl<MenuItem>("menuAbout")!;
-            lblFileName = this.FindControl<TextBlock>("lblFileName")!;
-            comboBox = this.FindControl<ComboBox>("comboBox")!;
-            btnExport = this.FindControl<Button>("btnExport")!;
-            btnImport = this.FindControl<Button>("btnImport")!;
-            btnRemove = this.FindControl<Button>("btnRemove")!;
-            btnInfo = this.FindControl<Button>("btnInfo")!;
-            btnExportAll = this.FindControl<Button>("btnExportAll")!;
-            btnImportAll = this.FindControl<Button>("btnImportAll")!;
-            btnRename = this.FindControl<Button>("btnRename")!;
             //generated events
             menuOpen.Click += MenuOpen_Click;
             menuLoadPackageFile.Click += MenuLoadPackageFile_Click;
@@ -88,12 +46,14 @@ namespace UABEAvalonia
             menuCompress.Click += MenuCompress_Click;
             menuExit.Click += MenuExit_Click;
             menuToggleDarkTheme.Click += MenuToggleDarkTheme_Click;
+            menuToggleCpp2Il.Click += MenuToggleCpp2Il_Click;
             menuAbout.Click += MenuAbout_Click;
             btnExport.Click += BtnExport_Click;
             btnImport.Click += BtnImport_Click;
             btnRemove.Click += BtnRemove_Click;
             btnInfo.Click += BtnInfo_Click;
             btnExportAll.Click += BtnExportAll_Click;
+            btnImportAll.Click += BtnImportAll_Click;
             btnRename.Click += BtnRename_Click;
             Closing += MainWindow_Closing;
 
@@ -284,7 +244,7 @@ namespace UABEAvalonia
             if (file == null)
                 return;
 
-            using FileStream fileStream = File.OpenWrite(file);
+            using FileStream fileStream = File.Open(file, FileMode.Create);
 
             Stream stream = item.Stream;
             stream.Position = 0;
@@ -427,12 +387,19 @@ namespace UABEAvalonia
                     }    
                 }
 
-                using FileStream fileStream = File.OpenWrite(bunAssetPath);
+                using FileStream fileStream = File.Open(bunAssetPath, FileMode.Create);
 
                 AssetsFileReader bundleReader = BundleInst.file.DataReader;
                 bundleReader.Position = dirInf.Offset;
                 bundleReader.BaseStream.CopyToCompat(fileStream, dirInf.DecompressedSize);
             }
+        }
+
+        private async void BtnImportAll_Click(object? sender, RoutedEventArgs e)
+        {
+            if (BundleInst == null)
+                return;
+
         }
 
         private async void BtnRename_Click(object? sender, RoutedEventArgs e)
@@ -472,10 +439,16 @@ namespace UABEAvalonia
         private async void MenuToggleDarkTheme_Click(object? sender, RoutedEventArgs e)
         {
             ConfigurationManager.Settings.UseDarkTheme = !ConfigurationManager.Settings.UseDarkTheme;
+            ThemeHandler.UseDarkTheme = ConfigurationManager.Settings.UseDarkTheme;
+        }
 
-            // thanks avalonia
+        private async void MenuToggleCpp2Il_Click(object? sender, RoutedEventArgs e)
+        {
+            bool useCpp2Il = !ConfigurationManager.Settings.UseCpp2Il;
+            ConfigurationManager.Settings.UseCpp2Il = useCpp2Il;
+
             await MessageBoxUtil.ShowDialog(this, "Note",
-                "Themes will be updated when you restart.");
+                $"Use Cpp2Il is set to: {useCpp2Il.ToString().ToLower()}");
         }
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -531,7 +504,7 @@ namespace UABEAvalonia
             }
         }
 
-
+        // todo, if stripped load from header (needed for adding new assets)
         private async Task<bool> LoadOrAskTypeData(AssetsFileInstance fileInst)
         {
             string uVer = fileInst.file.Metadata.UnityVersion;
@@ -618,6 +591,13 @@ namespace UABEAvalonia
                 if (file == null)
                     return;
 
+                if (Path.GetFullPath(file) == Path.GetFullPath(BundleInst.path))
+                {
+                    await MessageBoxUtil.ShowDialog(this,
+                        "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
+                    return;
+                }
+
                 const string lz4Option = "LZ4";
                 const string lzmaOption = "LZMA";
                 const string cancelOption = "Cancel";
@@ -672,7 +652,7 @@ namespace UABEAvalonia
                 if (splitFilePath == null || splitFilePath == string.Empty)
                     return null;
 
-                using (FileStream mergeFile = File.OpenWrite(splitFilePath))
+                using (FileStream mergeFile = File.Open(splitFilePath, FileMode.Create))
                 {
                     int idx = 0;
                     string thisSplitFileNoNum = selectedFile.Substring(0, selectedFile.Length - 1);
@@ -802,7 +782,7 @@ namespace UABEAvalonia
         private void SaveBundle(BundleFileInstance bundleInst, string path)
         {
             List<BundleReplacer> replacers = Workspace.GetReplacers();
-            using (FileStream fs = File.OpenWrite(path))
+            using (FileStream fs = File.Open(path, FileMode.Create))
             using (AssetsFileWriter w = new AssetsFileWriter(fs))
             {
                 bundleInst.file.Write(w, replacers.ToList());
@@ -819,7 +799,7 @@ namespace UABEAvalonia
             var compType = (AssetBundleCompressionType)argsArr[2];
             var progress = (IAssetBundleCompressProgress)argsArr[3];
 
-            using (FileStream fs = File.OpenWrite(path))
+            using (FileStream fs = File.Open(path, FileMode.Create))
             using (AssetsFileWriter w = new AssetsFileWriter(fs))
             {
                 bundleInst.file.Pack(bundleInst.file.Reader, w, compType, true, progress);
@@ -868,11 +848,6 @@ namespace UABEAvalonia
                 totalSize += dirInf.DecompressedSize;
             }
             return totalSize;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

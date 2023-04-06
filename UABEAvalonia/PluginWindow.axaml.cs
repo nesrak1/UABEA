@@ -2,18 +2,14 @@ using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using System;
 using System.Collections.Generic;
 using UABEAvalonia.Plugins;
 
 namespace UABEAvalonia
 {
-    public class PluginWindow : Window
+    public partial class PluginWindow : Window
     {
-        //controls
-        private ListBox boxPluginList;
-        private Button btnOk;
-        private Button btnCancel;
-
         private Window win;
         private AssetWorkspace workspace;
         private List<AssetContainer> selection;
@@ -26,10 +22,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated controls
-            boxPluginList = this.FindControl<ListBox>("boxPluginList");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
             //generated events
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -56,18 +48,20 @@ namespace UABEAvalonia
             }
 
             var plugOpt = menuPlugInf.pluginOpt;
-            await plugOpt.ExecutePlugin(win, workspace, selection);
+            try
+            {
+                await plugOpt.ExecutePlugin(win, workspace, selection);
+            }
+            catch (Exception ex)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Plugin Exception!", $"Plugin {menuPlugInf.displayName} has crashed. Stacktrace:\n" + ex.ToString());
+            }
             Close(true);
         }
 
         private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(false);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

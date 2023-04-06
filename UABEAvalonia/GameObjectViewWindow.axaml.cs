@@ -12,14 +12,6 @@ namespace UABEAvalonia
 {
     public partial class GameObjectViewWindow : Window
     {
-        //controls
-        private TreeView gameObjectTreeView;
-        private AssetDataTreeView componentTreeView;
-        private MenuItem menuVisitAsset;
-        private ComboBox cbxFiles;
-        private Button btnExpand;
-        private Button btnCollapse;
-
         private InfoWindow win;
         private AssetWorkspace workspace;
 
@@ -33,19 +25,10 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated controls
-            gameObjectTreeView = this.FindControl<TreeView>("gameObjectTreeView");
-            componentTreeView = this.FindControl<AssetDataTreeView>("componentTreeView");
-            menuVisitAsset = this.FindControl<MenuItem>("menuVisitAsset");
-            cbxFiles = this.FindControl<ComboBox>("cbxFiles");
-            btnExpand = this.FindControl<Button>("btnExpand");
-            btnCollapse = this.FindControl<Button>("btnCollapse");
             //generated events
             gameObjectTreeView.SelectionChanged += GameObjectTreeView_SelectionChanged;
-            menuVisitAsset.Click += MenuVisitAsset_Click;
+            gameObjectTreeView.DoubleTapped += GameObjectTreeView_DoubleTapped;
             cbxFiles.SelectionChanged += CbxFiles_SelectionChanged;
-            btnExpand.Click += BtnExpand_Click;
-            btnCollapse.Click += BtnCollapse_Click;
         }
 
         public GameObjectViewWindow(InfoWindow win, AssetWorkspace workspace) : this()
@@ -55,7 +38,7 @@ namespace UABEAvalonia
 
             ignoreDropdownEvent = true;
 
-            componentTreeView.Init(workspace);
+            componentTreeView.Init(win, workspace);
             PopulateFilesComboBox();
             PopulateHierarchyTreeView();
         }
@@ -68,7 +51,7 @@ namespace UABEAvalonia
 
             ignoreDropdownEvent = true;
 
-            componentTreeView.Init(workspace);
+            componentTreeView.Init(win, workspace);
             PopulateFilesComboBox();
             PopulateHierarchyTreeView();
 
@@ -111,13 +94,12 @@ namespace UABEAvalonia
             }
         }
 
-        private void MenuVisitAsset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private void GameObjectTreeView_DoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
         {
-            TreeViewItem item = (TreeViewItem)componentTreeView.SelectedItem;
-            if (item != null && item.Tag != null)
+            if (gameObjectTreeView.SelectedItem != null)
             {
-                AssetDataTreeViewItem info = (AssetDataTreeViewItem)item.Tag;
-                win.SelectAsset(info.fromFile, info.fromPathId);
+                TreeViewItem item = (TreeViewItem)gameObjectTreeView.SelectedItem;
+                item.IsExpanded = !item.IsExpanded;
             }
         }
 
@@ -134,25 +116,8 @@ namespace UABEAvalonia
             PopulateHierarchyTreeView();
         }
 
-        private void BtnExpand_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            if (componentTreeView.SelectedItem != null && componentTreeView.SelectedItem is TreeViewItem treeItem)
-            {
-                componentTreeView.ExpandAllChildren(treeItem);
-            }
-        }
-
-        private void BtnCollapse_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            if (componentTreeView.SelectedItem != null && componentTreeView.SelectedItem is TreeViewItem treeItem)
-            {
-                componentTreeView.CollapseAllChildren(treeItem);
-            }
-        }
-
         private void PopulateFilesComboBox()
         {
-            AvaloniaList<object> comboBoxItems = (AvaloniaList<object>)cbxFiles.Items;
             foreach (AssetsFileInstance fileInstance in workspace.LoadedFiles)
             {
                 ComboBoxItem comboItem = new ComboBoxItem()
@@ -160,7 +125,7 @@ namespace UABEAvalonia
                     Content = fileInstance.name,
                     Tag = fileInstance
                 };
-                comboBoxItems.Add(comboItem);
+                cbxFiles.Items?.Add(comboItem);
             }
             cbxFiles.SelectedIndex = 0;
         }
@@ -223,16 +188,14 @@ namespace UABEAvalonia
                 LoadGameObjectTreeItem(childTransformCont, childTransformBf, treeItem);
             }
 
-            AvaloniaList<object> parentItems;
             if (parentTreeItem == null)
             {
-                parentItems = (AvaloniaList<object>)gameObjectTreeView.Items;
+                gameObjectTreeView.Items?.Add(treeItem);
             }
             else
             {
-                parentItems = (AvaloniaList<object>)parentTreeItem.Items;
+                parentTreeItem.Items?.Add(treeItem);
             }
-            parentItems.Add(treeItem);
 
             if (selectedGo != null)
             {
@@ -241,11 +204,6 @@ namespace UABEAvalonia
                     selectedTreeItem = treeItem;
                 }
             }
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

@@ -130,7 +130,8 @@ namespace UABEAvalonia
 
         public void LoadAssetsFile(AssetsFileInstance fromFile, bool loadDependencies)
         {
-            if (LoadedFiles.Contains(fromFile))
+            string fromFilePath = fromFile.path.ToLower();
+            if (LoadedFileNames.Contains(fromFilePath))
                 return;
 
             fromFile.file.GenerateQuickLookupTree();
@@ -228,9 +229,15 @@ namespace UABEAvalonia
             }
         }
 
-        public AssetTypeTemplateField GetTemplateField(AssetContainer cont, bool skipMonoBehaviourFields = false)
+        public AssetTypeTemplateField GetTemplateField(AssetContainer cont, bool forceCldb = false, bool skipMonoBehaviourFields = false)
         {
-            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, false, skipMonoBehaviourFields);
+            AssetReadFlags readFlags = AssetReadFlags.None;
+            if (forceCldb)
+                readFlags |= AssetReadFlags.ForceFromCldb;
+            if (skipMonoBehaviourFields)
+                readFlags |= AssetReadFlags.SkipMonoBehaviourFields;
+
+            return am.GetTemplateBaseField(cont.FileInstance, cont.FileReader, cont.FilePosition, cont.ClassId, cont.MonoId, readFlags);
         }
 
         public AssetContainer? GetAssetContainer(AssetsFileInstance fileInst, int fileId, long pathId, bool onlyInfo = true)
@@ -248,7 +255,8 @@ namespace UABEAvalonia
                     if (!onlyInfo && !cont.HasValueField)
                     {
                         // only set mono temp generator when we open a MonoBehaviour
-                        if ((cont.ClassId == (int)AssetClassID.MonoBehaviour || cont.ClassId < 0) && !setMonoTempGeneratorsYet && !fileInst.file.Metadata.TypeTreeEnabled)
+                        bool isMonoBehaviour = cont.ClassId == (int)AssetClassID.MonoBehaviour || cont.ClassId < 0;
+                        if (isMonoBehaviour && !setMonoTempGeneratorsYet && !fileInst.file.Metadata.TypeTreeEnabled)
                         {
                             string dataDir = Extensions.GetAssetsFileDirectory(fileInst);
                             bool success = SetMonoTempGenerators(dataDir);
@@ -258,10 +266,17 @@ namespace UABEAvalonia
                             }
                         }
 
-                        AssetTypeTemplateField tempField = GetTemplateField(cont);
                         try
                         {
-                            AssetTypeValueField baseField = tempField.MakeValue(cont.FileReader, cont.FilePosition);
+                            AssetTypeTemplateField tempField = GetTemplateField(cont);
+
+                            RefTypeManager? refMan = null;
+                            if (isMonoBehaviour)
+                            {
+                                refMan = am.GetRefTypeManager(fileInst);
+                            }
+
+                            AssetTypeValueField baseField = tempField.MakeValue(cont.FileReader, cont.FilePosition, refMan);
                             cont = new AssetContainer(cont, baseField);
                         }
                         catch
@@ -280,6 +295,43 @@ namespace UABEAvalonia
             int fileId = pptrField["m_FileID"].AsInt;
             long pathId = pptrField["m_PathID"].AsLong;
             return GetAssetContainer(fileInst, fileId, pathId, onlyInfo);
+        }
+
+        public AssetContainer GetAssetContainer(AssetsFileInstance fileInst, AssetPPtr pptr, bool onlyInfo = true)
+        {
+            int fileId = pptr.FileId;
+            long pathId = pptr.PathId;
+            return GetAssetContainer(fileInst, fileId, pathId, onlyInfo);
+        }
+
+        // todo: just overwrite original container values
+        public AssetContainer GetAssetContainer(AssetContainer cont)
+        {
+            return GetAssetContainer(cont.FileInstance, 0, cont.PathId, false);
+        }
+
+        public List<AssetContainer> GetAssetsOfType(int classId)
+        {
+            List<AssetContainer> filteredAssets = new List<AssetContainer>();
+
+            var allConts = LoadedAssets.Values;
+            foreach (AssetContainer cont in allConts)
+            {
+                if (cont == null)
+                    continue;
+
+                if (cont.ClassId == classId)
+                {
+                    filteredAssets.Add(cont);
+                }
+            }
+
+            return filteredAssets;
+        }
+
+        public List<AssetContainer> GetAssetsOfType(AssetClassID classId)
+        {
+            return GetAssetsOfType((int)classId);
         }
 
         public AssetTypeValueField? GetBaseField(AssetContainer cont)
@@ -359,7 +411,7 @@ namespace UABEAvalonia
             {
                 setMonoTempGeneratorsYet = true;
                 FindCpp2IlFilesResult il2cppFiles = FindCpp2IlFiles.Find(fileDir);
-                if (il2cppFiles.success)
+                if (il2cppFiles.success && ConfigurationManager.Settings.UseCpp2Il)
                 {
                     am.MonoTempGenerator = new Cpp2IlTempGenerator(il2cppFiles.metaPath, il2cppFiles.asmPath);
                     return true;

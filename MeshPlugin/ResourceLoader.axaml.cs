@@ -7,7 +7,6 @@ namespace MeshPlugin
 {
     public partial class ResourceLoader : Window
     {
-        private Button btnOk;
         public ResourceLoader()
         {
             InitializeComponent();

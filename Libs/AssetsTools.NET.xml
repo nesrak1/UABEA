@@ -4,6 +4,32 @@
         <name>AssetsTools.NET</name>
     </assembly>
     <members>
+        <member name="F:AssetsTools.NET.Extra.AssetReadFlags.None">
+            <summary>
+            No flags.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.Extra.AssetReadFlags.PreferEditor">
+            <summary>
+            Use the editor version of the TPK instead of the
+            the player version. Use this if you are generating
+            new assets for an editor project.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.Extra.AssetReadFlags.SkipMonoBehaviourFields">
+            <summary>
+            If the file doesn't have a type tree, decide whether
+            to skip calling AssetsManager.MonoTempGenerator to add the
+            MonoBehaviour fields to the end of the base MonoBehaviour
+            field or not.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.Extra.AssetReadFlags.ForceFromCldb">
+            <summary>
+            If the file is using a type tree, force it to use
+            the loaded class database instead.
+            </summary>
+        </member>
         <member name="T:AssetsTools.NET.Extra.LambdaAssetReplacer">
             <summary>
             Replacer that deserializes the specified asset, lets a delegate
@@ -156,7 +182,7 @@
         <member name="P:AssetsTools.NET.AssetFileInfo.TypeIdOrIndex">
             <summary>
             Before version 16 this is the type ID of the asset. In version 16 and later this is the index into the type tree list.
-            In versions 15 and below, this is the same as TypeId except in MonoBehaviours where this acts as ScriptTypeIndex (negative).
+            In versions 15 and below, this is the same as TypeId except in MonoBehaviours where this acts similar to ScriptTypeIndex (negative).
             You should use TypeId for the type ID in either version. <see cref="T:AssetsTools.NET.Extra.AssetClassID"/>
             </summary>
         </member>
@@ -333,7 +359,7 @@
         </member>
         <member name="P:AssetsTools.NET.AssetsFileMetadata.RefTypes">
             <summary>
-            List of reference types (unknown what this is for).
+            List of reference types.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.AssetsFileMetadata.UserInformation">
@@ -353,7 +379,7 @@
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.TypeFlags">
             <summary>
-            1 if array.
+            Information about whether the node is an array, registry, etc.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.TypeStrOffset">
@@ -370,6 +396,7 @@
             <summary>
             Byte size of the field's type (for example, int is 4).
             If the field isn't a value type, then this value is a sum of all children sizes.
+            If the size is variable, this is set to -1.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeNode.Index">
@@ -385,6 +412,29 @@
         <member name="P:AssetsTools.NET.TypeTreeNode.RefTypeHash">
             <summary>
             Unknown.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.TypeTreeNodeFlags.Array">
+            <summary>
+            Type tree node is an array.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.TypeTreeNodeFlags.Ref">
+            <summary>
+            Type tree node is a ref type. For example, "managedRefArrayItem" would be an
+            array item that is a reference to an object in the registry.
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.TypeTreeNodeFlags.Registry">
+            <summary>
+            Type tree node is a registry. Should just be "ManagedReferencesRegistry references".
+            </summary>
+        </member>
+        <member name="F:AssetsTools.NET.TypeTreeNodeFlags.ArrayOfRefs">
+            <summary>
+            Type tree node is an array of ref types. This occurs if the SerializeReference was
+            added to a list or array instead of just a single field. This is not applied to the
+            Array child of the field, just the field itself.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.TypeTreeType.TypeId">
@@ -422,9 +472,19 @@
             String table bytes for this type.
             </summary>
         </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.IsRefType">
+            <summary>
+            Is the type a reference type?
+            </summary>
+        </member>
         <member name="P:AssetsTools.NET.TypeTreeType.TypeDependencies">
             <summary>
-            Type dependencies for this type. Unknown purpose.
+            Type dependencies for this type. Used by MonoBehaviours referencing ref types. Only used when IsRefType is false.
+            </summary>
+        </member>
+        <member name="P:AssetsTools.NET.TypeTreeType.TypeReference">
+            <summary>
+            Type reference information. Only used when IsRefType is true.
             </summary>
         </member>
         <member name="P:AssetsTools.NET.AssetTypeTemplateField.Name">

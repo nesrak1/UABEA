@@ -39,7 +39,16 @@
     <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="Assets" />
     <Border Margin="10,53,200,10" BorderBrush="Black" BorderThickness="1">
 	  <DataGrid AutoGenerateColumns="False" CanUserResizeColumns="True" IsReadOnly="True" Name="dataGrid">
-		  <DataGrid.Columns>
+      <DataGrid.RowTheme>
+        <ControlTheme TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+          <ControlTheme.Children>
+            <Style Selector="^:nth-child(2n)">
+              <Setter Property="Background" Value="#00FFFFFF" />
+            </Style>
+          </ControlTheme.Children>
+        </ControlTheme>
+      </DataGrid.RowTheme>
+      <DataGrid.Columns>
 			  <DataGridTemplateColumn Header=" ">
 				  <DataGridTemplateColumn.CellTemplate>
 					  <DataTemplate>
@@ -73,6 +82,7 @@
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Plugins" Name="btnPlugin" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Raw" Name="btnImportRaw" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Dump" Name="btnImportDump" />
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Edit Data" Name="btnEditData" />
       <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Remove" Name="btnRemove" />
     </StackPanel>
   </Grid>

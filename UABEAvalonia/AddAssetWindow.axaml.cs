@@ -11,15 +11,6 @@ namespace UABEAvalonia
 {
     public partial class AddAssetWindow : Window
     {
-        //controls
-        private ComboBox ddFileId;
-        private TextBox boxPathId;
-        private TextBox boxTypeId;
-        private TextBox boxMonoId;
-        private CheckBox chkCreateZerodAsset;
-        private Button btnOk;
-        private Button btnCancel;
-
         private AssetWorkspace workspace;
 
         public AddAssetWindow()
@@ -28,14 +19,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated controls
-            ddFileId = this.FindControl<ComboBox>("ddFileId");
-            boxPathId = this.FindControl<TextBox>("boxPathId");
-            boxTypeId = this.FindControl<TextBox>("boxTypeId");
-            boxMonoId = this.FindControl<TextBox>("boxMonoId");
-            chkCreateZerodAsset = this.FindControl<CheckBox>("chkCreateZerodAsset");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
             //generated events
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -223,11 +206,6 @@ namespace UABEAvalonia
                 tempField.FromTypeTree(ttType);
             }
             return true;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

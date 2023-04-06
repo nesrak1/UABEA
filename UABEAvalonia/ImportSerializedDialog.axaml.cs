@@ -6,19 +6,13 @@ namespace UABEAvalonia
 {
     public partial class ImportSerializedDialog : Window
     {
-        private Button btnYes;
-        private Button btnNo;
-
         public ImportSerializedDialog()
         {
             InitializeComponent();
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            btnYes = this.FindControl<Button>("btnYes");
-            btnNo = this.FindControl<Button>("btnNo");
-
+            //generated events
             btnYes.Click += BtnYes_Click;
             btnNo.Click += BtnNo_Click;
         }
@@ -31,11 +25,6 @@ namespace UABEAvalonia
         private void BtnNo_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(false);
-        }
-        
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

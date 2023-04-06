@@ -13,21 +13,13 @@ namespace UABEAvalonia
 {
     public partial class ExportBatchChooseType : Window
     {
-        private ComboBox comboFileType;
-        private Button btnOk;
-        private Button btnCancel;
-
         public ExportBatchChooseType()
         {
             InitializeComponent();
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            comboFileType = this.FindControl<ComboBox>("comboFileType");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
-
+            //generated events
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
         }
@@ -40,11 +32,6 @@ namespace UABEAvalonia
         private void BtnCancel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(null);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

@@ -1,4 +1,5 @@
 using AssetsTools.NET;
+using AssetsTools.NET.Extra;
 using AssetsTools.NET.Texture;
 using Avalonia;
 using Avalonia.Controls;
@@ -16,28 +17,13 @@ using Image = SixLabors.ImageSharp.Image;
 
 namespace TexturePlugin
 {
-    public class EditDialog : Window
+    public partial class EditDialog : Window
     {
-        //controls
-        private TextBox boxName;
-        private ComboBox ddTextureFmt;
-        private CheckBox chkHasMipMaps;
-        private CheckBox chkIsReadable;
-        private ComboBox ddFilterMode;
-        private TextBox boxAnisotFilter;
-        private TextBox boxMipMapBias;
-        private ComboBox ddWrapModeU;
-        private ComboBox ddWrapModeV;
-        private TextBox boxLightMapFormat;
-        private ComboBox ddColorSpace;
-        private Button btnLoad;
-        private Button btnSave;
-        private Button btnCancel;
-
         private TextureFile tex;
         private AssetTypeValueField baseField;
+        private AssetsFileInstance fileInst;
 
-        private byte[] modImageBytes;
+        private string imagePath;
 
         public EditDialog()
         {
@@ -45,21 +31,6 @@ namespace TexturePlugin
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            boxName = this.FindControl<TextBox>("boxName");
-            ddTextureFmt = this.FindControl<ComboBox>("ddTextureFmt");
-            chkHasMipMaps = this.FindControl<CheckBox>("chkHasMipMaps");
-            chkIsReadable = this.FindControl<CheckBox>("chkIsReadable");
-            ddFilterMode = this.FindControl<ComboBox>("ddFilterMode");
-            boxAnisotFilter = this.FindControl<TextBox>("boxAnisotFilter");
-            boxMipMapBias = this.FindControl<TextBox>("boxMipMapBias");
-            ddWrapModeU = this.FindControl<ComboBox>("ddWrapModeU");
-            ddWrapModeV = this.FindControl<ComboBox>("ddWrapModeV");
-            boxLightMapFormat = this.FindControl<TextBox>("boxLightMapFormat");
-            ddColorSpace = this.FindControl<ComboBox>("ddColorSpace");
-            btnLoad = this.FindControl<Button>("btnLoad");
-            btnSave = this.FindControl<Button>("btnSave");
-            btnCancel = this.FindControl<Button>("btnCancel");
             //generated events
             btnLoad.Click += BtnLoad_Click;
             btnSave.Click += BtnSave_Click;
@@ -72,15 +43,16 @@ namespace TexturePlugin
             ddColorSpace.Items = Enum.GetValues(typeof(ColorSpace));
         }
 
-        public EditDialog(string name, TextureFile tex, AssetTypeValueField baseField) : this()
+        public EditDialog(string name, TextureFile tex, AssetTypeValueField baseField, AssetsFileInstance fileInst) : this()
         {
             this.tex = tex;
             this.baseField = baseField;
+            this.fileInst = fileInst;
 
-            modImageBytes = null;
+            imagePath = null;
 
             boxName.Text = name;
-            ddTextureFmt.SelectedIndex = tex.m_TextureFormat - 1;
+            ddTextureFmt.SelectedIndex = TextureFormatToIndex(tex.m_TextureFormat);
             chkHasMipMaps.IsChecked = tex.m_MipMap;
             chkIsReadable.IsChecked = tex.m_IsReadable;
             ddFilterMode.SelectedIndex = tex.m_TextureSettings.m_FilterMode;
@@ -108,89 +80,119 @@ namespace TexturePlugin
 
             if (file != null && file != string.Empty)
             {
-                ImportTexture(file); //lol thanks span
+                imagePath = file;
             }
         }
 
         private async void BtnSave_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            if (modImageBytes != null)
+            uint platform = fileInst.file.Metadata.TargetPlatform;
+            byte[] platformBlob = TextureHelper.GetPlatformBlob(baseField);
+
+            Image<Rgba32> imgToImport;
+            if (imagePath == null)
             {
-                TextureFormat fmt = (TextureFormat)(ddTextureFmt.SelectedIndex + 1);
-                byte[] encImageBytes = TextureEncoderDecoder.Encode(modImageBytes, tex.m_Width, tex.m_Height, fmt);
-
-                if (encImageBytes == null)
-                {
-                    await MessageBoxUtil.ShowDialog(this, "Error", $"Failed to encode texture format {fmt}");
-                    Close(false);
-                    return;
-                }
-
-                AssetTypeValueField m_StreamData = baseField["m_StreamData"];
-                m_StreamData["offset"].AsInt = 0;
-                m_StreamData["size"].AsInt = 0;
-                m_StreamData["path"].AsString = "";
-
-                baseField["m_Name"].AsString = boxName.Text;
-
-                if (!baseField["m_MipMap"].IsDummy)
-                    baseField["m_MipMap"].AsBool = chkHasMipMaps.IsChecked ?? false;
-
-                if (!baseField["m_MipCount"].IsDummy)
-                    baseField["m_MipCount"].AsInt = 1;
-
-                if (!baseField["m_ReadAllowed"].IsDummy)
-                    baseField["m_ReadAllowed"].AsBool = chkIsReadable.IsChecked ?? false;
-
-                AssetTypeValueField m_TextureSettings = baseField["m_TextureSettings"];
-
-                m_TextureSettings["m_FilterMode"].AsInt = ddFilterMode.SelectedIndex;
-
-                if (int.TryParse(boxAnisotFilter.Text, out int aniso))
-                    m_TextureSettings["m_Aniso"].AsInt = aniso;
-
-                if (int.TryParse(boxMipMapBias.Text, out int mipBias))
-                    m_TextureSettings["m_MipBias"].AsInt = mipBias;
-
-                m_TextureSettings["m_WrapU"].AsInt = ddWrapModeU.SelectedIndex;
-                m_TextureSettings["m_WrapV"].AsInt = ddWrapModeV.SelectedIndex;
-
-                if (boxLightMapFormat.Text.StartsWith("0x"))
-                {
-                    if (int.TryParse(boxLightMapFormat.Text, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out int lightFmt))
-                        baseField["m_LightmapFormat"].AsInt = lightFmt;
-                }
-                else
-                {
-                    if (int.TryParse(boxLightMapFormat.Text, out int lightFmt))
-                        baseField["m_LightmapFormat"].AsInt = lightFmt;
-                }
-
-                baseField["m_ColorSpace"].AsInt = ddColorSpace.SelectedIndex;
-
-                baseField["m_TextureFormat"].AsInt = (int)fmt;
-                baseField["m_CompleteImageSize"].AsInt = encImageBytes.Length;
-
-                baseField["m_Width"].AsInt = tex.m_Width;
-                baseField["m_Height"].AsInt = tex.m_Height;
-
-                AssetTypeValueField image_data = baseField["image data"];
-                image_data.Value.ValueType = AssetValueType.ByteArray;
-                image_data.TemplateField.ValueType = AssetValueType.ByteArray;
-                image_data.AsByteArray = encImageBytes;
-
-                Close(true);
+                byte[] data = TextureHelper.GetRawTextureBytes(tex, fileInst);
+                imgToImport = TextureImportExport.Export(data, tex.m_Width, tex.m_Height, (TextureFormat)tex.m_TextureFormat, platform, platformBlob);
             }
             else
             {
-                await MessageBoxUtil.ShowDialog(this, "Error",
-                    "Texture reencoding is not supported atm.\n" +
-                    "If you want to change the texture format,\n" +
-                    "export it to png first then reimport it here.\n" +
-                    "Sorry for the inconvenience.");
-
-                Close(false);
+                imgToImport = Image.Load<Rgba32>(imagePath);
             }
+
+            TextureFormat fmt = (TextureFormat)IndexToTextureFormat(ddTextureFmt.SelectedIndex);
+
+            int mips = 1;
+            if (chkHasMipMaps.IsChecked.GetValueOrDefault())
+            {
+                if (imgToImport.Width == tex.m_Width && imgToImport.Height == tex.m_Height)
+                {
+                    mips = tex.m_MipCount;
+                }
+                else if (TextureHelper.IsPo2(imgToImport.Width) && TextureHelper.IsPo2(imgToImport.Height))
+                {
+                    mips = TextureHelper.GetMaxMipCount(imgToImport.Width, imgToImport.Height);
+                }
+            }
+
+            int width = 0, height = 0;
+            byte[] encImageBytes = null;
+            string exceptionMessage = string.Empty;
+            try
+            {
+                encImageBytes = TextureImportExport.Import(imgToImport, fmt, out width, out height, ref mips, platform, platformBlob);
+            }
+            catch (Exception ex)
+            {
+                exceptionMessage = ex.ToString();
+            }
+
+            if (encImageBytes == null)
+            {
+                string dialogText = $"Failed to encode texture format {fmt}!";
+                if (exceptionMessage != null)
+                {
+                    dialogText += "\n" + exceptionMessage;
+                }
+                await MessageBoxUtil.ShowDialog(this, "Error", dialogText);
+                Close(false);
+                return;
+            }
+
+            AssetTypeValueField m_StreamData = baseField["m_StreamData"];
+            m_StreamData["offset"].AsInt = 0;
+            m_StreamData["size"].AsInt = 0;
+            m_StreamData["path"].AsString = "";
+
+            baseField["m_Name"].AsString = boxName.Text;
+
+            if (!baseField["m_MipMap"].IsDummy)
+                baseField["m_MipMap"].AsBool = chkHasMipMaps.IsChecked ?? false;
+
+            if (!baseField["m_MipCount"].IsDummy)
+                baseField["m_MipCount"].AsInt = mips;
+
+            if (!baseField["m_ReadAllowed"].IsDummy)
+                baseField["m_ReadAllowed"].AsBool = chkIsReadable.IsChecked ?? false;
+
+            AssetTypeValueField m_TextureSettings = baseField["m_TextureSettings"];
+
+            m_TextureSettings["m_FilterMode"].AsInt = ddFilterMode.SelectedIndex;
+
+            if (int.TryParse(boxAnisotFilter.Text, out int aniso))
+                m_TextureSettings["m_Aniso"].AsInt = aniso;
+
+            if (int.TryParse(boxMipMapBias.Text, out int mipBias))
+                m_TextureSettings["m_MipBias"].AsInt = mipBias;
+
+            m_TextureSettings["m_WrapU"].AsInt = ddWrapModeU.SelectedIndex;
+            m_TextureSettings["m_WrapV"].AsInt = ddWrapModeV.SelectedIndex;
+
+            if (boxLightMapFormat.Text.StartsWith("0x"))
+            {
+                if (int.TryParse(boxLightMapFormat.Text, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out int lightFmt))
+                    baseField["m_LightmapFormat"].AsInt = lightFmt;
+            }
+            else
+            {
+                if (int.TryParse(boxLightMapFormat.Text, out int lightFmt))
+                    baseField["m_LightmapFormat"].AsInt = lightFmt;
+            }
+
+            baseField["m_ColorSpace"].AsInt = ddColorSpace.SelectedIndex;
+
+            baseField["m_TextureFormat"].AsInt = (int)fmt;
+            baseField["m_CompleteImageSize"].AsInt = encImageBytes.Length;
+
+            baseField["m_Width"].AsInt = width;
+            baseField["m_Height"].AsInt = height;
+
+            AssetTypeValueField image_data = baseField["image data"];
+            image_data.Value.ValueType = AssetValueType.ByteArray;
+            image_data.TemplateField.ValueType = AssetValueType.ByteArray;
+            image_data.AsByteArray = encImageBytes;
+
+            Close(true);
         }
 
         private void BtnCancel_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -198,23 +200,21 @@ namespace TexturePlugin
             Close(false);
         }
 
-        private void ImportTexture(string file)
+        // lazy and quick enum conversion
+        private int TextureFormatToIndex(int format)
         {
-            using (Image<Rgba32> image = Image.Load<Rgba32>(file))
-            {
-                tex.m_Width = image.Width;
-                tex.m_Height = image.Height;
-
-                image.Mutate(i => i.Flip(FlipMode.Vertical));
-
-                modImageBytes = new byte[tex.m_Width * tex.m_Height * 4];
-                image.CopyPixelDataTo(modImageBytes);
-            }
+            if (format >= 41)
+                return format - 41 + 37;
+            else
+                return format - 1;
         }
 
-        private void InitializeComponent()
+        private int IndexToTextureFormat(int format)
         {
-            AvaloniaXamlLoader.Load(this);
+            if (format >= 37)
+                return format + 41 - 37;
+            else
+                return format + 1;
         }
     }
 

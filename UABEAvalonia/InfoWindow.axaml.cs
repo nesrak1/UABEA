@@ -5,10 +5,6 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
-using MessageBox.Avalonia;
-using MessageBox.Avalonia.DTO;
-using MessageBox.Avalonia.Enums;
-using MessageBox.Avalonia.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,37 +18,8 @@ using UABEAvalonia.Plugins;
 
 namespace UABEAvalonia
 {
-    public class InfoWindow : Window
+    public partial class InfoWindow : Window
     {
-        //controls
-        private MenuItem menuAdd;
-        private MenuItem menuSave;
-        private MenuItem menuSaveAs;
-        private MenuItem menuCreateStandaloneInstaller;
-        private MenuItem menuCreatePackageFile;
-        private MenuItem menuClose;
-        private MenuItem menuSearchByName;
-        private MenuItem menuContinueSearch;
-        private MenuItem menuGoToAsset;
-        private MenuItem menuFilter;
-        private MenuItem menuDependencies;
-        private MenuItem menuContainers;
-        private MenuItem menuScripts;
-        private MenuItem menuHierarchy;
-        private Button btnViewData;
-        private Button btnSceneView;
-        private Button btnExportRaw;
-        private Button btnExportDump;
-        private Button btnPlugin;
-        private Button btnImportRaw;
-        private Button btnImportDump;
-        private Button btnRemove;
-        private DataGrid dataGrid;
-        private TextBox boxName;
-        private TextBox boxPathId;
-        private TextBox boxFileId;
-        private TextBox boxType;
-
         //todo, rework all this
         public AssetWorkspace Workspace { get; }
         public AssetsManager am { get => Workspace.am; }
@@ -84,34 +51,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            menuAdd = this.FindControl<MenuItem>("menuAdd")!;
-            menuSave = this.FindControl<MenuItem>("menuSave")!;
-            menuSaveAs = this.FindControl<MenuItem>("menuSaveAs")!;
-            menuCreateStandaloneInstaller = this.FindControl<MenuItem>("menuCreateStandaloneInstaller")!;
-            menuCreatePackageFile = this.FindControl<MenuItem>("menuCreatePackageFile")!;
-            menuClose = this.FindControl<MenuItem>("menuClose")!;
-            menuSearchByName = this.FindControl<MenuItem>("menuSearchByName")!;
-            menuContinueSearch = this.FindControl<MenuItem>("menuContinueSearch")!;
-            menuGoToAsset = this.FindControl<MenuItem>("menuGoToAsset")!;
-            menuFilter = this.FindControl<MenuItem>("menuFilter")!;
-            menuDependencies = this.FindControl<MenuItem>("menuDependencies")!;
-            menuContainers = this.FindControl<MenuItem>("menuContainers")!;
-            menuScripts = this.FindControl<MenuItem>("menuScripts")!;
-            menuHierarchy = this.FindControl<MenuItem>("menuHierarchy")!;
-            btnViewData = this.FindControl<Button>("btnViewData")!;
-            btnSceneView = this.FindControl<Button>("btnSceneView")!;
-            btnExportRaw = this.FindControl<Button>("btnExportRaw")!;
-            btnExportDump = this.FindControl<Button>("btnExportDump")!;
-            btnPlugin = this.FindControl<Button>("btnPlugin")!;
-            btnImportRaw = this.FindControl<Button>("btnImportRaw")!;
-            btnImportDump = this.FindControl<Button>("btnImportDump")!;
-            btnRemove = this.FindControl<Button>("btnRemove")!;
-            dataGrid = this.FindControl<DataGrid>("dataGrid")!;
-            boxName = this.FindControl<TextBox>("boxName")!;
-            boxPathId = this.FindControl<TextBox>("boxPathId")!;
-            boxFileId = this.FindControl<TextBox>("boxFileId")!;
-            boxType = this.FindControl<TextBox>("boxType")!;
             //generated events
             KeyDown += InfoWindow_KeyDown;
             menuAdd.Click += MenuAdd_Click;
@@ -132,6 +71,7 @@ namespace UABEAvalonia
             btnExportDump.Click += BtnExportDump_Click;
             btnImportRaw.Click += BtnImportRaw_Click;
             btnImportDump.Click += BtnImportDump_Click;
+            btnEditData.Click += BtnEditData_Click;
             btnRemove.Click += BtnRemove_Click;
             btnPlugin.Click += BtnPlugin_Click;
             dataGrid.SelectionChanged += DataGrid_SelectionChanged;
@@ -328,7 +268,7 @@ namespace UABEAvalonia
                 else
                 {
                     // fast method in case asset hasn't loaded yet
-                    AssetTypeTemplateField template = Workspace.GetTemplateField(container, true);
+                    AssetTypeTemplateField template = Workspace.GetTemplateField(container, false, true);
                     hasGameObjectParent = template.Children.Any(c => c.Name == "m_GameObject");
                 }
 
@@ -425,6 +365,26 @@ namespace UABEAvalonia
                 await BatchImportDump(selection);
             else
                 await SingleImportDump(selection);
+        }
+
+        private async void BtnEditData_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            if (await FailIfNothingSelected())
+                return;
+
+            AssetContainer? selection = GetSelectedAssetsReplaced()[0];
+            if (selection != null && !selection.HasValueField)
+            {
+                selection = Workspace.GetAssetContainer(selection.FileInstance, 0, selection.PathId, false);
+            }
+            if (selection == null)
+            {
+                await MessageBoxUtil.ShowDialog(this,
+                    "Error", "Asset failed to deserialize.");
+                return;
+            }
+
+            await ShowEditAssetWindow(selection);
         }
 
         private async void BtnRemove_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -600,7 +560,7 @@ namespace UABEAvalonia
 
                     try
                     {
-                        using (FileStream fs = File.OpenWrite(filePath))
+                        using (FileStream fs = File.Open(filePath, FileMode.Create))
                         using (AssetsFileWriter w = new AssetsFileWriter(fs))
                         {
                             file.file.Write(w, 0, replacers);
@@ -649,7 +609,7 @@ namespace UABEAvalonia
                     Extensions.GetUABENameFast(Workspace, selectedCont, false, out string assetName, out string _);
                     string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.dat");
 
-                    using (FileStream fs = File.OpenWrite(file))
+                    using (FileStream fs = File.Open(file, FileMode.Create))
                     {
                         AssetImportExport dumper = new AssetImportExport();
                         dumper.DumpRawAsset(fs, selectedCont.FileReader, selectedCont.FilePosition, selectedCont.Size);
@@ -676,7 +636,7 @@ namespace UABEAvalonia
 
             if (file != null && file != string.Empty)
             {
-                using (FileStream fs = File.OpenWrite(file))
+                using (FileStream fs = File.Open(file, FileMode.Create))
                 {
                     AssetImportExport dumper = new AssetImportExport();
                     dumper.DumpRawAsset(fs, selectedCont.FileReader, selectedCont.FilePosition, selectedCont.Size);
@@ -705,7 +665,7 @@ namespace UABEAvalonia
                     assetName = Extensions.ReplaceInvalidPathChars(assetName);
                     string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedCont.FileInstance.path)}-{selectedCont.PathId}.{extension}");
 
-                    using (FileStream fs = File.OpenWrite(file))
+                    using (FileStream fs = File.Open(file, FileMode.Create))
                     using (StreamWriter sw = new StreamWriter(fs))
                     {
                         AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);
@@ -740,7 +700,7 @@ namespace UABEAvalonia
 
             if (file != null && file != string.Empty)
             {
-                using (FileStream fs = File.OpenWrite(file))
+                using (FileStream fs = File.Open(file, FileMode.Create))
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
                     AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);
@@ -929,6 +889,26 @@ namespace UABEAvalonia
                     Workspace.AddReplacer(selectedInst, replacer, new MemoryStream(bytes));
                 }
             }
+        }
+
+        public async Task ShowEditAssetWindow(AssetContainer cont)
+        {
+            AssetTypeValueField baseField = cont.BaseValueField;
+            if (baseField == null)
+            {
+                await MessageBoxUtil.ShowDialog(this, "Error", "Something went wrong deserializing this asset.");
+                return;
+            }
+
+            EditDataWindow editWin = new EditDataWindow(baseField);
+            byte[]? data = await editWin.ShowDialog<byte[]?>(this);
+            if (data == null)
+            {
+                return;
+            }
+
+            AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(cont, data);
+            Workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(data));
         }
 
         private async void NextNameSearch()
@@ -1235,11 +1215,6 @@ namespace UABEAvalonia
             return items;
         }
         // END TEMPORARY DATAGRID HACKS
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
     }
 
     public class AssetInfoDataGridItem : INotifyPropertyChanged

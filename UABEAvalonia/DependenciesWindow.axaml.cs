@@ -4,26 +4,14 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
-using MessageBox.Avalonia.Enums;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UABEAvalonia.Plugins;
 
 namespace UABEAvalonia
 {
-    public class DependenciesWindow : Window
-    {
-        //controls
-        private ListBox boxDependenciesList;
-        private ComboBox cbxFiles;
-        private Button btnAdd;
-        private Button btnEdit;
-        private Button btnRemove;
-        private Button btnMoveUp;
-        private Button btnMoveDown;
-        private Button btnCancel;
-        private Button btnOk;
-		
+    public partial class DependenciesWindow : Window
+    {		
         private AssetWorkspace workspace;
 
         private Dictionary<AssetsFileInstance, List<AssetsFileExternal>> dependencyMap;
@@ -37,16 +25,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated controls
-            boxDependenciesList = this.FindControl<ListBox>("boxDependenciesList")!;
-            cbxFiles = this.FindControl<ComboBox>("cbxFiles")!;
-            btnAdd = this.FindControl<Button>("btnAdd")!;
-            btnEdit = this.FindControl<Button>("btnEdit")!;
-            btnRemove = this.FindControl<Button>("btnRemove")!;
-            btnMoveUp = this.FindControl<Button>("btnMoveUp")!;
-            btnMoveDown = this.FindControl<Button>("btnMoveDown")!;
-            btnCancel = this.FindControl<Button>("btnCancel")!;
-            btnOk = this.FindControl<Button>("btnOk")!;
             //generated events
             btnAdd.Click += BtnAdd_Click;
             btnEdit.Click += BtnEdit_Click;
@@ -365,11 +343,6 @@ namespace UABEAvalonia
             return result == MessageBoxResult.Yes;
         }
 
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
-
         private class DependencyComboBoxItem
         {
             public string text;
@@ -415,7 +388,7 @@ namespace UABEAvalonia
                     if (dependency.PathName != string.Empty)
                         return $"{index} - {dependency.PathName}";
                     else
-                        return $"{index} - {dependency.Guid.mostSignificant:x16}{dependency.Guid.leastSignificant:x16}";
+                        return $"{index} - {dependency.Guid}";
                 }
                 else if (!isDependency && file != null)
                     return $"{index} - {file.name}";

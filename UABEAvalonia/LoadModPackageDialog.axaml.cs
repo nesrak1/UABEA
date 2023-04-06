@@ -14,13 +14,6 @@ namespace UABEAvalonia
 {
     public partial class LoadModPackageDialog : Window
     {
-        //controls
-        private TreeView treeView;
-        private TextBox boxBaseFolder;
-        private Button btnBaseFolder;
-        private Button btnOk;
-        private Button btnCancel;
-
         private bool builtTree;
         private TreeViewItem affectedBundles;
         private TreeViewItem affectedFiles;
@@ -36,20 +29,12 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            treeView = this.FindControl<TreeView>("treeView");
-            boxBaseFolder = this.FindControl<TextBox>("boxBaseFolder");
-            btnBaseFolder = this.FindControl<Button>("btnBaseFolder");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
             //generated events
             btnBaseFolder.Click += BtnBaseFolder_Click;
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
-            treeView.DoubleTapped += TreeView_DoubleTapped; //I hate this but whatever
-
-            //workaround since there is no textchanged event
-            boxBaseFolder.GetObservable(TextBox.TextProperty).Subscribe(text => UpdateTree());
+            treeView.DoubleTapped += TreeView_DoubleTapped;
+            boxBaseFolder.TextChanged += BoxBaseFolder_TextChanged;
         }
 
         public LoadModPackageDialog(InstallerPackageFile emip, AssetsManager am) : this()
@@ -143,6 +128,11 @@ namespace UABEAvalonia
             fileItem.Update(nameof(fileItem.DisplayText));
         }
 
+        private void BoxBaseFolder_TextChanged(object? sender, TextChangedEventArgs e)
+        {
+            UpdateTree();
+        }
+
         private void BuildTreeAssets()
         {
             builtTree = false;
@@ -206,11 +196,6 @@ namespace UABEAvalonia
             //    am.classFile = newFile;
             //}
             return true;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 

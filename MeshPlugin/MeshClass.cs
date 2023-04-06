@@ -167,12 +167,8 @@ namespace MeshPlugin
                     if (m_Use16BitIndices)
                     {
                         var m_IndexBuffer = baseField["m_IndexBuffer"];
-                        var count = m_IndexBuffer["Array"].AsArray.size;
-                        var bytes = new byte[count];
-                        for (int i = 0; i < count; i++)
-                        {
-                            bytes[i] = m_IndexBuffer["Array"][i].AsByte;
-                        }
+                        var bytes = m_IndexBuffer["Array"].AsByteArray;
+                        var count = bytes.Length;
                         MemoryStream ms = new MemoryStream(bytes);
                         AssetsFileReader reader = new AssetsFileReader(ms);
                         {
@@ -187,9 +183,8 @@ namespace MeshPlugin
                     else
                     {
                         var m_IndexBuffer = baseField["m_IndexBuffer"];
-                        var count = m_IndexBuffer["Array"].AsArray.size;
-                        var bytes = new byte[count];
-                        for (int i = 0; i < count; i++)
+                        var bytes = m_IndexBuffer["Array"].AsByteArray;
+                        for (int i = 0; i < bytes.Length; i++)
                         {
                             bytes[i] = m_IndexBuffer["Array"][i].AsByte;
                         }
@@ -219,21 +214,12 @@ namespace MeshPlugin
                 }
                 if (!baseField["m_BakedConvexCollisionMesh"].IsDummy)
                 {
-                    var count = baseField["m_BakedConvexCollisionMesh.Array"].AsArray.size;
-                    m_BakedConvexCollisionMesh = new byte[count];
-                    for (int i = 0; i < count; i++)
-                    {
-                        m_BakedConvexCollisionMesh[i] = baseField["m_BakedConvexCollisionMesh.Array"][i].AsByte;
-                    }
+                    m_BakedConvexCollisionMesh = baseField["m_BakedConvexCollisionMesh.Array"].AsByteArray;
+
                 }
                 if (!baseField["m_BakedTriangleCollisionMesh"].IsDummy)
                 {
-                    var count = baseField["m_BakedTriangleCollisionMesh.Array"].AsArray.size;
-                    m_BakedTriangleCollisionMesh = new byte[count];
-                    for (int i = 0; i < count; i++)
-                    {
-                        m_BakedTriangleCollisionMesh[i] = baseField["m_BakedTriangleCollisionMesh.Array"][i].AsByte;
-                    }
+                    m_BakedTriangleCollisionMesh = baseField["m_BakedTriangleCollisionMesh.Array"].AsByteArray;
                 }
                 if (!baseField["m_MeshMetrics[0]"].IsDummy && !baseField["m_MeshMetrics[1]"].IsDummy)
                 {
@@ -941,12 +927,7 @@ namespace MeshPlugin
                 m_Range = m_PackedFloatVector["m_Range"].AsFloat;
                 m_Start = m_PackedFloatVector["m_Start"].AsFloat;
 
-                var count = m_PackedFloatVector["m_Data.Array"].AsArray.size;
-                m_Data = new byte[count];
-                for (int i = 0; i < count; i++)
-                {
-                    m_Data[i] = m_PackedFloatVector["m_Data.Array"][i].AsByte;
-                }
+                m_Data = m_PackedFloatVector["m_Data.Array"].AsByteArray;
                 m_BitSize = m_PackedFloatVector["m_BitSize"].AsByte;
             }
 
@@ -999,12 +980,7 @@ namespace MeshPlugin
             {
                 m_NumItems = m_PackedIntVector["m_NumItems"].AsUInt;
 
-                var count = m_PackedIntVector["m_Data.Array"].AsArray.size;
-                m_Data = new byte[count];
-                for (int i = 0; i < count; i++)
-                {
-                    m_Data[i] = m_PackedIntVector["m_Data.Array"][i].AsByte;
-                }
+                m_Data = m_PackedIntVector["m_Data.Array"].AsByteArray;
 
                 m_BitSize = m_PackedIntVector["m_BitSize"].AsByte;
             }

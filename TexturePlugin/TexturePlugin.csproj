@@ -10,11 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.0.0-preview3" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.0.0-preview3" />
-    <PackageReference Include="Avalonia.Diagnostics" Version="11.0.0-preview3" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.0-preview3" />
-    <PackageReference Include="Avalonia.Themes.Simple" Version="11.0.0-preview3" />
+    <PackageReference Include="AssetRipper.TextureDecoder" Version="1.2.0" />
+    <PackageReference Include="Avalonia" Version="11.0.0-preview6" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.0.0-preview6" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.0.0-preview6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.0-preview6" />
+    <PackageReference Include="Avalonia.Themes.Simple" Version="11.0.0-preview6" />
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
   </ItemGroup>
@@ -70,7 +71,7 @@
       <ISPCBinDir>$(SolutionDir)TexToolWrap\ispc\linux64\libispc_texcomp.so</ISPCBinDir>
       <CrunchBinDir>$(SolutionDir)TexToolWrap\crunch\linux64\libcrnlib.so</CrunchBinDir>
     </PropertyGroup>
-    <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Linux)) AND ('$(LinuxUnameM)' == 'i386' OR '$(Platform)' == 'i686')">
+    <PropertyGroup Condition="$([MSBuild]::IsOsPlatform(Linux)) AND ('$(LinuxUnameM)' == 'i386' OR '$(LinuxUnameM)' == 'i686')">
       <UABEANativeConfig>linux-x86</UABEANativeConfig>
       <TexToolWrapBinDir>$(SolutionDir)TexToolWrap\libtextoolwrap.so</TexToolWrapBinDir>
       <PVRTexToolBinDir>$(SolutionDir)TexToolWrap\PVRTexLib\Linux_x86_32\libPVRTexLib.so</PVRTexToolBinDir>

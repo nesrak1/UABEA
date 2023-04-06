@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:uabea="clr-namespace:UABEAvalonia"
+        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="550"
+        Width="350" Height="550"
+        Icon="/Assets/uabeavalonia16.ico"
+        x:Class="UABEAvalonia.EditDataWindow"
+        Title="Edit Data">
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="*" />
+			<RowDefinition Height="30" />
+		</Grid.RowDefinitions>
+		<TextBox TextWrapping="NoWrap" AcceptsReturn="True" FontFamily="Consolas,Monospace,Courier,DejaVu Sans Mono,Roboto Mono" Grid.Row="0" Name="textBox" />
+		<Grid Grid.Row="1">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*" />
+				<ColumnDefinition Width="*" />
+			</Grid.ColumnDefinitions>
+			<Button Grid.Column="0" Name="btnOk">Ok</Button>
+			<Button Grid.Column="1" Name="btnCancel">Cancel</Button>
+		</Grid>
+	</Grid>
+</Window>

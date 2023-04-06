@@ -9,12 +9,6 @@ namespace UABEAvalonia
 {
     public partial class SelectDumpWindow : Window
     {
-        //controls
-        private ComboBox comboBox;
-        private ComboBoxItem anyItem;
-        private Button btnOk;
-        private Button btnCancel;
-
         public static List<string> ALL_EXTENSIONS = new List<string>() { "json", "txt" };
 
         public SelectDumpWindow()
@@ -23,11 +17,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated controls
-            comboBox = this.FindControl<ComboBox>("comboBox");
-            anyItem = this.FindControl<ComboBoxItem>("anyItem");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
             //generated events
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -60,11 +49,6 @@ namespace UABEAvalonia
         private void BtnCancel_Click(object? sender, RoutedEventArgs e)
         {
             Close(null);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

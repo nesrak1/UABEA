@@ -10,12 +10,8 @@ using System.Collections.Generic;
 
 namespace UABEAvalonia
 {
-    public class DataWindow : Window
+    public partial class DataWindow : Window
     {
-        //controls
-        private AssetDataTreeView treeView;
-        private MenuItem menuVisitAsset;
-
         private InfoWindow win;
         private AssetWorkspace workspace;
 
@@ -25,12 +21,7 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            treeView = this.FindControl<AssetDataTreeView>("treeView");
-            menuVisitAsset = this.FindControl<MenuItem>("menuVisitAsset");
             //generated events
-            treeView.DoubleTapped += TreeView_DoubleTapped;
-            menuVisitAsset.Click += MenuVisitAsset_Click;
             Closing += DataWindow_Closing;
         }
 
@@ -41,7 +32,7 @@ namespace UABEAvalonia
 
             SetWindowTitle(workspace, cont);
 
-            treeView.Init(workspace);
+            treeView.Init(win, workspace);
             treeView.LoadComponent(cont);
         }
 
@@ -54,33 +45,9 @@ namespace UABEAvalonia
                 Title += $": {typeName} {assetName} ({cont.FileInstance.name}/{cont.PathId})";
         }
 
-        private void TreeView_DoubleTapped(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            if (treeView.SelectedItem != null)
-            {
-                TreeViewItem item = (TreeViewItem)treeView.SelectedItem;
-                item.IsExpanded = !item.IsExpanded;
-            }
-        }
-
-        private void MenuVisitAsset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            TreeViewItem item = (TreeViewItem)treeView.SelectedItem;
-            if (item != null && item.Tag != null)
-            {
-                AssetDataTreeViewItem info = (AssetDataTreeViewItem)item.Tag;
-                win.SelectAsset(info.fromFile, info.fromPathId);
-            }
-        }
-
         private void DataWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             treeView.Items = null;
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

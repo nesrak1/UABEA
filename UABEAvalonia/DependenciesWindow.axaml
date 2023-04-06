@@ -47,8 +47,8 @@
           <ColumnDefinition Width="*"></ColumnDefinition>
           <ColumnDefinition Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <Button Grid.Column="0" Name="btnCancel">Cancel</Button>
-        <Button Grid.Column="1" Name="btnOk">Ok</Button>
+        <Button Grid.Column="0" Name="btnOk">Ok</Button>
+        <Button Grid.Column="1" Name="btnCancel">Cancel</Button>
       </Grid>
     </Grid>
   </Grid>

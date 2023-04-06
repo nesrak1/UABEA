@@ -11,7 +11,7 @@
         "dependencies": {
           "AssetsTools.NET": "1.0.0",
           "NETStandard.Library": "2.0.3",
-          "Samboy063.LibCpp2IL": "2022.0.5"
+          "Samboy063.LibCpp2IL": "2022.0.7.2"
         },
         "runtime": {
           "AssetsTools.NET.Cpp2IL.dll": {}
@@ -51,15 +51,15 @@
           "Microsoft.NETCore.Platforms": "1.1.0"
         }
       },
-      "Samboy063.LibCpp2IL/2022.0.5": {
+      "Samboy063.LibCpp2IL/2022.0.7.2": {
         "dependencies": {
           "IndexRange": "1.0.0",
           "Samboy063.WasmDisassembler": "2022.0.2"
         },
         "runtime": {
           "lib/netstandard2.0/LibCpp2IL.dll": {
-            "assemblyVersion": "2022.0.5.0",
-            "fileVersion": "2022.0.5.0"
+            "assemblyVersion": "2022.0.7.0",
+            "fileVersion": "2022.0.7.0"
           }
         }
       },
@@ -115,12 +115,12 @@
       "path": "netstandard.library/2.0.3",
       "hashPath": "netstandard.library.2.0.3.nupkg.sha512"
     },
-    "Samboy063.LibCpp2IL/2022.0.5": {
+    "Samboy063.LibCpp2IL/2022.0.7.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-eH+/FBclsKDxboa9N/tFoiM8kwvietVX0FtXYxvcexSp/geYCyTt2XUGOQjinqd3Yqg/QxmpIqBO7qy4MQHrhw==",
-      "path": "samboy063.libcpp2il/2022.0.5",
-      "hashPath": "samboy063.libcpp2il.2022.0.5.nupkg.sha512"
+      "sha512": "sha512-DpVeU0dQkUJCpbw0f1xKOG8vimdK2oYhrVABC7HDE3/ikGjhnMZd3i5b1joKDHZ+AiL90TWOaEXPcy24rCZ0dA==",
+      "path": "samboy063.libcpp2il/2022.0.7.2",
+      "hashPath": "samboy063.libcpp2il.2022.0.7.2.nupkg.sha512"
     },
     "Samboy063.WasmDisassembler/2022.0.2": {
       "type": "package",

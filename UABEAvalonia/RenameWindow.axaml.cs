@@ -6,23 +6,12 @@ namespace UABEAvalonia
 {
     public partial class RenameWindow : Window
     {
-        //controls
-        private Button btnOk;
-        private Button btnCancel;
-        private TextBox boxOrig;
-        private TextBox boxNew;
-
         public RenameWindow()
         {
             InitializeComponent();
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            btnOk = this.FindControl<Button>("btnOk")!;
-            btnCancel = this.FindControl<Button>("btnCancel")!;
-            boxOrig = this.FindControl<TextBox>("boxOrig")!;
-            boxNew = this.FindControl<TextBox>("boxNew")!;
             //generated events
             btnOk.Click += BtnYes_Click;
             btnCancel.Click += BtnNo_Click;
@@ -43,11 +32,6 @@ namespace UABEAvalonia
         private void BtnNo_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             Close(string.Empty);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

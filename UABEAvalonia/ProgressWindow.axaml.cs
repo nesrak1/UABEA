@@ -9,10 +9,6 @@ namespace UABEAvalonia
 {
     public partial class ProgressWindow : Window
     {
-        //controls
-        private TextBlock lblTitle;
-        private ProgressBar progressBar;
-
         public IAssetBundleCompressProgress Progress { get; }
 
         public ProgressWindow()
@@ -21,10 +17,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated items
-            lblTitle = this.FindControl<TextBlock>("lblTitle")!;
-            progressBar = this.FindControl<ProgressBar>("progressBar")!;
-
             Progress = new ProgressWindowProgress(this);
 
             progressBar.Minimum = 0.0;
@@ -43,11 +35,6 @@ namespace UABEAvalonia
             {
                 Close(true);
             }
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
 
         internal class ProgressWindowProgress : IAssetBundleCompressProgress

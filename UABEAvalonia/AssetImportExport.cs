@@ -1,5 +1,6 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -44,14 +45,15 @@ namespace UABEAvalonia
             string fieldName = template.Name;
             bool isArray = template.IsArray;
 
-            //string's field isn't aligned but its array is
+            // string's field isn't aligned but its array is
             if (template.ValueType == AssetValueType.String)
                 align = "1";
 
-            //mainly to handle enum fields not having the int type name
+            // mainly to handle enum fields not having the int type name
             if (template.ValueType != AssetValueType.None &&
                 template.ValueType != AssetValueType.Array &&
                 template.ValueType != AssetValueType.ByteArray &&
+                template.ValueType != AssetValueType.ManagedReferencesRegistry &&
                 !isArray)
             {
                 typeName = CorrectTypeName(template.ValueType);
@@ -97,12 +99,7 @@ namespace UABEAvalonia
                     AssetValueType evt = field.Value.ValueType;
                     if (evt == AssetValueType.String)
                     {
-                        //only replace \ with \\ but not " with \" lol
-                        //you just have to find the last "
-                        string fixedStr = field.AsString
-                            .Replace("\\", "\\\\")
-                            .Replace("\r", "\\r")
-                            .Replace("\n", "\\n");
+                        string fixedStr = TextDumpEscapeString(field.AsString);
                         value = $" = \"{fixedStr}\"";
                     }
                     else if (1 <= (int)evt && (int)evt <= 12)
@@ -112,9 +109,79 @@ namespace UABEAvalonia
                 }
                 sw.WriteLine($"{new string(' ', depth)}{align} {typeName} {fieldName}{value}");
 
-                for (int i = 0; i < field.Children.Count; i++)
+                if (field.Value != null && field.Value.ValueType == AssetValueType.ManagedReferencesRegistry)
                 {
-                    RecurseTextDump(field.Children[i], depth + 1);
+                    // todo separate method
+                    ManagedReferencesRegistry registry = field.Value.AsManagedReferencesRegistry;
+
+                    if (registry.version == 1)
+                    {
+                        // we need to include this since text dumps are
+                        // essentially pretty raw dumps and need to include
+                        // that info so we know when to stop the list
+                        List<AssetTypeReferencedObject> referencesWithTerm = new List<AssetTypeReferencedObject>(registry.references)
+                        {
+                            new AssetTypeReferencedObject()
+                            {
+                                rid = 0,
+                                type = AssetTypeReference.TERMINUS,
+                                data = AssetTypeValueField.DUMMY_FIELD
+                            }
+                        };
+
+                        sw.WriteLine($"{new string(' ', depth + 1)}0 int version = {registry.version}");
+                        for (int i = 0; i < referencesWithTerm.Count; i++)
+                        {
+                            AssetTypeReferencedObject refObj = referencesWithTerm[i];
+                            AssetTypeReference typeRef = refObj.type;
+                            sw.WriteLine($"{new string(' ', depth + 1)}0 ReferencedObject {i:d8}");
+                            sw.WriteLine($"{new string(' ', depth + 2)}0 ReferencedManagedType type");
+                            sw.WriteLine($"{new string(' ', depth + 3)}1 string class = \"{TextDumpEscapeString(typeRef.ClassName)}\"");
+                            sw.WriteLine($"{new string(' ', depth + 3)}1 string ns = \"{TextDumpEscapeString(typeRef.Namespace)}\"");
+                            sw.WriteLine($"{new string(' ', depth + 3)}1 string asm = \"{TextDumpEscapeString(typeRef.AsmName)}\"");
+                            sw.WriteLine($"{new string(' ', depth + 2)}0 ReferencedObjectData data");
+
+                            foreach (AssetTypeValueField child in refObj.data.Children)
+                            {
+                                RecurseTextDump(child, depth + 3);
+                            }
+                        }
+                    }
+                    else if (registry.version == 2)
+                    {
+                        sw.WriteLine($"{new string(' ', depth + 1)}0 int version = {registry.version}");
+                        sw.WriteLine($"{new string(' ', depth + 1)}0 vector RefIds");
+                        sw.WriteLine($"{new string(' ', depth + 2)}1 Array Array");
+                        sw.WriteLine($"{new string(' ', depth + 3)}0 int size = {registry.references.Count}");
+                        for (int i = 0; i < registry.references.Count; i++)
+                        {
+                            AssetTypeReferencedObject refObj = registry.references[i];
+                            AssetTypeReference typeRef = refObj.type;
+                            sw.WriteLine($"{new string(' ', depth + 3)}0 ReferencedObject data");
+                            sw.WriteLine($"{new string(' ', depth + 4)}0 SInt64 rid = {refObj.rid}");
+                            sw.WriteLine($"{new string(' ', depth + 4)}0 ReferencedManagedType type");
+                            sw.WriteLine($"{new string(' ', depth + 5)}1 string class = \"{TextDumpEscapeString(typeRef.ClassName)}\"");
+                            sw.WriteLine($"{new string(' ', depth + 5)}1 string ns = \"{TextDumpEscapeString(typeRef.Namespace)}\"");
+                            sw.WriteLine($"{new string(' ', depth + 5)}1 string asm = \"{TextDumpEscapeString(typeRef.AsmName)}\"");
+                            sw.WriteLine($"{new string(' ', depth + 4)}0 ReferencedObjectData data");
+
+                            foreach (AssetTypeValueField child in refObj.data.Children)
+                            {
+                                RecurseTextDump(child, depth + 5);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new NotSupportedException($"Registry version {registry.version} not supported!");
+                    }
+                }
+                else
+                {
+                    foreach (AssetTypeValueField? child in field)
+                    {
+                        RecurseTextDump(child, depth + 1);
+                    }
                 }
             }
         }
@@ -160,32 +227,98 @@ namespace UABEAvalonia
                 {
                     AssetValueType evt = field.Value.ValueType;
                     
-                    object value = evt switch
+                    if (field.Value.ValueType != AssetValueType.ManagedReferencesRegistry)
                     {
-                        AssetValueType.Bool => field.AsBool,
-                        AssetValueType.Int8 or
-                        AssetValueType.Int16 or
-                        AssetValueType.Int32 => field.AsInt,
-                        AssetValueType.Int64 => field.AsLong,
-                        AssetValueType.UInt8 or
-                        AssetValueType.UInt16 or
-                        AssetValueType.UInt32 => field.AsUInt,
-                        AssetValueType.UInt64 => field.AsULong,
-                        AssetValueType.String => field.AsString,
-                        AssetValueType.Float => field.AsFloat,
-                        AssetValueType.Double => field.AsDouble,
-                        _ => "invalid value"
-                    };
+                        object value = evt switch
+                        {
+                            AssetValueType.Bool => field.AsBool,
+                            AssetValueType.Int8 or
+                            AssetValueType.Int16 or
+                            AssetValueType.Int32 => field.AsInt,
+                            AssetValueType.Int64 => field.AsLong,
+                            AssetValueType.UInt8 or
+                            AssetValueType.UInt16 or
+                            AssetValueType.UInt32 => field.AsUInt,
+                            AssetValueType.UInt64 => field.AsULong,
+                            AssetValueType.String => field.AsString,
+                            AssetValueType.Float => field.AsFloat,
+                            AssetValueType.Double => field.AsDouble,
+                            _ => "invalid value"
+                        };
 
-                    return (JValue)JToken.FromObject(value);
+                        return (JValue)JToken.FromObject(value);
+                    }
+                    else
+                    {
+                        // todo separate method
+                        ManagedReferencesRegistry registry = field.Value.AsManagedReferencesRegistry;
+
+                        if (registry.version == 1 || registry.version == 2)
+                        {
+                            JArray jArrayRefs = new JArray();
+
+                            foreach (AssetTypeReferencedObject refObj in registry.references)
+                            {
+                                AssetTypeReference typeRef = refObj.type;
+
+                                JObject jObjManagedType = new JObject
+                                {
+                                    { "class", typeRef.ClassName },
+                                    { "ns", typeRef.Namespace },
+                                    { "asm", typeRef.AsmName }
+                                };
+
+                                JObject jObjData = new JObject();
+
+                                foreach (AssetTypeValueField child in refObj.data)
+                                {
+                                    jObjData.Add(child.FieldName, RecurseJsonDump(child, uabeFlavor));
+                                }
+
+                                JObject jObjRefObject;
+
+                                if (registry.version == 1)
+                                {
+                                    jObjRefObject = new JObject
+                                    {
+                                        { "type", jObjManagedType },
+                                        { "data", jObjData }
+                                    };
+                                }
+                                else
+                                {
+                                    jObjRefObject = new JObject
+                                    {
+                                        { "rid", refObj.rid },
+                                        { "type", jObjManagedType },
+                                        { "data", jObjData }
+                                    };
+                                }
+
+                                jArrayRefs.Add(jObjRefObject);
+                            }
+
+                            JObject jObjReferences = new JObject
+                            {
+                                { "version", registry.version },
+                                { "RefIds", jArrayRefs }
+                            };
+
+                            return jObjReferences;
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"Registry version {registry.version} not supported!");
+                        }
+                    }
                 }
                 else
                 {
                     JObject jObject = new JObject();
 
-                    for (int i = 0; i < field.Children.Count; i++)
+                    foreach (AssetTypeValueField child in field)
                     {
-                        jObject.Add(field.Children[i].FieldName, RecurseJsonDump(field.Children[i], uabeFlavor));
+                        jObject.Add(child.FieldName, RecurseJsonDump(child, uabeFlavor));
                     }
 
                     return jObject;
@@ -236,7 +369,7 @@ namespace UABEAvalonia
                 while (line[thisDepth] == ' ')
                     thisDepth++;
 
-                if (line[thisDepth] == '[') //array index, ignore
+                if (line[thisDepth] == '[') // array index, ignore
                     continue;
 
                 if (thisDepth < alignStack.Count)
@@ -358,7 +491,16 @@ namespace UABEAvalonia
                     JToken? childToken = token[childTempField.Name];
 
                     if (childToken == null)
-                        throw new Exception($"Missing field {childTempField.Name} in json.");
+                    {
+                        if (tempField != null)
+                        {
+                            throw new Exception($"Missing field {childTempField.Name} in JSON. Parent field is {tempField.Type} {tempField.Name}.");
+                        }
+                        else
+                        {
+                            throw new Exception($"Missing field {childTempField.Name} in JSON.");
+                        }
+                    }
                         
                     RecurseJsonImport(childTempField, childToken);
                 }
@@ -367,6 +509,10 @@ namespace UABEAvalonia
                 {
                     aw.Align();
                 }
+            }
+            else if (tempField.HasValue && tempField.ValueType == AssetValueType.ManagedReferencesRegistry)
+            {
+                throw new NotImplementedException("SerializeReference not supported in JSON import yet!");
             }
             else
             {
@@ -447,10 +593,10 @@ namespace UABEAvalonia
                     }
                 }
 
-                //have to do this because of bug in MonoDeserializer
+                // have to do this because of bug in MonoDeserializer
                 if (tempField.IsArray && tempField.ValueType != AssetValueType.ByteArray)
                 {
-                    //children[0] is size field, children[1] is the data field
+                    // children[0] is size field, children[1] is the data field
                     AssetTypeTemplateField childTempField = tempField.Children[1];
 
                     JArray? tokenArray = (JArray?)token;
@@ -543,6 +689,16 @@ namespace UABEAvalonia
             return "UnknownBaseType";
         }
 
+        // only replace \ with \\ but not " with \" lol
+        // you just have to find the last "
+        private string TextDumpEscapeString(string str)
+        {
+            return str
+                .Replace("\\", "\\\\")
+                .Replace("\r", "\\r")
+                .Replace("\n", "\\n");
+        }
+        
         public static AssetsReplacer CreateAssetReplacer(AssetContainer cont, byte[] data)
         {
             return new AssetsReplacerFromMemory(cont.PathId, cont.ClassId, cont.MonoId, data);

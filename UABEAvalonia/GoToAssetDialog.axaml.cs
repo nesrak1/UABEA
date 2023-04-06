@@ -11,12 +11,6 @@ namespace UABEAvalonia
 {
     public partial class GoToAssetDialog : Window
     {
-        //controls
-        private ComboBox ddFileId;
-        private TextBox boxPathId;
-        private Button btnOk;
-        private Button btnCancel;
-
         private AssetWorkspace workspace;
 
         public GoToAssetDialog()
@@ -25,11 +19,6 @@ namespace UABEAvalonia
 #if DEBUG
             this.AttachDevTools();
 #endif
-            //generated controls
-            ddFileId = this.FindControl<ComboBox>("ddFileId");
-            boxPathId = this.FindControl<TextBox>("boxPathId");
-            btnOk = this.FindControl<Button>("btnOk");
-            btnCancel = this.FindControl<Button>("btnCancel");
             //generated events
             btnOk.Click += BtnOk_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -89,11 +78,6 @@ namespace UABEAvalonia
             AssetPPtr pptr = new AssetPPtr(fileId, pathId);
 
             Close(pptr);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

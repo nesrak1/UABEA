@@ -9,32 +9,43 @@ using System.Threading.Tasks;
 using UABEAvalonia;
 using UABEAvalonia.Plugins;
 
-namespace TextAssetPlugin
+namespace FontPlugin
 {
-    public static class TextAssetHelper
-    {
-        public static string GetUContainerExtension(AssetContainer item)
+    public static class FontHelper
+    {        
+        public static AssetTypeValueField GetByteArrayFont(AssetWorkspace workspace, AssetContainer font)
         {
-            string ucont = item.Container;
-            if (Path.GetFileName(ucont) != Path.GetFileNameWithoutExtension(ucont))
-            {
-                return Path.GetExtension(ucont);
-            }
+            AssetTypeTemplateField fontTemp = workspace.GetTemplateField(font);
+            AssetTypeTemplateField fontData = fontTemp.Children.FirstOrDefault(f => f.Name == "m_FontData");
+            if (fontData == null)
+                return null;
+            
+            // m_FontData.Array
+            fontData.Children[0].ValueType = AssetValueType.ByteArray;
 
-            return string.Empty;
+            AssetTypeValueField baseField = fontTemp.MakeValue(font.FileReader, font.FilePosition);
+            return baseField;
+        }
+
+        public static bool IsDataOtf(byte[] byteData)
+        {
+            return byteData[0] == 0x4f &&
+                byteData[1] == 0x54 &&
+                byteData[2] == 0x54 &&
+                byteData[3] == 0x4f;
         }
     }
 
-    public class ImportTextAssetOption : UABEAPluginOption
+    public class ImportFontOption : UABEAPluginOption
     {
         public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
         {
-            name = "Import .txt";
+            name = "Import .ttf/.otf";
 
             if (action != UABEAPluginAction.Import)
                 return false;
 
-            int classId = am.ClassDatabase.FindAssetClassByName("TextAsset").ClassId;
+            int classId = am.ClassDatabase.FindAssetClassByName("Font").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -61,19 +72,19 @@ namespace TextAssetPlugin
 
             if (dir != null && dir != string.Empty)
             {
-                List<string> extensions = new List<string>() { "*" };
+                List<string> extensions = new List<string>() { "otf", "ttf" };
                 ImportBatch dialog = new ImportBatch(workspace, selection, dir, extensions);
                 List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
                 foreach (ImportBatchInfo batchInfo in batchInfos)
                 {
                     AssetContainer cont = batchInfo.cont;
 
-                    AssetTypeValueField baseField = workspace.GetBaseField(cont);
+                    AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
 
                     string file = batchInfo.importFile;
 
                     byte[] byteData = File.ReadAllBytes(file);
-                    baseField["m_Script"].AsByteArray = byteData;
+                    baseField["m_FontData.Array"].AsByteArray = byteData;
 
                     byte[] savedAsset = baseField.WriteToByteArray();
 
@@ -86,28 +97,20 @@ namespace TextAssetPlugin
             }
             return false;
         }
+
         public async Task<bool> SingleImport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             AssetContainer cont = selection[0];
 
             OpenFileDialog ofd = new OpenFileDialog();
 
-            AssetTypeValueField baseField = workspace.GetBaseField(cont);
+            AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
 
-            ofd.Title = "Open text file";
+            ofd.Title = "Open font file";
             ofd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "Text files (*.txt)", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = "Font files (*.ttf;*.otf)", Extensions = new List<string>() { "ttf", "otf" } },
                 new FileDialogFilter() { Name = "All types (*.*)", Extensions = new List<string>() { "*.*" } }
             };
-
-            string ucontExt = TextAssetHelper.GetUContainerExtension(cont);
-            if (ucontExt != string.Empty)
-            {
-                string ucontExtNoDot = ucontExt[1..];
-                string displayName = $"{ucontExtNoDot} files (*{ucontExt})";
-                List<string> extensions = new List<string>() { ucontExtNoDot };
-                ofd.Filters.Insert(0, new FileDialogFilter() { Name = displayName, Extensions = extensions });
-            }
 
             string[] fileList = await ofd.ShowAsync(win);
             if (fileList == null || fileList.Length == 0)
@@ -118,7 +121,7 @@ namespace TextAssetPlugin
             if (file != null && file != string.Empty)
             {
                 byte[] byteData = File.ReadAllBytes(file);
-                baseField["m_Script"].AsByteArray = byteData;
+                baseField["m_FontData.Array"].AsByteArray = byteData;
 
                 byte[] savedAsset = baseField.WriteToByteArray();
 
@@ -131,16 +134,16 @@ namespace TextAssetPlugin
         }
     }
     
-    public class ExportTextAssetOption : UABEAPluginOption
+    public class ExportFontOption : UABEAPluginOption
     {
         public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
         {
-            name = "Export .txt";
+            name = "Export .ttf/.otf";
 
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = am.ClassDatabase.FindAssetClassByName("TextAsset").ClassId;
+            int classId = am.ClassDatabase.FindAssetClassByName("Font").ClassId;
 
             foreach (AssetContainer cont in selection)
             {
@@ -169,21 +172,20 @@ namespace TextAssetPlugin
             {
                 foreach (AssetContainer cont in selection)
                 {
-                    AssetTypeValueField baseField = workspace.GetBaseField(cont);
+                    AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
 
                     string name = baseField["m_Name"].AsString;
-                    byte[] byteData = baseField["m_Script"].AsByteArray;
+                    byte[] byteData = baseField["m_FontData.Array"].AsByteArray;
+
+                    if (byteData.Length == 0)
+                        continue;
 
                     name = Extensions.ReplaceInvalidPathChars(name);
 
-                    string extension = ".txt";
-                    string ucontExt = TextAssetHelper.GetUContainerExtension(cont);
-                    if (ucontExt != string.Empty)
-                    {
-                        extension = ucontExt;
-                    }
+                    bool isOtf = FontHelper.IsDataOtf(byteData);
+                    string extension = isOtf ? "otf" : "ttf";
 
-                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}{extension}");
+                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}");
 
                     File.WriteAllBytes(file, byteData);
                 }
@@ -191,33 +193,37 @@ namespace TextAssetPlugin
             }
             return false;
         }
+
         public async Task<bool> SingleExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             AssetContainer cont = selection[0];
 
             SaveFileDialog sfd = new SaveFileDialog();
 
-            AssetTypeValueField baseField = workspace.GetBaseField(cont);
+            AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
             string name = baseField["m_Name"].AsString;
             name = Extensions.ReplaceInvalidPathChars(name);
 
-            sfd.Title = "Save text file";
+            byte[] byteData = baseField["m_FontData.Array"].AsByteArray;
+
+            if (byteData.Length == 0)
+            {
+                await MessageBoxUtil.ShowDialog(win,
+                    "Empty font", "This font does not use m_FontData. It cannot be exported as a ttf or otf.");
+
+                return false;
+            }
+
+            bool isOtf = FontHelper.IsDataOtf(byteData);
+            string fontType = isOtf ? "otf" : "ttf";
+
+            sfd.Title = "Save font file";
             sfd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "Text file", Extensions = new List<string>() { "txt" } },
+                new FileDialogFilter() { Name = $"Font file (*.{fontType})", Extensions = new List<string>() { fontType } },
                 new FileDialogFilter() { Name = "All types (*.*)", Extensions = new List<string>() { "*.*" } }
             };
 
-            string defaultExtension = ".txt";
-
-            string ucontExt = TextAssetHelper.GetUContainerExtension(cont);
-            if (ucontExt != string.Empty)
-            {
-                string ucontExtNoDot = ucontExt[1..];
-                string displayName = $"{ucontExtNoDot} files (*{ucontExt})";
-                List<string> extensions = new List<string>() { ucontExtNoDot };
-                sfd.Filters.Insert(0, new FileDialogFilter() { Name = displayName, Extensions = extensions });
-                defaultExtension = ucontExt;
-            }
+            string defaultExtension = "." + fontType;
 
             sfd.InitialFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}{defaultExtension}";
 
@@ -225,7 +231,6 @@ namespace TextAssetPlugin
 
             if (file != null && file != string.Empty)
             {
-                byte[] byteData = baseField["m_Script"].AsByteArray;
                 File.WriteAllBytes(file, byteData);
 
                 return true;
@@ -234,16 +239,16 @@ namespace TextAssetPlugin
         }
     }
 
-    public class TextAssetPlugin : UABEAPlugin
+    public class FontPlugin : UABEAPlugin
     {
         public PluginInfo Init()
         {
             PluginInfo info = new PluginInfo();
-            info.name = "TextAsset Import/Export";
+            info.name = "Font Import/Export";
 
             info.options = new List<UABEAPluginOption>();
-            info.options.Add(new ImportTextAssetOption());
-            info.options.Add(new ExportTextAssetOption());
+            info.options.Add(new ImportFontOption());
+            info.options.Add(new ExportFontOption());
             return info;
         }
     }

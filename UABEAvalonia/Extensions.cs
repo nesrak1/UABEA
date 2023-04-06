@@ -163,7 +163,14 @@ namespace UABEAvalonia
                 {
                     // this is a bad idea. this directly calls am.GetTemplateField
                     // which won't look for new MonoScripts from UABEA.
-                    AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont, true);
+                    // hasTypeTree is set to false to ignore type tree (to prevent
+                    // reading the entire MonoBehaviour if type trees are provided)
+
+                    bool wasUsingCache = workspace.am.UseTemplateFieldCache;
+                    workspace.am.UseTemplateFieldCache = false;
+                    AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont, true, true);
+                    workspace.am.UseTemplateFieldCache = wasUsingCache;
+
                     monoBf = monoTemp.MakeValue(cont.FileReader, cont.FilePosition);
                 }
 

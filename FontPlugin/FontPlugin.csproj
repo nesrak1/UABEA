@@ -33,8 +33,8 @@
       <UABEABinDir>$(SolutionDir)UABEAvalonia\$(OutputPath)</UABEABinDir>
     </PropertyGroup>
     
-    <!-- copy textassetplugin -->
-    <Copy SourceFiles="$(OutputPath)TextAssetPlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
+    <!-- copy fontplugin -->
+    <Copy SourceFiles="$(OutputPath)FontPlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
   </Target>
   
   <!-- publish event -->
@@ -43,7 +43,7 @@
       <UABEABinDir>$(SolutionDir)UABEAvalonia\$(PublishDir)</UABEABinDir>
     </PropertyGroup>
     
-    <!-- copy textassetplugin -->
-    <Copy SourceFiles="$(OutputPath)TextAssetPlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
+    <!-- copy fontplugin -->
+    <Copy SourceFiles="$(OutputPath)FontPlugin.dll" DestinationFolder="$(UABEABinDir)plugins" ContinueOnError="true" />
   </Target>
 </Project>
