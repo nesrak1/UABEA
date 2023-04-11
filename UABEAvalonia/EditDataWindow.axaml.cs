@@ -2,8 +2,12 @@ using AssetsTools.NET;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using AvaloniaEdit;
+using AvaloniaEdit.TextMate;
 using System.IO;
 using System.Text;
+using TextMateSharp.Grammars;
+using UABEAvalonia.TextHighlighting;
 
 namespace UABEAvalonia
 {
@@ -29,15 +33,21 @@ namespace UABEAvalonia
             
             impexp = new AssetImportExport();
             impexp.DumpTextAsset(sw, baseField);
+
             sw.Flush();
+            ms.Position = 0;
 
             string str = Encoding.UTF8.GetString(ms.ToArray());
-            textBox.Text = str;
+            var registryOptions = new UABEDumpRegistryOptions(ThemeHandler.UseDarkTheme ? ThemeName.DarkPlus : ThemeName.LightPlus);
+            var textMateInstallation = textEditor.InstallTextMate(registryOptions);
+            textMateInstallation.SetGrammar("source.utxt");
+            textEditor.Load(ms);
         }
 
         private async void BtnOk_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            using MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(textBox.Text ?? string.Empty));
+            string text = textEditor.Text;
+            using MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
             StreamReader sr = new StreamReader(ms);
             byte[]? data = impexp.ImportTextAsset(sr, out string? exceptionMessage);
             if (data == null)

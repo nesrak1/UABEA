@@ -1,0 +1,38 @@
+{
+  "name": "utxt",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "1.0.0",
+  "publisher": "vscode",
+  "license": "MIT",
+  "engines": {
+    "vscode": "*"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "utxt",
+        "extensions": [
+          ".txt",
+          ".utxt"
+        ],
+        "aliases": [
+          "UTXT",
+          "utxt"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "utxt",
+        "path": "./syntaxes/utxt.tmLanguage.json",
+        "scopeName": "source.utxt"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/vscode.git"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "name": "UABE Dump",
+  "scopeName": "source.utxt",
+  "fileTypes": [".utxt"],
+  "patterns": [
+    {
+      "name": "comment.line.block.utxt",
+      "begin": "\\(",
+      "end": "\\)"
+    },
+    {
+      "name": "constant.numeric.decimal.utxt",
+      "match": "\\b[0-9]+\\b"
+    },
+    {
+      "captures": {
+        "1": {
+          "name": "constant.numeric.decimal.utxt"
+        },
+        "2": {
+          "name": "storage.type.built-in.primitive.utxt"
+        }
+      },
+      "match": "^\\s*([0-9]+)\\s+(string|SInt8|char|UInt8|unsigned char|SInt16|short|UInt16|unsigned short|SInt32|int|Type\\*|UInt32|unsigned int|SInt64|long|UInt64|unsigned long long|FileSize|float|double|bool|Array|TypelessData|ManagedReferencesRegistry)\\b"
+    },
+    {
+      "captures": {
+        "1": {
+          "name": "constant.numeric.decimal.utxt"
+        },
+        "2": {
+          "name": "entity.name.class.utxt"
+        }
+      },
+      "match": "^\\s*([0-9]+)\\s+(PPtr<[^>]+>)(?=\\W)"
+    },
+    {
+      "captures": {
+        "1": {
+          "name": "constant.numeric.decimal.utxt"
+        },
+        "2": {
+          "name": "entity.name.class.utxt"
+        }
+      },
+      "match": "^\\s*([0-9]+)\\s+(\\w+)\\b"
+    },
+    {
+      "name": "punctuation.definition.directive.utxt",
+      "match": "\\b=\\b"
+    },
+    {
+      "name": "string.quoted.double.utxt",
+      "begin": "\"",
+      "end": "\"$",
+      "patterns": [
+        {
+          "name": "constant.character.escape.utxt",
+          "match": "\\\\."
+        }
+      ]
+    }
+  ]
+}
