@@ -115,8 +115,11 @@ namespace UABEAvalonia
                         return;
                     }
 
-                    await win.ShowEditAssetWindow(cont);
-                    await MessageBoxUtil.ShowDialog(win, "Note", "Asset updated. Changes will be shown next time you open this asset.");
+                    bool saved = await win.ShowEditAssetWindow(cont);
+                    if (saved)
+                    {
+                        await MessageBoxUtil.ShowDialog(win, "Note", "Asset updated. Changes will be shown next time you open this asset.");
+                    }
                 }
             }
         }

@@ -891,24 +891,25 @@ namespace UABEAvalonia
             }
         }
 
-        public async Task ShowEditAssetWindow(AssetContainer cont)
+        public async Task<bool> ShowEditAssetWindow(AssetContainer cont)
         {
             AssetTypeValueField baseField = cont.BaseValueField;
             if (baseField == null)
             {
                 await MessageBoxUtil.ShowDialog(this, "Error", "Something went wrong deserializing this asset.");
-                return;
+                return false;
             }
 
             EditDataWindow editWin = new EditDataWindow(baseField);
             byte[]? data = await editWin.ShowDialog<byte[]?>(this);
             if (data == null)
             {
-                return;
+                return false;
             }
 
             AssetsReplacer replacer = AssetImportExport.CreateAssetReplacer(cont, data);
             Workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(data));
+            return true;
         }
 
         private async void NextNameSearch()
