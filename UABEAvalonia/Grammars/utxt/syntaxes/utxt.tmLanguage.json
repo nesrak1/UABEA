@@ -10,7 +10,7 @@
     },
     {
       "name": "constant.numeric.decimal.utxt",
-      "match": "\\b[0-9]+\\b"
+      "match": "\\b([0-9]+|true|false)\\b"
     },
     {
       "captures": {
