@@ -10,6 +10,8 @@ assignees: ''
 **Note**
 You should **always** be using the nightly builds to report bugs. If you are not using nightly, download it and try again. It can be downloaded from: https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip. If it's still happening, continue on.
 
+## Delete the above block if you understand. Any issues posted with this block will be closed.
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
