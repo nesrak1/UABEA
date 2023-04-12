@@ -413,9 +413,8 @@ namespace UABEAvalonia
 
             // if we rename twice, the "original name" is the current name
             RenameWindow window = new RenameWindow(item.Name);
-            string? newName = await window.ShowDialog<string?>(this);
-
-            if (newName == null)
+            string newName = await window.ShowDialog<string>(this);
+            if (newName == string.Empty)
                 return;
 
             Workspace.RenameFile(item.Name, newName);
