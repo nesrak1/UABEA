@@ -49,16 +49,6 @@ namespace UABEAvalonia
             if (template.ValueType == AssetValueType.String)
                 align = "1";
 
-            // mainly to handle enum fields not having the int type name
-            if (template.ValueType != AssetValueType.None &&
-                template.ValueType != AssetValueType.Array &&
-                template.ValueType != AssetValueType.ByteArray &&
-                template.ValueType != AssetValueType.ManagedReferencesRegistry &&
-                !isArray)
-            {
-                typeName = CorrectTypeName(template.ValueType);
-            }
-
             if (isArray)
             {
                 AssetTypeTemplateField sizeTemplate = template.Children[0];
@@ -389,50 +379,23 @@ namespace UABEAvalonia
                 if (eqSign != -1)
                 {
                     string check = line.Substring(typeName);
-                    //this list may be incomplete
-                    if (StartsWithSpace(check, "bool"))
-                    {
-                        aw.Write(bool.Parse(valueStr));
-                    }
-                    else if (StartsWithSpace(check, "UInt8"))
-                    {
-                        aw.Write(byte.Parse(valueStr));
-                    }
-                    else if (StartsWithSpace(check, "SInt8"))
-                    {
-                        aw.Write(sbyte.Parse(valueStr));
-                    }
-                    else if (StartsWithSpace(check, "UInt16"))
-                    {
-                        aw.Write(ushort.Parse(valueStr));
-                    }
-                    else if (StartsWithSpace(check, "SInt16"))
-                    {
-                        aw.Write(short.Parse(valueStr));
-                    }
-                    else if (StartsWithSpace(check, "unsigned int"))
-                    {
-                        aw.Write(uint.Parse(valueStr));
-                    }
-                    else if (StartsWithSpace(check, "int"))
+
+                    // sorted by frequency
+                    if (StartsWithSpace(check, "int"))
                     {
                         aw.Write(int.Parse(valueStr));
-                    }
-                    else if (StartsWithSpace(check, "UInt64"))
-                    {
-                        aw.Write(ulong.Parse(valueStr));
-                    }
-                    else if (StartsWithSpace(check, "SInt64"))
-                    {
-                        aw.Write(long.Parse(valueStr));
                     }
                     else if (StartsWithSpace(check, "float"))
                     {
                         aw.Write(float.Parse(valueStr));
                     }
-                    else if (StartsWithSpace(check, "double"))
+                    else if (StartsWithSpace(check, "bool"))
                     {
-                        aw.Write(double.Parse(valueStr));
+                        aw.Write(bool.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "SInt64"))
+                    {
+                        aw.Write(long.Parse(valueStr));
                     }
                     else if (StartsWithSpace(check, "string"))
                     {
@@ -441,6 +404,72 @@ namespace UABEAvalonia
                         string valueStrFix = valueStr.Substring(firstQuote + 1, lastQuote - firstQuote - 1);
                         valueStrFix = UnescapeDumpString(valueStrFix);
                         aw.WriteCountStringInt32(valueStrFix);
+                    }
+                    else if (StartsWithSpace(check, "UInt8"))
+                    {
+                        aw.Write(byte.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "unsigned int"))
+                    {
+                        aw.Write(uint.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "UInt16"))
+                    {
+                        aw.Write(ushort.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "SInt8"))
+                    {
+                        aw.Write(sbyte.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "SInt16"))
+                    {
+                        aw.Write(short.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "UInt64"))
+                    {
+                        aw.Write(ulong.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "double"))
+                    {
+                        aw.Write(double.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "char"))
+                    {
+                        aw.Write(sbyte.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "FileSize"))
+                    {
+                        aw.Write(int.Parse(valueStr));
+                    }
+                    // not seen in the wild? but still part of at
+                    // I'm not sure where this list is from
+                    else if (StartsWithSpace(check, "short"))
+                    {
+                        aw.Write(short.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "long"))
+                    {
+                        aw.Write(long.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "SInt32"))
+                    {
+                        aw.Write(int.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "UInt32"))
+                    {
+                        aw.Write(uint.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "unsigned char"))
+                    {
+                        aw.Write(byte.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "unsigned short"))
+                    {
+                        aw.Write(ushort.Parse(valueStr));
+                    }
+                    else if (StartsWithSpace(check, "unsigned long long"))
+                    {
+                        aw.Write(ulong.Parse(valueStr));
                     }
 
                     if (align)
@@ -655,38 +684,6 @@ namespace UABEAvalonia
             }
 
             return sb.ToString();
-        }
-
-        private string CorrectTypeName(AssetValueType valueTypes)
-        {
-            switch (valueTypes)
-            {
-                case AssetValueType.Bool:
-                    return "bool";
-                case AssetValueType.UInt8:
-                    return "UInt8";
-                case AssetValueType.Int8:
-                    return "SInt8";
-                case AssetValueType.UInt16:
-                    return "UInt16";
-                case AssetValueType.Int16:
-                    return "SInt16";
-                case AssetValueType.UInt32:
-                    return "unsigned int";
-                case AssetValueType.Int32:
-                    return "int";
-                case AssetValueType.UInt64:
-                    return "UInt64";
-                case AssetValueType.Int64:
-                    return "SInt64";
-                case AssetValueType.Float:
-                    return "float";
-                case AssetValueType.Double:
-                    return "double";
-                case AssetValueType.String:
-                    return "string";
-            }
-            return "UnknownBaseType";
         }
 
         // only replace \ with \\ but not " with \" lol
