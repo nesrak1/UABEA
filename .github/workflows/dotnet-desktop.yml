@@ -2,7 +2,7 @@ name: Build UABEA Windows
 
 on:
   push:
-    branches: [ master, at3 ]
+    branches: [ master, linux-actions-test ]
   pull_request:
     branches: [ master ]
 
@@ -17,7 +17,7 @@ jobs:
         fetch-depth: 0
 
     - name: Install .NET Core
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
 
@@ -26,8 +26,12 @@ jobs:
 
     - name: Build
       run: msbuild UABEAvalonia.sln /restore /p:Configuration=Release
+    
+    - name: Remove unused platforms
+      run: Remove-Item -Path "UABEAvalonia\bin\Release\net6.0\runtimes\*" -Recurse -Exclude "UABEAvalonia\bin\Release\net6.0\runtimes\win-x64"
       
-    - uses: actions/upload-artifact@v2
+    - name: Upload
+      uses: actions/upload-artifact@v2
       with:
         name: uabea-windows
         path: UABEAvalonia/bin/Release/net6.0

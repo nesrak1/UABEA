@@ -1,2 +1,17 @@
-UABEA is a small clone of UABE in c#. It supports all versions Unity 5.5 and up.
-UABEA uses Font Awesome Free icons under the CC BY 4.0 license.
+UABEA is a C# remake of the original UABE (https://github.com/SeriousCache/UABE).
+It supports all versions Unity 5.0 and up.
+
+Licenses:
+- Avalonia (MIT license) https://github.com/AvaloniaUI/Avalonia
+  - Dock.Avalonia (MIT license) https://github.com/wieslawsoltes/Dock
+  - AvaloniaEdit (MIT license) https://github.com/AvaloniaUI/AvaloniaEdit
+- AssetsTools.NET (MIT license) https://github.com/nesrak1/AssetsTools.NET/tree/upd21-with-inst
+  - Cpp2IL (MIT license) https://github.com/SamboyCoding/Cpp2IL
+  - Mono.Cecil (MIT license) https://github.com/jbevain/cecil
+  - AssetRipper.TextureDecoder (MIT license) https://github.com/AssetRipper/TextureDecoder
+- ISPC Texture Compressor (MIT license) https://github.com/GameTechDev/ISPCTextureCompressor
+- Unity crnlib (zlib license) https://github.com/Unity-Technologies/crunch/tree/unity
+- PVRTexLib (PVRTexTool license, see pvrtexlib.txt) https://developer.imaginationtech.com/pvrtextool
+- ImageSharp (Apache License 2.0) https://github.com/SixLabors/ImageSharp
+- Fsb5Sharp (MIT license) https://github.com/SamboyCoding/Fmod5Sharp
+- Font Awesome Free icons (CC BY 4.0 license) https://fontawesome.com

@@ -1,0 +1,43 @@
+name: Build UABEA Ubuntu
+
+on:
+  push:
+    branches: [ master, linux-actions-test ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    
+    - name: Remove TexToolWrap VC++ project
+      run: dotnet sln UABEAvalonia.sln remove TexToolWrap/TexToolWrap.vcxproj
+
+    - name: Restore
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Fix libonigwrap directory
+      run: cp UABEAvalonia/bin/Release/net6.0/runtimes/linux/native/libonigwrap.so UABEAvalonia/bin/Release/net6.0/runtimes/linux-x64/native/libonigwrap.so
+    
+    - name: Remove unused platforms
+      run: find UABEAvalonia/bin/Release/net6.0/runtimes/* -maxdepth 0 ! -name linux-x64 -type d -exec rm -r {} +
+      
+    - name: Upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: uabea-ubuntu
+        path: UABEAvalonia/bin/Release/net6.0
