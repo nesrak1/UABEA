@@ -1,4 +1,4 @@
-name: Build UABEA Windows
+name: Build UABEA Ubuntu
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: ubuntu-20.04
 
     steps:
     - name: Checkout
@@ -20,12 +20,15 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
+    
+    - name: Remove TexToolWrap VC++ project
+      run: dotnet sln UABEAvalonia.sln remove TexToolWrap/TexToolWrap.vcxproj
 
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@v1.1
+    - name: Restore
+      run: dotnet restore
 
     - name: Build
-      run: msbuild UABEAvalonia.sln /restore /p:Configuration=Release
+      run: dotnet build --configuration Release --no-restore
       
     - name: Upload
       uses: actions/upload-artifact@v2
