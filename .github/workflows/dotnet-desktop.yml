@@ -28,7 +28,7 @@ jobs:
       run: msbuild UABEAvalonia.sln /restore /p:Configuration=Release
     
     - name: Remove unused platforms
-      run: for /d %i in (UABEAvalonia\bin\Release\net6.0\runtimes\*) do if not "%i"=="UABEAvalonia\bin\Release\net6.0\runtimes\win-x64" rd /s /q "%i"
+      run: Remove-Item -Path "UABEAvalonia\bin\Release\net6.0\runtimes\*" -Recurse -Exclude "UABEAvalonia\bin\Release\net6.0\runtimes\win-x64"
       
     - name: Upload
       uses: actions/upload-artifact@v2
