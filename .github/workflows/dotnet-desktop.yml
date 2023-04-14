@@ -2,7 +2,7 @@ name: Build UABEA Windows
 
 on:
   push:
-    branches: [ master, linux-actions-test ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -28,7 +28,7 @@ jobs:
       run: msbuild UABEAvalonia.sln /restore /p:Configuration=Release
     
     - name: Remove unused platforms
-      run: Remove-Item -Path "UABEAvalonia\bin\Release\net6.0\runtimes\*" -Recurse -Exclude "UABEAvalonia\bin\Release\net6.0\runtimes\win-x64"
+      run: Get-ChildItem -Path "UABEAvalonia\bin\Release\net6.0\runtimes" -Directory | Where-Object { $_.Name -ne "win-x64" } | Remove-Item -Recurse -Force
       
     - name: Upload
       uses: actions/upload-artifact@v2

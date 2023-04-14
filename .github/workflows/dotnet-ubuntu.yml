@@ -2,7 +2,7 @@ name: Build UABEA Ubuntu
 
 on:
   push:
-    branches: [ master, linux-actions-test ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
