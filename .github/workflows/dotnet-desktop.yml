@@ -28,7 +28,7 @@ jobs:
       run: msbuild UABEAvalonia.sln /restore /p:Configuration=Release
     
     - name: Remove unused platforms
-      run: Get-ChildItem -Path "UABEAvalonia\bin\Release\net6.0\runtimes" -Directory | Where-Object { $_.Name -ne "win-x64" } | Remove-Item -Recurse -Force
+      run: Get-ChildItem -Path "UABEAvalonia\bin\Release\net6.0\runtimes" -Directory | Where-Object { $_.Name -notin @("win-x64", "win7-x64", "win") } | Remove-Item -Recurse -Force
       
     - name: Upload
       uses: actions/upload-artifact@v2
