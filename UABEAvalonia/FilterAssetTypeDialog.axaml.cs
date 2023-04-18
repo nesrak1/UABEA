@@ -26,12 +26,11 @@ namespace UABEAvalonia
             deselectBtn.Click += DeselectBtn_Click;
         }
 
-        public FilterAssetTypeDialog(HashSet<AssetClassID> filteredOutTypeIds) : this()
+        public FilterAssetTypeDialog(HashSet<AssetClassID> filteredOutTypeIds, HashSet<AssetClassID> usedIds) : this()
         {
             List<FilterAssetListItem> listItems = new List<FilterAssetListItem>();
 
-            AssetClassID[] ids = Enum.GetValues<AssetClassID>();
-            foreach (AssetClassID id in ids)
+            foreach (AssetClassID id in usedIds)
             {
                 listItems.Add(new FilterAssetListItem(id, !filteredOutTypeIds.Contains(id)));
             }

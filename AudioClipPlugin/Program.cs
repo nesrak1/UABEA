@@ -10,6 +10,7 @@ using UABEAvalonia;
 using UABEAvalonia.Plugins;
 using Fmod5Sharp;
 using Fmod5Sharp.FmodTypes;
+using Avalonia.Platform.Storage;
 
 namespace AudioPlugin
 {
@@ -56,77 +57,28 @@ namespace AudioPlugin
 
         public async Task<bool> BatchExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
-            OpenFolderDialog ofd = new OpenFolderDialog();
-            ofd.Title = "Select export directory";
-
-            string dir = await ofd.ShowAsync(win);
-
-            if (dir != null && dir != string.Empty)
+            var selectedFolders = await win.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
             {
-                foreach (AssetContainer cont in selection)
-                {
-                    AssetTypeValueField baseField = workspace.GetBaseField(cont);
+                Title = "Select export directory"
+            });
 
-                    string name = baseField["m_Name"].AsString;
-                    name = Extensions.ReplaceInvalidPathChars(name);
-                    
-                    CompressionFormat compressionFormat = (CompressionFormat)baseField["m_CompressionFormat"].AsInt;
-                    string extension = GetExtension(compressionFormat);
-                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}");
+            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            if (selectedFolderPaths.Length == 0)
+                return false;
 
-                    string ResourceSource = baseField["m_Resource.m_Source"].AsString;
-                    ulong ResourceOffset = baseField["m_Resource.m_Offset"].AsULong;
-                    ulong ResourceSize = baseField["m_Resource.m_Size"].AsULong;
+            string dir = selectedFolderPaths[0];
 
-                    byte[] resourceData;
-                    if (!GetAudioBytes(cont, ResourceSource, ResourceOffset, ResourceSize, out resourceData))
-                    {
-                        continue;
-                    }
-
-                    if (!FsbLoader.TryLoadFsbFromByteArray(resourceData, out FmodSoundBank bank))
-                    {
-                        continue;
-                    }
-                    List<FmodSample> samples = bank.Samples;
-                    samples[0].RebuildAsStandardFileFormat(out byte[] sampleData, out string sampleExtension);
-
-                    if (sampleExtension.ToLowerInvariant() == "wav")
-                    {
-                        // since fmod5sharp gives us malformed wav data, we have to correct it
-                        FixWAV(ref sampleData);
-                    }
-                    
-                    File.WriteAllBytes(file, sampleData);
-                }
-                return true;
-            }
-            return false;
-        }
-
-        public async Task<bool> SingleExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
-        {
-            AssetContainer cont = selection[0];
-
-            SaveFileDialog sfd = new SaveFileDialog();
-
-            AssetTypeValueField baseField = workspace.GetBaseField(cont);
-            string name = baseField["m_Name"].AsString;
-            name = Extensions.ReplaceInvalidPathChars(name);
-            
-            CompressionFormat compressionFormat = (CompressionFormat) baseField["m_CompressionFormat"].AsInt;
-
-            sfd.Title = "Save audio file";
-            string extension = GetExtension(compressionFormat);
-            sfd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = $"{extension.ToUpper()} file", Extensions = new List<string>() { extension } }
-            };
-            sfd.InitialFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}";
-
-            string file = await sfd.ShowAsync(win);
-
-            if (file != null && file != string.Empty)
+            foreach (AssetContainer cont in selection)
             {
+                AssetTypeValueField baseField = workspace.GetBaseField(cont);
+
+                string name = baseField["m_Name"].AsString;
+                name = Extensions.ReplaceInvalidPathChars(name);
+                    
+                CompressionFormat compressionFormat = (CompressionFormat)baseField["m_CompressionFormat"].AsInt;
+                string extension = GetExtension(compressionFormat);
+                string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}");
+
                 string ResourceSource = baseField["m_Resource.m_Source"].AsString;
                 ulong ResourceOffset = baseField["m_Resource.m_Offset"].AsULong;
                 ulong ResourceSize = baseField["m_Resource.m_Size"].AsULong;
@@ -134,12 +86,12 @@ namespace AudioPlugin
                 byte[] resourceData;
                 if (!GetAudioBytes(cont, ResourceSource, ResourceOffset, ResourceSize, out resourceData))
                 {
-                    return false;
+                    continue;
                 }
-                
+
                 if (!FsbLoader.TryLoadFsbFromByteArray(resourceData, out FmodSoundBank bank))
                 {
-                    return false;
+                    continue;
                 }
                 List<FmodSample> samples = bank.Samples;
                 samples[0].RebuildAsStandardFileFormat(out byte[] sampleData, out string sampleExtension);
@@ -149,13 +101,64 @@ namespace AudioPlugin
                     // since fmod5sharp gives us malformed wav data, we have to correct it
                     FixWAV(ref sampleData);
                 }
-                
+                    
                 File.WriteAllBytes(file, sampleData);
-
-                return true;
             }
+            return true;
+        }
 
-            return false;
+        public async Task<bool> SingleExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
+        {
+            AssetContainer cont = selection[0];
+
+            AssetTypeValueField baseField = workspace.GetBaseField(cont);
+            string name = baseField["m_Name"].AsString;
+            name = Extensions.ReplaceInvalidPathChars(name);
+            
+            CompressionFormat compressionFormat = (CompressionFormat) baseField["m_CompressionFormat"].AsInt;
+
+            string extension = GetExtension(compressionFormat);
+            var selectedFile = await win.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()
+            {
+                Title = "Save audio file",
+                FileTypeChoices = new List<FilePickerFileType>()
+                {
+                    new FilePickerFileType($"{extension.ToUpper()} file (*.{extension})") { Patterns = new List<string>() { "*." + extension } }
+                },
+                DefaultExtension = extension,
+                SuggestedFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}"
+            });
+
+            string selectedFilePath = Extensions.GetSaveFileDialogFile(selectedFile);
+            if (selectedFilePath == null)
+                return false;
+
+            string ResourceSource = baseField["m_Resource.m_Source"].AsString;
+            ulong ResourceOffset = baseField["m_Resource.m_Offset"].AsULong;
+            ulong ResourceSize = baseField["m_Resource.m_Size"].AsULong;
+
+            byte[] resourceData;
+            if (!GetAudioBytes(cont, ResourceSource, ResourceOffset, ResourceSize, out resourceData))
+            {
+                return false;
+            }
+                
+            if (!FsbLoader.TryLoadFsbFromByteArray(resourceData, out FmodSoundBank bank))
+            {
+                return false;
+            }
+            List<FmodSample> samples = bank.Samples;
+            samples[0].RebuildAsStandardFileFormat(out byte[] sampleData, out string sampleExtension);
+
+            if (sampleExtension.ToLowerInvariant() == "wav")
+            {
+                // since fmod5sharp gives us malformed wav data, we have to correct it
+                FixWAV(ref sampleData);
+            }
+                
+            File.WriteAllBytes(selectedFilePath, sampleData);
+
+            return true;
         }
 
         private static void FixWAV(ref byte[] wavData)

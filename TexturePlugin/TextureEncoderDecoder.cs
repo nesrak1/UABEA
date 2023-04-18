@@ -303,13 +303,13 @@ namespace TexturePlugin
                 int checkoutId = -1;
                 fixed (byte* dataPtr = data)
                 {
-                    // setting ver to 1 bypasses "The texture could not be loaded because it has been
+                    // we don't know the size of the output yet
+                    // write it to unmanaged memory first and copy to managed after we have the size
+                    // ////////////
+                    // setting ver to 1 fixes "The texture could not be loaded because it has been
                     // encoded with an older version of Crunch" not sure if this breaks older games though
                     // todo: determine version ranges
                     IntPtr dataIntPtr = (IntPtr)dataPtr;
-                    
-                    // we don't know the size of the output yet
-                    // write it to unmanaged memory first and copy to managed after we have the size
                     size = PInvoke.EncodeByCrunchUnity(dataIntPtr, ref checkoutId, (int)format, quality, (uint)width, (uint)height, 1, mips);
                     if (size == 0)
                     {

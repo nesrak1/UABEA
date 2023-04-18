@@ -4,6 +4,7 @@ using AssetsTools.NET.Texture;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
@@ -66,22 +67,20 @@ namespace TexturePlugin
 
         private async void BtnLoad_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Title = "Open texture";
-            ofd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "Texture file", Extensions = new List<string>() { "png", "tga" } }
-            };
+            var selectedFiles = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
+            {
+                Title = "Open texture",
+                FileTypeFilter = new List<FilePickerFileType>()
+                {
+                    new FilePickerFileType("Texture file") { Patterns = new List<string>() { "*.png", "*.tga" } }
+                }
+            });
 
-            string[] fileList = await ofd.ShowAsync(this);
-            if (fileList == null || fileList.Length == 0)
+            string[] selectedFilePaths = Extensions.GetOpenFileDialogFiles(selectedFiles);
+            if (selectedFilePaths.Length == 0)
                 return;
 
-            string file = fileList[0];
-
-            if (file != null && file != string.Empty)
-            {
-                imagePath = file;
-            }
+            imagePath = selectedFilePaths[0];
         }
 
         private async void BtnSave_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)

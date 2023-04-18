@@ -16,8 +16,9 @@
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<StackPanel Orientation="Horizontal">
-						<CheckBox IsChecked="{Binding Enabled}" />
-						<TextBlock Text="{Binding Type}"/>
+            <CheckBox IsChecked="{Binding Enabled}">
+              <TextBlock Text="{Binding Type}"/>
+            </CheckBox>
 					</StackPanel>
 				</DataTemplate>
 			</ListBox.ItemTemplate>

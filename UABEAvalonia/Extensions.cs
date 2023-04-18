@@ -1,6 +1,7 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using AssetsTools.NET.Extra.Decompressors.LZ4;
+using Avalonia.Platform.Storage;
 using SevenZip.Compression.LZMA;
 using System;
 using System.Collections.Generic;
@@ -247,6 +248,21 @@ namespace UABEAvalonia
         public static string GetFilePathWithoutExtension(string path)
         {
             return Path.Combine(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path));
+        }
+
+        public static string[] GetOpenFileDialogFiles(IReadOnlyList<IStorageFile> files)
+        {
+            return files.Select(sf => sf.TryGetLocalPath()).Where(p => p != null).ToArray()!;
+        }
+
+        public static string? GetSaveFileDialogFile(IStorageFile? file)
+        {
+            return file?.TryGetLocalPath();
+        }
+
+        public static string[] GetOpenFolderDialogFiles(IReadOnlyList<IStorageFolder> folders)
+        {
+            return folders.Select(sf => sf.TryGetLocalPath()).Where(p => p != null).ToArray()!;
         }
     }
 }

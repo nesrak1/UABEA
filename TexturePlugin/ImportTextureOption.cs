@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UABEAvalonia.Plugins;
 using UABEAvalonia;
+using Avalonia.Platform.Storage;
 
 namespace TexturePlugin
 {
@@ -105,46 +106,48 @@ namespace TexturePlugin
                 selection[i] = new AssetContainer(selection[i], TextureHelper.GetByteArrayTexture(workspace, selection[i]));
             }
 
-            OpenFolderDialog ofd = new OpenFolderDialog();
-            ofd.Title = "Select import directory";
-
-            string dir = await ofd.ShowAsync(win);
-
-            if (dir != null && dir != string.Empty)
+            var selectedFolders = await win.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
             {
-                List<string> extensions = new List<string>() { "png", "tga" };
+                Title = "Select import directory"
+            });
 
-                ImportBatch dialog = new ImportBatch(workspace, selection, dir, extensions);
-                List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
-                if (batchInfos == null)
-                {
-                    return false;
-                }
+            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            if (selectedFolderPaths.Length == 0)
+                return false;
 
-                bool success = await ImportTextures(win, batchInfos);
-                if (success)
-                {
-                    foreach (AssetContainer cont in selection)
-                    {
-                        if (batchInfos.Where(x => x.pathId == cont.PathId).Count() == 0)
-                        {
-                            continue;
-                        }
-                        byte[] savedAsset = cont.BaseValueField.WriteToByteArray();
+            string dir = selectedFolderPaths[0];
 
-                        var replacer = new AssetsReplacerFromMemory(
-                            cont.PathId, cont.ClassId, cont.MonoId, savedAsset);
+            List<string> extensions = new List<string>() { "png", "tga" };
 
-                        workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
-                    }
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+            ImportBatch dialog = new ImportBatch(workspace, selection, dir, extensions);
+            List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
+            if (batchInfos == null)
+            {
+                return false;
             }
-            return false;
+
+            bool success = await ImportTextures(win, batchInfos);
+            if (success)
+            {
+                foreach (AssetContainer cont in selection)
+                {
+                    if (batchInfos.Where(x => x.pathId == cont.PathId).Count() == 0)
+                    {
+                        continue;
+                    }
+                    byte[] savedAsset = cont.BaseValueField.WriteToByteArray();
+
+                    var replacer = new AssetsReplacerFromMemory(
+                        cont.PathId, cont.ClassId, cont.MonoId, savedAsset);
+
+                    workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

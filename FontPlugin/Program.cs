@@ -1,6 +1,7 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -65,61 +66,28 @@ namespace FontPlugin
 
         public async Task<bool> BatchImport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
-            OpenFolderDialog ofd = new OpenFolderDialog();
-            ofd.Title = "Select import directory";
-
-            string dir = await ofd.ShowAsync(win);
-
-            if (dir != null && dir != string.Empty)
+            var selectedFolders = await win.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
             {
-                List<string> extensions = new List<string>() { "otf", "ttf" };
-                ImportBatch dialog = new ImportBatch(workspace, selection, dir, extensions);
-                List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
-                foreach (ImportBatchInfo batchInfo in batchInfos)
-                {
-                    AssetContainer cont = batchInfo.cont;
+                Title = "Select import directory"
+            });
 
-                    AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
-
-                    string file = batchInfo.importFile;
-
-                    byte[] byteData = File.ReadAllBytes(file);
-                    baseField["m_FontData.Array"].AsByteArray = byteData;
-
-                    byte[] savedAsset = baseField.WriteToByteArray();
-
-                    var replacer = new AssetsReplacerFromMemory(
-                        cont.PathId, cont.ClassId, cont.MonoId, savedAsset);
-
-                    workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
-                }
-                return true;
-            }
-            return false;
-        }
-
-        public async Task<bool> SingleImport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
-        {
-            AssetContainer cont = selection[0];
-
-            OpenFileDialog ofd = new OpenFileDialog();
-
-            AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
-
-            ofd.Title = "Open font file";
-            ofd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = "Font files (*.ttf;*.otf)", Extensions = new List<string>() { "ttf", "otf" } },
-                new FileDialogFilter() { Name = "All types (*.*)", Extensions = new List<string>() { "*.*" } }
-            };
-
-            string[] fileList = await ofd.ShowAsync(win);
-            if (fileList == null || fileList.Length == 0)
+            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            if (selectedFolderPaths.Length == 0)
                 return false;
 
-            string file = fileList[0];
+            string dir = selectedFolderPaths[0];
 
-            if (file != null && file != string.Empty)
+            List<string> extensions = new List<string>() { "otf", "ttf" };
+            ImportBatch dialog = new ImportBatch(workspace, selection, dir, extensions);
+            List<ImportBatchInfo> batchInfos = await dialog.ShowDialog<List<ImportBatchInfo>>(win);
+            foreach (ImportBatchInfo batchInfo in batchInfos)
             {
+                AssetContainer cont = batchInfo.cont;
+
+                AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
+
+                string file = batchInfo.importFile;
+
                 byte[] byteData = File.ReadAllBytes(file);
                 baseField["m_FontData.Array"].AsByteArray = byteData;
 
@@ -130,7 +98,41 @@ namespace FontPlugin
 
                 workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
             }
-            return false;
+            return true;
+        }
+
+        public async Task<bool> SingleImport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
+        {
+            AssetContainer cont = selection[0];
+
+            AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
+
+            var selectedFiles = await win.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
+            {
+                Title = "Open font file",
+                FileTypeFilter = new List<FilePickerFileType>()
+                {
+                    new FilePickerFileType("Font files (*.ttf;*.otf)") { Patterns = new List<string>() { "*.ttf", "*.otf" } },
+                    new FilePickerFileType("All types (*.*)") { Patterns = new List<string>() { "*.*" } }
+                }
+            });
+
+            string[] selectedFilePaths = Extensions.GetOpenFileDialogFiles(selectedFiles);
+            if (selectedFilePaths.Length == 0)
+                return false;
+
+            string file = selectedFilePaths[0];
+
+            byte[] byteData = File.ReadAllBytes(file);
+            baseField["m_FontData.Array"].AsByteArray = byteData;
+
+            byte[] savedAsset = baseField.WriteToByteArray();
+
+            var replacer = new AssetsReplacerFromMemory(
+                cont.PathId, cont.ClassId, cont.MonoId, savedAsset);
+
+            workspace.AddReplacer(cont.FileInstance, replacer, new MemoryStream(savedAsset));
+            return true;
         }
     }
     
@@ -163,42 +165,42 @@ namespace FontPlugin
 
         public async Task<bool> BatchExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
-            OpenFolderDialog ofd = new OpenFolderDialog();
-            ofd.Title = "Select export directory";
-
-            string dir = await ofd.ShowAsync(win);
-
-            if (dir != null && dir != string.Empty)
+            var selectedFolders = await win.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
             {
-                foreach (AssetContainer cont in selection)
-                {
-                    AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
+                Title = "Select export directory"
+            });
 
-                    string name = baseField["m_Name"].AsString;
-                    byte[] byteData = baseField["m_FontData.Array"].AsByteArray;
+            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            if (selectedFolderPaths.Length == 0)
+                return false;
 
-                    if (byteData.Length == 0)
-                        continue;
+            string dir = selectedFolderPaths[0];
 
-                    name = Extensions.ReplaceInvalidPathChars(name);
+            foreach (AssetContainer cont in selection)
+            {
+                AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
 
-                    bool isOtf = FontHelper.IsDataOtf(byteData);
-                    string extension = isOtf ? "otf" : "ttf";
+                string name = baseField["m_Name"].AsString;
+                byte[] byteData = baseField["m_FontData.Array"].AsByteArray;
 
-                    string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}");
+                if (byteData.Length == 0)
+                    continue;
 
-                    File.WriteAllBytes(file, byteData);
-                }
-                return true;
+                name = Extensions.ReplaceInvalidPathChars(name);
+
+                bool isOtf = FontHelper.IsDataOtf(byteData);
+                string extension = isOtf ? "otf" : "ttf";
+
+                string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}");
+
+                File.WriteAllBytes(file, byteData);
             }
-            return false;
+            return true;
         }
 
         public async Task<bool> SingleExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             AssetContainer cont = selection[0];
-
-            SaveFileDialog sfd = new SaveFileDialog();
 
             AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
             string name = baseField["m_Name"].AsString;
@@ -215,27 +217,27 @@ namespace FontPlugin
             }
 
             bool isOtf = FontHelper.IsDataOtf(byteData);
-            string fontType = isOtf ? "otf" : "ttf";
+            string extension = isOtf ? "otf" : "ttf";
 
-            sfd.Title = "Save font file";
-            sfd.Filters = new List<FileDialogFilter>() {
-                new FileDialogFilter() { Name = $"Font file (*.{fontType})", Extensions = new List<string>() { fontType } },
-                new FileDialogFilter() { Name = "All types (*.*)", Extensions = new List<string>() { "*.*" } }
-            };
-
-            string defaultExtension = "." + fontType;
-
-            sfd.InitialFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}{defaultExtension}";
-
-            string file = await sfd.ShowAsync(win);
-
-            if (file != null && file != string.Empty)
+            var selectedFile = await win.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()
             {
-                File.WriteAllBytes(file, byteData);
+                Title = "Save font file",
+                FileTypeChoices = new List<FilePickerFileType>()
+                {
+                    new FilePickerFileType($"Font file (*.{extension})") { Patterns = new List<string>() { "*." + extension } },
+                    new FilePickerFileType($"All types (*.*)") { Patterns = new List<string>() { "*.*" } },
+                },
+                DefaultExtension = extension,
+                SuggestedFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}"
+            });
 
-                return true;
-            }
-            return false;
+            string selectedFilePath = Extensions.GetSaveFileDialogFile(selectedFile);
+            if (selectedFilePath == null)
+                return false;
+
+            File.WriteAllBytes(selectedFilePath, byteData);
+
+            return true;
         }
     }
 
