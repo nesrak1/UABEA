@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -25,6 +26,7 @@ namespace UABEAvalonia
         private bool changesUnsaved; // sets false after saving
         private bool changesMade; // stays true even after saving
         private bool ignoreCloseEvent;
+        private bool infoOpen;
 
         //public ObservableCollection<ComboBoxItem> comboItems;
 
@@ -43,6 +45,7 @@ namespace UABEAvalonia
             menuLoadPackageFile.Click += MenuLoadPackageFile_Click;
             menuClose.Click += MenuClose_Click;
             menuSave.Click += MenuSave_Click;
+            menuSaveAs.Click += MenuSaveAs_Click;
             menuCompress.Click += MenuCompress_Click;
             menuExit.Click += MenuExit_Click;
             menuToggleDarkTheme.Click += MenuToggleDarkTheme_Click;
@@ -60,6 +63,7 @@ namespace UABEAvalonia
             changesUnsaved = false;
             changesMade = false;
             ignoreCloseEvent = false;
+            infoOpen = false;
 
             AddHandler(DragDrop.DropEvent, Drop);
 
@@ -106,7 +110,7 @@ namespace UABEAvalonia
             {
                 AssetsFileInstance fileInst = am.LoadAssetsFile(selectedFile, true);
 
-                if (!await LoadOrAskTypeData(fileInst))
+                if (!LoadOrAskTypeData(fileInst))
                     return;
 
                 List<AssetsFileInstance> fileInstances = new List<AssetsFileInstance>();
@@ -134,8 +138,20 @@ namespace UABEAvalonia
                     }
                 }
 
+                if (infoOpen)
+                {
+                    await MessageBoxUtil.ShowDialog(this,
+                        "Warning", "You cannot open two info windows at the same time. " +
+                                   "Consider opening two separate UABEA windows if you " +
+                                   "want two different games' files open at once.");
+
+                    return;
+                }
+
                 InfoWindow info = new InfoWindow(am, fileInstances, false);
                 info.Show();
+                info.Closing += (_, _) => { infoOpen = false; };
+                infoOpen = true;
             }
             else if (fileType == DetectedFileType.BundleFile)
             {
@@ -220,7 +236,12 @@ namespace UABEAvalonia
 
         private async void MenuSave_Click(object? sender, RoutedEventArgs e)
         {
-            await AskForLocationAndSave();
+            await AskForLocationAndSave(false);
+        }
+
+        private async void MenuSaveAs_Click(object? sender, RoutedEventArgs e)
+        {
+            await AskForLocationAndSave(true);
         }
 
         private async void MenuCompress_Click(object? sender, RoutedEventArgs e)
@@ -345,9 +366,20 @@ namespace UABEAvalonia
                 if (BundleInst != null && fileInst.parentBundle == null)
                     fileInst.parentBundle = BundleInst;
 
+                if (infoOpen)
+                {
+                    await MessageBoxUtil.ShowDialog(this,
+                        "Warning", "You cannot open two info windows at the same time. " +
+                                   "Consider opening two separate UABEA windows if you " +
+                                   "want two different games' files open at once.");
+
+                    return;
+                }
+
                 InfoWindow info = new InfoWindow(am, new List<AssetsFileInstance> { fileInst }, true);
                 info.Closing += InfoWindow_Closing;
                 info.Show();
+                infoOpen = true;
             }
             else
             {
@@ -372,7 +404,7 @@ namespace UABEAvalonia
         {
             if (BundleInst == null)
                 return;
-
+            
             var selectedFolders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
             {
                 Title = "Select export directory"
@@ -486,6 +518,7 @@ namespace UABEAvalonia
             if (sender == null)
                 return;
 
+            infoOpen = false;
             InfoWindow window = (InfoWindow)sender;
 
             if (window.Workspace.fromBundle && window.ChangedAssetsDatas != null)
@@ -525,12 +558,12 @@ namespace UABEAvalonia
             return true;
         }
 
-        private async Task AskForLocationAndSave()
+        private async Task AskForLocationAndSave(bool saveAs)
         {
             if (changesUnsaved && BundleInst != null)
             {
-                SaveFileDialog sfd = new SaveFileDialog();
-                sfd.Title = "Save as...";
+                if (saveAs)
+                {
                     var selectedFile = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()
                     {
                         Title = "Save as..."
@@ -538,16 +571,50 @@ namespace UABEAvalonia
 
                     string? selectedFilePath = Extensions.GetSaveFileDialogFile(selectedFile);
                     if (selectedFilePath == null)
-                    return;
+                        return;
 
                     if (Path.GetFullPath(selectedFilePath) == Path.GetFullPath(BundleInst.path))
-                {
-                    await MessageBoxUtil.ShowDialog(this,
-                        "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
-                    return;
-                }
+                    {
+                        await MessageBoxUtil.ShowDialog(this,
+                            "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
+                        return;
+                    }
 
                     SaveBundle(BundleInst, selectedFilePath);
+                }
+                else
+                {
+                    BundleFileInstance file = BundleInst;
+
+                    string newName = "~" + file.name;
+                    string dir = Path.GetDirectoryName(file.path)!;
+                    string filePath = Path.Combine(dir, newName);
+                    string origFilePath = file.path;
+
+                    SaveBundle(file, filePath);
+
+                    // "overwrite" the original
+                    file.file.Reader.Close();
+                    File.Delete(origFilePath);
+                    File.Move(filePath, origFilePath);
+                    file.file = new AssetBundleFile();
+                    file.file.Read(new AssetsFileReader(File.OpenRead(origFilePath)));
+
+                    BundleWorkspaceItem? selectedItem = (BundleWorkspaceItem?)comboBox.SelectedItem;
+                    string? selectedName = null;
+                    if (selectedItem != null)
+                    {
+                        selectedName = selectedItem.Name;
+                    }
+
+                    Workspace.Reset(file);
+
+                    BundleWorkspaceItem? newItem = Workspace.Files.FirstOrDefault(f => f.Name == selectedName);
+                    if (newItem != null)
+                    {
+                        comboBox.SelectedItem = newItem;
+                    }
+                }
             }
         }
 
@@ -560,7 +627,7 @@ namespace UABEAvalonia
                     MessageBoxType.YesNo);
                 if (choice == MessageBoxResult.Yes)
                 {
-                    await AskForLocationAndSave();
+                    await AskForLocationAndSave(true);
                 }
             }
         }
@@ -666,7 +733,7 @@ namespace UABEAvalonia
                     SuggestedStartLocation = await StorageProvider.TryGetFolderFromPathAsync(Path.GetDirectoryName(fileToSplit)!),
                     SuggestedFileName = Path.GetFileName(fileToSplit[.. ^".split0".Length])
                 });
-
+                
                 string? selectedFilePath = Extensions.GetSaveFileDialogFile(selectedFile);
                 if (selectedFilePath == null)
                     return null;
