@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Avalonia;
@@ -58,6 +59,19 @@ namespace UABEAvalonia
             if (args.ExceptionObject is Exception ex)
             {
                 File.WriteAllText("uabeacrash.log", ex.ToString());
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    // can't trust the process to be stable enough
+                    // to even show an avalonia messagebox, do hacky
+                    // vbscript instead
+                    string mshtaArgs = "vbscript:Execute(\"CreateObject(\"\"WScript.Shell\"\").Popup CreateObject(\"\"Scripting.FileSystemObject\"\").OpenTextFile(\"\"uabeacrash.log\"\", 1).ReadAll,,\"\"uabea crash exception (please report this crash with uabeacrash.log)\"\" :close\")";
+                    Process.Start(new ProcessStartInfo("mshta", mshtaArgs));
+                }
+                else
+                {
+                    Console.WriteLine("uabea crash exception (please report this crash with uabeacrash.log)");
+                    Console.WriteLine(ex.ToString());
+                }
             }
         }
 
