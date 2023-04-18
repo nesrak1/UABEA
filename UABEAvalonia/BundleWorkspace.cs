@@ -1,5 +1,6 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using Avalonia.Media;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -148,7 +149,35 @@ namespace UABEAvalonia
         // but IsModified comes from edits by the info window
         public bool IsModified { get; }
         public Stream Stream { get; }
-        //public BundleReplacer? Replacer { get; }
+
+        private static SolidColorBrush AssetsBrushDark = new SolidColorBrush(Avalonia.Media.Color.Parse("#b17fd7"));
+        private static SolidColorBrush AssetsBrushLight = new SolidColorBrush(Avalonia.Media.Color.Parse("#642c8f"));
+        private static SolidColorBrush RessBrushDark = new SolidColorBrush(Avalonia.Media.Color.Parse("#569cd6"));
+        private static SolidColorBrush RessBrushLight = new SolidColorBrush(Avalonia.Media.Color.Parse("#0000ff"));
+        private static SolidColorBrush ResourceBrushDark = new SolidColorBrush(Avalonia.Media.Color.Parse("#ffd700"));
+        private static SolidColorBrush ResourceBrushLight = new SolidColorBrush(Avalonia.Media.Color.Parse("#9e7e00"));
+        private static SolidColorBrush EtcBrushDark = new SolidColorBrush(Avalonia.Media.Color.Parse("#ee00ee"));
+        private static SolidColorBrush EtcBrushLight = new SolidColorBrush(Avalonia.Media.Color.Parse("#ee00ee"));
+        
+        private static SolidColorBrush AssetsBrush => ThemeHandler.UseDarkTheme ? AssetsBrushDark : AssetsBrushLight;
+        private static SolidColorBrush RessBrush => ThemeHandler.UseDarkTheme ? RessBrushDark : RessBrushLight;
+        private static SolidColorBrush ResourceBrush => ThemeHandler.UseDarkTheme ? ResourceBrushDark : ResourceBrushLight;
+        private static SolidColorBrush EtcBrush => ThemeHandler.UseDarkTheme ? EtcBrushDark : EtcBrushLight;
+
+        public IBrush Color
+        {
+            get
+            {
+                if (IsSerialized)
+                    return AssetsBrush;
+                else if (Name.EndsWith(".resS"))
+                    return RessBrush;
+                else if (Name.EndsWith(".resource"))
+                    return ResourceBrush;
+                else
+                    return EtcBrush;
+            }
+        }
 
         public BundleWorkspaceItem(
             string name, string originalName, bool isNew,
@@ -165,21 +194,6 @@ namespace UABEAvalonia
 
             IsRemoved = false;
         }
-
-        //public BundleWorkspaceItem(
-        //    string name, string originalName, bool isNew,
-        //    bool isSerialized, Stream stream, BundleReplacer replacer
-        //)
-        //{
-        //    Name = name;
-        //    OriginalName = originalName;
-        //    IsNew = isNew;
-        //    IsSerialized = isSerialized;
-        //    Stream = stream;
-        //    Replacer = replacer;
-        //
-        //    IsRemoved = false;
-        //}
 
         public override string ToString()
         {

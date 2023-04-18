@@ -30,7 +30,13 @@
     </Menu>
 
     <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="No file opened." TextAlignment="Center" FontWeight="Bold" FontSize="14" Name="lblFileName" />
-    <ComboBox Margin="10,56,10,0" VerticalAlignment="Top" Height="26" IsEnabled="False" Name="comboBox" />
+    <ComboBox Margin="10,56,10,0" VerticalAlignment="Top" Height="26" IsEnabled="False" Name="comboBox">
+      <ComboBox.ItemTemplate>
+        <DataTemplate>
+          <TextBlock Text="{Binding}" Foreground="{Binding Color}" />
+        </DataTemplate>
+      </ComboBox.ItemTemplate>
+    </ComboBox>
 
     <Grid Margin="10,87,10,0" VerticalAlignment="Top" Grid.IsSharedSizeScope="True">
       <Grid.RowDefinitions>

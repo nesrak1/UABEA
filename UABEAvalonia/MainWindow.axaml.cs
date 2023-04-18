@@ -26,7 +26,7 @@ namespace UABEAvalonia
         private bool changesUnsaved; // sets false after saving
         private bool changesMade; // stays true even after saving
         private bool ignoreCloseEvent;
-        private bool infoOpen;
+        private List<InfoWindow> openInfoWindows;
 
         //public ObservableCollection<ComboBoxItem> comboItems;
 
@@ -63,7 +63,7 @@ namespace UABEAvalonia
             changesUnsaved = false;
             changesMade = false;
             ignoreCloseEvent = false;
-            infoOpen = false;
+            openInfoWindows = new List<InfoWindow>();
 
             AddHandler(DragDrop.DropEvent, Drop);
 
@@ -91,7 +91,7 @@ namespace UABEAvalonia
 
             DetectedFileType fileType = AssetBundleDetector.DetectFileType(selectedFile);
 
-            CloseAllFiles();
+            await CloseAllFiles();
 
             // can you even have split bundles?
             if (fileType != DetectedFileType.Unknown)
@@ -138,7 +138,8 @@ namespace UABEAvalonia
                     }
                 }
 
-                if (infoOpen)
+                // shouldn't be possible but just in case
+                if (openInfoWindows.Count > 0)
                 {
                     await MessageBoxUtil.ShowDialog(this,
                         "Warning", "You cannot open two info windows at the same time. " +
@@ -150,8 +151,14 @@ namespace UABEAvalonia
 
                 InfoWindow info = new InfoWindow(am, fileInstances, false);
                 info.Show();
-                info.Closing += (_, _) => { infoOpen = false; };
-                infoOpen = true;
+                info.Closing += (sender, _) => {
+                    if (sender == null)
+                        return;
+
+                    InfoWindow window = (InfoWindow)sender;
+                    openInfoWindows.Remove(window);
+                };
+                openInfoWindows.Add(info);
             }
             else if (fileType == DetectedFileType.BundleFile)
             {
@@ -252,7 +259,7 @@ namespace UABEAvalonia
         private async void MenuClose_Click(object? sender, RoutedEventArgs e)
         {
             await AskForSave();
-            CloseAllFiles();
+            await CloseAllFiles();
         }
 
         private async void BtnExport_Click(object? sender, RoutedEventArgs e)
@@ -366,20 +373,14 @@ namespace UABEAvalonia
                 if (BundleInst != null && fileInst.parentBundle == null)
                     fileInst.parentBundle = BundleInst;
 
-                if (infoOpen)
-                {
-                    await MessageBoxUtil.ShowDialog(this,
-                        "Warning", "You cannot open two info windows at the same time. " +
-                                   "Consider opening two separate UABEA windows if you " +
-                                   "want two different games' files open at once.");
-
-                    return;
-                }
+                // don't check for info open here
+                // we're assuming it's fine since two infos can
+                // be opened from a bundle without problems
 
                 InfoWindow info = new InfoWindow(am, new List<AssetsFileInstance> { fileInst }, true);
                 info.Closing += InfoWindow_Closing;
                 info.Show();
-                infoOpen = true;
+                openInfoWindows.Add(info);
             }
             else
             {
@@ -441,11 +442,42 @@ namespace UABEAvalonia
             }
         }
 
-        private void BtnImportAll_Click(object? sender, RoutedEventArgs e)
+        private async void BtnImportAll_Click(object? sender, RoutedEventArgs e)
         {
             if (BundleInst == null)
                 return;
 
+            var selectedFolders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
+            {
+                Title = "Select import directory"
+            });
+
+            string[]? selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            if (selectedFolderPaths.Length == 0)
+                return;
+
+            string dir = selectedFolderPaths[0];
+
+            foreach (string filePath in Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories))
+            {
+                string relPath = Path.GetRelativePath(dir, filePath);
+                relPath = relPath.Replace("\\", "/").TrimEnd('/');
+
+                BundleWorkspaceItem? itemToReplace = Workspace.Files.FirstOrDefault(f => f.Name == relPath);
+                if (itemToReplace != null)
+                {
+                    Workspace.AddOrReplaceFile(File.OpenRead(filePath), itemToReplace.Name, itemToReplace.IsSerialized);
+                }
+                else
+                {
+                    DetectedFileType type = AssetBundleDetector.DetectFileType(filePath);
+                    bool isSerialized = type == DetectedFileType.AssetsFile;
+                    Workspace.AddOrReplaceFile(File.OpenRead(filePath), relPath, isSerialized);
+                }
+            }
+
+            changesUnsaved = true;
+            changesMade = true;
         }
 
         private async void BtnRename_Click(object? sender, RoutedEventArgs e)
@@ -518,8 +550,8 @@ namespace UABEAvalonia
             if (sender == null)
                 return;
 
-            infoOpen = false;
             InfoWindow window = (InfoWindow)sender;
+            openInfoWindows.Remove(window);
 
             if (window.Workspace.fromBundle && window.ChangedAssetsDatas != null)
             {
@@ -896,8 +928,14 @@ namespace UABEAvalonia
             }
         }
 
-        private void CloseAllFiles()
+        private async Task CloseAllFiles()
         {
+            List<InfoWindow> openInfoWindowsCopy = new List<InfoWindow>(openInfoWindows);
+            foreach (InfoWindow window in openInfoWindowsCopy)
+            {
+                await window.AskForSaveAndClose();
+            }
+
             //newFiles.Clear();
             changesUnsaved = false;
             changesMade = false;
