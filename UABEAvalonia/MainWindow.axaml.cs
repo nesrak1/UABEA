@@ -608,43 +608,30 @@ namespace UABEAvalonia
                     if (Path.GetFullPath(selectedFilePath) == Path.GetFullPath(BundleInst.path))
                     {
                         await MessageBoxUtil.ShowDialog(this,
-                            "File in use", "Since this file is already open in UABEA, you must pick a new file name (sorry!)");
+                            "File in use", "Please use File > Save to save over the currently open bundle.");
                         return;
                     }
 
-                    SaveBundle(BundleInst, selectedFilePath);
+                    try
+                    {
+                        SaveBundle(BundleInst, selectedFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        await MessageBoxUtil.ShowDialog(this,
+                            "Write exception", "There was a problem while writing the file:\n" + ex.ToString());
+                    }
                 }
                 else
                 {
-                    BundleFileInstance file = BundleInst;
-
-                    string newName = "~" + file.name;
-                    string dir = Path.GetDirectoryName(file.path)!;
-                    string filePath = Path.Combine(dir, newName);
-                    string origFilePath = file.path;
-
-                    SaveBundle(file, filePath);
-
-                    // "overwrite" the original
-                    file.file.Reader.Close();
-                    File.Delete(origFilePath);
-                    File.Move(filePath, origFilePath);
-                    file.file = new AssetBundleFile();
-                    file.file.Read(new AssetsFileReader(File.OpenRead(origFilePath)));
-
-                    BundleWorkspaceItem? selectedItem = (BundleWorkspaceItem?)comboBox.SelectedItem;
-                    string? selectedName = null;
-                    if (selectedItem != null)
+                    try
                     {
-                        selectedName = selectedItem.Name;
+                        SaveBundleOver(BundleInst);
                     }
-
-                    Workspace.Reset(file);
-
-                    BundleWorkspaceItem? newItem = Workspace.Files.FirstOrDefault(f => f.Name == selectedName);
-                    if (newItem != null)
+                    catch (Exception ex)
                     {
-                        comboBox.SelectedItem = newItem;
+                        await MessageBoxUtil.ShowDialog(this,
+                            "Write exception", "There was a problem while writing the file:\n" + ex.ToString());
                     }
                 }
             }
@@ -910,6 +897,38 @@ namespace UABEAvalonia
                 bundleInst.file.Write(w, replacers.ToList());
             }
             changesUnsaved = false;
+        }
+
+        private void SaveBundleOver(BundleFileInstance bundleInst)
+        {
+            string newName = "~" + bundleInst.name;
+            string dir = Path.GetDirectoryName(bundleInst.path)!;
+            string filePath = Path.Combine(dir, newName);
+            string origFilePath = bundleInst.path;
+
+            SaveBundle(bundleInst, filePath);
+
+            // "overwrite" the original
+            bundleInst.file.Reader.Close();
+            File.Delete(origFilePath);
+            File.Move(filePath, origFilePath);
+            bundleInst.file = new AssetBundleFile();
+            bundleInst.file.Read(new AssetsFileReader(File.OpenRead(origFilePath)));
+
+            BundleWorkspaceItem? selectedItem = (BundleWorkspaceItem?)comboBox.SelectedItem;
+            string? selectedName = null;
+            if (selectedItem != null)
+            {
+                selectedName = selectedItem.Name;
+            }
+
+            Workspace.Reset(bundleInst);
+
+            BundleWorkspaceItem? newItem = Workspace.Files.FirstOrDefault(f => f.Name == selectedName);
+            if (newItem != null)
+            {
+                comboBox.SelectedItem = newItem;
+            }
         }
 
         private void CompressBundle(object? args)
