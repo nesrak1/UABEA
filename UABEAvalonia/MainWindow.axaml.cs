@@ -367,11 +367,11 @@ namespace UABEAvalonia
                 string assetMemPath = Path.Combine(BundleInst.path, name);
                 AssetsFileInstance fileInst = am.LoadAssetsFile(assetStream, assetMemPath, true);
 
-                if (!LoadOrAskTypeData(fileInst))
-                    return;
-
                 if (BundleInst != null && fileInst.parentBundle == null)
                     fileInst.parentBundle = BundleInst;
+
+                if (!LoadOrAskTypeData(fileInst))
+                    return;
 
                 // don't check for info open here
                 // we're assuming it's fine since two infos can
@@ -582,11 +582,17 @@ namespace UABEAvalonia
             }
         }
 
-        // todo, if stripped load from header (needed for adding new assets)
         private bool LoadOrAskTypeData(AssetsFileInstance fileInst)
         {
             string uVer = fileInst.file.Metadata.UnityVersion;
-            am.LoadClassDatabaseFromPackage(uVer);
+            if (uVer == "0.0.0" && fileInst.parentBundle != null)
+            {
+                am.LoadClassDatabaseFromPackage(fileInst.parentBundle.file.Header.EngineVersion);
+            }
+            else
+            {
+                am.LoadClassDatabaseFromPackage(uVer);
+            }
             return true;
         }
 

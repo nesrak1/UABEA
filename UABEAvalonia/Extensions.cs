@@ -167,6 +167,10 @@ namespace UABEAvalonia
                     // hasTypeTree is set to false to ignore type tree (to prevent
                     // reading the entire MonoBehaviour if type trees are provided)
 
+                    // it might be a better idea to just temporarily remove the extra
+                    // fields from a single MonoBehaviour so we don't have to read
+                    // from the cldb (especially so for stripped versions of bundles)
+
                     bool wasUsingCache = workspace.am.UseTemplateFieldCache;
                     workspace.am.UseTemplateFieldCache = false;
                     AssetTypeTemplateField monoTemp = workspace.GetTemplateField(cont, true, true);
