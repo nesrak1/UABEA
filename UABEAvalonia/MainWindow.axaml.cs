@@ -587,12 +587,10 @@ namespace UABEAvalonia
             string uVer = fileInst.file.Metadata.UnityVersion;
             if (uVer == "0.0.0" && fileInst.parentBundle != null)
             {
-                am.LoadClassDatabaseFromPackage(fileInst.parentBundle.file.Header.EngineVersion);
+                uVer = fileInst.parentBundle.file.Header.EngineVersion;
             }
-            else
-            {
-                am.LoadClassDatabaseFromPackage(uVer);
-            }
+
+            am.LoadClassDatabaseFromPackage(uVer);
             return true;
         }
 
