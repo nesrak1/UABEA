@@ -226,15 +226,8 @@ namespace UABEAvalonia
                 return;
 
             AssetInfoDataGridItem gridItem = GetSelectedGridItem();
-            if (gridItem.Size > 500000)
-            {
-                var result = await MessageBoxUtil.ShowDialogCustom(this,
-                    "Warning", "The asset you are about to open is very big and may take a lot of time and memory.",
-                    "Continue anyway", "Cancel");
-
-                if (result == "Cancel")
-                    return;
-            }
+            if (!await WarnIfAssetSizeLarge(gridItem))
+                return;
 
             List<AssetContainer> selectedConts = GetSelectedAssetsReplaced();
             if (selectedConts.Count > 0)
@@ -368,6 +361,10 @@ namespace UABEAvalonia
         private async void BtnEditData_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             if (await FailIfNothingSelected())
+                return;
+
+            AssetInfoDataGridItem gridItem = GetSelectedGridItem();
+            if (!await WarnIfAssetSizeLarge(gridItem))
                 return;
 
             AssetContainer? selection = GetSelectedAssetsReplaced()[0];
@@ -602,6 +599,21 @@ namespace UABEAvalonia
         {
             am.UnloadAllAssetsFiles(true);
             Close();
+        }
+
+        private async Task<bool> WarnIfAssetSizeLarge(AssetInfoDataGridItem gridItem)
+        {
+            if (gridItem.Size > 500000)
+            {
+                var result = await MessageBoxUtil.ShowDialogCustom(this,
+                    "Warning", "The asset you are about to open is very big and may take a lot of time and memory.",
+                    "Continue anyway", "Cancel");
+
+                if (result == "Cancel")
+                    return false;
+            }
+
+            return true;
         }
 
         private async Task BatchExportRaw(List<AssetContainer> selection)
