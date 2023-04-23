@@ -506,6 +506,9 @@ namespace UABEAvalonia
             comboBox.SelectedItem = null;
             comboBox.SelectedItem = item;
             Workspace.Files.Remove(null);
+
+            changesUnsaved = true;
+            changesMade = true;
         }
 
         private void MenuExit_Click(object? sender, RoutedEventArgs e)
