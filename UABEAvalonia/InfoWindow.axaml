@@ -18,7 +18,6 @@
         <MenuItem Header="Save" HotKey="Ctrl+S" InputGesture="Ctrl+S" Name="menuSave" />
         <MenuItem Header="Save as..." HotKey="Ctrl+Shift+S" InputGesture="Ctrl+Shift+S" Name="menuSaveAs" />
         <MenuItem Header="Mod Maker">
-          <MenuItem Header="Create standalone installer" Name="menuCreateStandaloneInstaller" />
           <MenuItem Header="Create package file" Name="menuCreatePackageFile" />
         </MenuItem>
         <MenuItem Header="Close" HotKey="Ctrl+W" InputGesture="Ctrl+W" Name="menuClose" />
