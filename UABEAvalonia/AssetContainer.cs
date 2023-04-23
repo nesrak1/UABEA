@@ -1,5 +1,6 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using System;
 using System.IO;
 
 namespace UABEAvalonia
@@ -17,8 +18,9 @@ namespace UABEAvalonia
         public AssetsFileInstance FileInstance { get; }
         public AssetTypeValueField? BaseValueField { get; }
 
-        public long FilePosition { get; }
-        public AssetsFileReader FileReader { get; }
+        public long FilePosition { get; private set; }
+        public AssetsFileReader? FileReader { get; private set; }
+
         // deprecated
         public AssetID AssetId
         {
@@ -91,6 +93,18 @@ namespace UABEAvalonia
             Container = string.Empty;
             FileInstance = container.FileInstance;
             BaseValueField = baseField;
+        }
+
+        public void SetNewFile(AssetsFileInstance fileInst)
+        {
+            AssetFileInfo info = fileInst.file.GetAssetInfo(PathId);
+            if (info == null)
+            {
+                throw new Exception("Missed an asset during save. Path ID: " + PathId);
+            }
+
+            FilePosition = info.AbsoluteByteStart;
+            FileReader = fileInst.file.Reader;
         }
     }
 }

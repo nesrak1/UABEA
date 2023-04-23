@@ -521,6 +521,8 @@ namespace UABEAvalonia
             }
             else
             {
+                List<int> changedFileIds = new List<int>();
+
                 foreach (var file in changedFiles)
                 {
                     List<AssetsReplacer> replacers;
@@ -584,12 +586,27 @@ namespace UABEAvalonia
                             File.Move(filePath, origFilePath);
                             file.file = new AssetsFile();
                             file.file.Read(new AssetsFileReader(File.OpenRead(origFilePath)));
+                            file.file.GenerateQuickLookupTree();
                         }
+
+                        changedFileIds.Add(Workspace.LoadedFiles.IndexOf(file));
                     }
                     catch (Exception ex)
                     {
                         await MessageBoxUtil.ShowDialog(this,
                             "Write exception", "There was a problem while writing the file:\n" + ex.ToString());
+                    }
+                }
+
+                if (!saveAs)
+                {
+                    foreach (AssetInfoDataGridItem item in dataGridItems)
+                    {
+                        int fileId = item.FileID;
+                        if (changedFileIds.Contains(fileId))
+                        {
+                            item.assetContainer.SetNewFile(Workspace.LoadedFiles[fileId]);
+                        }
                     }
                 }
             }
