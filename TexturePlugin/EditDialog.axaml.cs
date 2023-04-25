@@ -164,8 +164,11 @@ namespace TexturePlugin
             if (int.TryParse(boxMipMapBias.Text, out int mipBias))
                 m_TextureSettings["m_MipBias"].AsInt = mipBias;
 
-            m_TextureSettings["m_WrapU"].AsInt = ddWrapModeU.SelectedIndex;
-            m_TextureSettings["m_WrapV"].AsInt = ddWrapModeV.SelectedIndex;
+            if (!m_TextureSettings["m_WrapU"].IsDummy)
+                m_TextureSettings["m_WrapU"].AsInt = ddWrapModeU.SelectedIndex;
+
+            if (!m_TextureSettings["m_WrapV"].IsDummy)
+                m_TextureSettings["m_WrapV"].AsInt = ddWrapModeV.SelectedIndex;
 
             if (boxLightMapFormat.Text.StartsWith("0x"))
             {
@@ -178,10 +181,13 @@ namespace TexturePlugin
                     baseField["m_LightmapFormat"].AsInt = lightFmt;
             }
 
-            baseField["m_ColorSpace"].AsInt = ddColorSpace.SelectedIndex;
+            if (!baseField["m_ColorSpace"].IsDummy)
+                baseField["m_ColorSpace"].AsInt = ddColorSpace.SelectedIndex;
 
             baseField["m_TextureFormat"].AsInt = (int)fmt;
-            baseField["m_CompleteImageSize"].AsInt = encImageBytes.Length;
+
+            if (!baseField["m_CompleteImageSize"].IsDummy)
+                baseField["m_CompleteImageSize"].AsInt = encImageBytes.Length;
 
             baseField["m_Width"].AsInt = width;
             baseField["m_Height"].AsInt = height;
