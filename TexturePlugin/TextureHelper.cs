@@ -38,6 +38,10 @@ namespace TexturePlugin
             if (texFile.m_StreamData.size != 0 && texFile.m_StreamData.path != string.Empty)
             {
                 string fixedStreamPath = texFile.m_StreamData.path;
+                if (inst.parentBundle == null && fixedStreamPath.StartsWith("archive:/"))
+                {
+                    fixedStreamPath = Path.GetFileName(fixedStreamPath);
+                }
                 if (!Path.IsPathRooted(fixedStreamPath) && rootPath != null)
                 {
                     fixedStreamPath = Path.Combine(rootPath, fixedStreamPath);

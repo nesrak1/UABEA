@@ -137,9 +137,9 @@ namespace UABEAvalonia
                     byte[] data = BundleHelper.LoadAssetDataFromBundle(bun, i);
                     string outName;
                     if (flags.Contains("-keepnames"))
-                        outName = Path.Combine(exportDirectory, $"{name}.assets");
+                        outName = Path.Combine(exportDirectory, name);
                     else
-                        outName = Path.Combine(exportDirectory, $"{Path.GetFileName(file)}_{name}.assets");
+                        outName = Path.Combine(exportDirectory, $"{Path.GetFileName(file)}_{name}");
                     Console.WriteLine($"Exporting {outName}...");
                     File.WriteAllBytes(outName, data);
                 }
@@ -192,7 +192,7 @@ namespace UABEAvalonia
                 for (int i = 0; i < entryCount; i++)
                 {
                     string name = bun.BlockAndDirInfo.DirectoryInfos[i].Name;
-                    string matchName = Path.Combine(importDirectory, $"{Path.GetFileName(file)}_{name}.assets");
+                    string matchName = Path.Combine(importDirectory, $"{Path.GetFileName(file)}_{name}");
 
                     if (File.Exists(matchName))
                     {
