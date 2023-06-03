@@ -14,6 +14,5 @@
    </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TexturePlugin\TexturePlugin.csproj" />
-    <ProjectReference Include="..\TobyCopy\TobyCopy.csproj" />
   </ItemGroup>
 </Project>
