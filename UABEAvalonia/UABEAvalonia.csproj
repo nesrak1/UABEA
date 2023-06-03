@@ -53,14 +53,16 @@
     <EmbeddedResource Include="Grammars\utxt\syntaxes\utxt.tmLanguage.json" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Grammars\utxt\package.json" />
     <Resource Include="Grammars\utxt\syntaxes\utxt.tmLanguage.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="LoadModPackageDialog.axaml.cs">
+    <Compile Update="Forms\ExportBatchChooseTypeDialog.axaml.cs">
+      <DependentUpon>ExportBatchChooseTypeDialog.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Forms\LoadModPackageDialog.axaml.cs">
       <DependentUpon>LoadModPackageDialog.axaml</DependentUpon>
     </Compile>
-    <Compile Update="ImportSerializedDialog.axaml.cs">
+    <Compile Update="Forms\ImportSerializedDialog.axaml.cs">
       <DependentUpon>ImportSerializedDialog.axaml</DependentUpon>
     </Compile>
   </ItemGroup>

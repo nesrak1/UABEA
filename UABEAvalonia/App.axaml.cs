@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Styling;
 
 namespace UABEAvalonia
 {
@@ -9,6 +10,7 @@ namespace UABEAvalonia
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
+            Current.RequestedThemeVariant = ThemeVariant.Light;
         }
 
         public override void OnFrameworkInitializationCompleted()

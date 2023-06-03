@@ -4,6 +4,9 @@
     <Application.Styles>
       <SimpleTheme/>
       <StyleInclude Source="avares://Avalonia.Themes.Simple/Controls/SimpleControls.xaml"/>
+      <StyleInclude Source="avares://UABEAvalonia/Styles/ExtendedControlStyles.axaml"/>
+      <StyleInclude Source="avares://UABEAvalonia/Styles/ImprovedTabStyles.axaml"/>
+      <StyleInclude Source="avares://UABEAvalonia/Styles/ImprovedHeaderedContentControlStyles.axaml"/>
     </Application.Styles>
 </Application>
 

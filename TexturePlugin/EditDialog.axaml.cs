@@ -76,7 +76,7 @@ namespace TexturePlugin
                 }
             });
 
-            string[] selectedFilePaths = Extensions.GetOpenFileDialogFiles(selectedFiles);
+            string[] selectedFilePaths = FileDialogUtils.GetOpenFileDialogFiles(selectedFiles);
             if (selectedFilePaths.Length == 0)
                 return;
 

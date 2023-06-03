@@ -88,7 +88,7 @@ namespace TexturePlugin
                 selection[i] = new AssetContainer(selection[i], TextureHelper.GetByteArrayTexture(workspace, selection[i]));
             }
 
-            ExportBatchChooseType dialog = new ExportBatchChooseType();
+            ExportBatchChooseTypeDialog dialog = new ExportBatchChooseTypeDialog();
             string fileType = await dialog.ShowDialog<string>(win);
 
             if (fileType == null || fileType == string.Empty)
@@ -99,7 +99,7 @@ namespace TexturePlugin
                 Title = "Select export directory"
             });
 
-            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            string[] selectedFolderPaths = FileDialogUtils.GetOpenFolderDialogFiles(selectedFolders);
             if (selectedFolderPaths.Length == 0)
                 return false;
 
@@ -118,7 +118,7 @@ namespace TexturePlugin
                 if (texFile.m_Width == 0 && texFile.m_Height == 0)
                     continue;
 
-                string assetName = Extensions.ReplaceInvalidPathChars(texFile.m_Name);
+                string assetName = PathUtils.ReplaceInvalidPathChars(texFile.m_Name);
                 string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{fileType.ToLower()}");
 
                 //bundle resS
@@ -174,7 +174,7 @@ namespace TexturePlugin
                 return false;
             }
 
-            string assetName = Extensions.ReplaceInvalidPathChars(texFile.m_Name);
+            string assetName = PathUtils.ReplaceInvalidPathChars(texFile.m_Name);
 
             var selectedFile = await win.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()
             {
@@ -188,7 +188,7 @@ namespace TexturePlugin
                 DefaultExtension = "png"
             });
 
-            string selectedFilePath = Extensions.GetSaveFileDialogFile(selectedFile);
+            string selectedFilePath = FileDialogUtils.GetSaveFileDialogFile(selectedFile);
             if (selectedFilePath == null)
                 return false;
 

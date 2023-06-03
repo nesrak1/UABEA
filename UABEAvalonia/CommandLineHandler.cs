@@ -121,7 +121,7 @@ namespace UABEAvalonia
                     return;
                 }
 
-                DetectedFileType fileType = AssetBundleDetector.DetectFileType(file);
+                DetectedFileType fileType = FileTypeDetector.DetectFileType(file);
                 if (fileType != DetectedFileType.BundleFile)
                 {
                     continue;
@@ -176,7 +176,7 @@ namespace UABEAvalonia
                     return;
                 }
 
-                DetectedFileType fileType = AssetBundleDetector.DetectFileType(file);
+                DetectedFileType fileType = FileTypeDetector.DetectFileType(file);
                 if (fileType != DetectedFileType.BundleFile)
                 {
                     continue;

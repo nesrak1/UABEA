@@ -61,7 +61,7 @@ namespace TextAssetPlugin
                 Title = "Select import directory"
             });
 
-            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            string[] selectedFolderPaths = FileDialogUtils.GetOpenFolderDialogFiles(selectedFolders);
             if (selectedFolderPaths.Length == 0)
                 return false;
 
@@ -117,7 +117,7 @@ namespace TextAssetPlugin
                 FileTypeFilter = filters
             });
 
-            string[] selectedFilePaths = Extensions.GetOpenFileDialogFiles(selectedFiles);
+            string[] selectedFilePaths = FileDialogUtils.GetOpenFileDialogFiles(selectedFiles);
             if (selectedFilePaths.Length == 0)
                 return false;
 
@@ -170,7 +170,7 @@ namespace TextAssetPlugin
                 Title = "Select export directory"
             });
 
-            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            string[] selectedFolderPaths = FileDialogUtils.GetOpenFolderDialogFiles(selectedFolders);
             if (selectedFolderPaths.Length == 0)
                 return false;
 
@@ -183,7 +183,7 @@ namespace TextAssetPlugin
                 string name = baseField["m_Name"].AsString;
                 byte[] byteData = baseField["m_Script"].AsByteArray;
 
-                name = Extensions.ReplaceInvalidPathChars(name);
+                name = PathUtils.ReplaceInvalidPathChars(name);
 
                 string extension = ".txt";
                 string ucontExt = TextAssetHelper.GetUContainerExtension(cont);
@@ -204,7 +204,7 @@ namespace TextAssetPlugin
 
             AssetTypeValueField baseField = workspace.GetBaseField(cont);
             string name = baseField["m_Name"].AsString;
-            name = Extensions.ReplaceInvalidPathChars(name);
+            name = PathUtils.ReplaceInvalidPathChars(name);
 
             var filters = new List<FilePickerFileType>()
             {
@@ -232,7 +232,7 @@ namespace TextAssetPlugin
                 SuggestedFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}"
             });
 
-            string selectedFilePath = Extensions.GetSaveFileDialogFile(selectedFile);
+            string selectedFilePath = FileDialogUtils.GetSaveFileDialogFile(selectedFile);
             if (selectedFilePath == null)
                 return false;
 

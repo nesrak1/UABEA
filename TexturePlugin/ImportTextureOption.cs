@@ -111,7 +111,7 @@ namespace TexturePlugin
                 Title = "Select import directory"
             });
 
-            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            string[] selectedFolderPaths = FileDialogUtils.GetOpenFolderDialogFiles(selectedFolders);
             if (selectedFolderPaths.Length == 0)
                 return false;
 

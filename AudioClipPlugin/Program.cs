@@ -62,7 +62,7 @@ namespace AudioPlugin
                 Title = "Select export directory"
             });
 
-            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            string[] selectedFolderPaths = FileDialogUtils.GetOpenFolderDialogFiles(selectedFolders);
             if (selectedFolderPaths.Length == 0)
                 return false;
 
@@ -73,7 +73,7 @@ namespace AudioPlugin
                 AssetTypeValueField baseField = workspace.GetBaseField(cont);
 
                 string name = baseField["m_Name"].AsString;
-                name = Extensions.ReplaceInvalidPathChars(name);
+                name = PathUtils.ReplaceInvalidPathChars(name);
                     
                 CompressionFormat compressionFormat = (CompressionFormat)baseField["m_CompressionFormat"].AsInt;
                 string extension = GetExtension(compressionFormat);
@@ -113,7 +113,7 @@ namespace AudioPlugin
 
             AssetTypeValueField baseField = workspace.GetBaseField(cont);
             string name = baseField["m_Name"].AsString;
-            name = Extensions.ReplaceInvalidPathChars(name);
+            name = PathUtils.ReplaceInvalidPathChars(name);
             
             CompressionFormat compressionFormat = (CompressionFormat) baseField["m_CompressionFormat"].AsInt;
 
@@ -129,7 +129,7 @@ namespace AudioPlugin
                 SuggestedFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}"
             });
 
-            string selectedFilePath = Extensions.GetSaveFileDialogFile(selectedFile);
+            string selectedFilePath = FileDialogUtils.GetSaveFileDialogFile(selectedFile);
             if (selectedFilePath == null)
                 return false;
 

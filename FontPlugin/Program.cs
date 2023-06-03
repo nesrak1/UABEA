@@ -71,7 +71,7 @@ namespace FontPlugin
                 Title = "Select import directory"
             });
 
-            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            string[] selectedFolderPaths = FileDialogUtils.GetOpenFolderDialogFiles(selectedFolders);
             if (selectedFolderPaths.Length == 0)
                 return false;
 
@@ -117,7 +117,7 @@ namespace FontPlugin
                 }
             });
 
-            string[] selectedFilePaths = Extensions.GetOpenFileDialogFiles(selectedFiles);
+            string[] selectedFilePaths = FileDialogUtils.GetOpenFileDialogFiles(selectedFiles);
             if (selectedFilePaths.Length == 0)
                 return false;
 
@@ -170,7 +170,7 @@ namespace FontPlugin
                 Title = "Select export directory"
             });
 
-            string[] selectedFolderPaths = Extensions.GetOpenFolderDialogFiles(selectedFolders);
+            string[] selectedFolderPaths = FileDialogUtils.GetOpenFolderDialogFiles(selectedFolders);
             if (selectedFolderPaths.Length == 0)
                 return false;
 
@@ -186,7 +186,7 @@ namespace FontPlugin
                 if (byteData.Length == 0)
                     continue;
 
-                name = Extensions.ReplaceInvalidPathChars(name);
+                name = PathUtils.ReplaceInvalidPathChars(name);
 
                 bool isOtf = FontHelper.IsDataOtf(byteData);
                 string extension = isOtf ? "otf" : "ttf";
@@ -204,7 +204,7 @@ namespace FontPlugin
 
             AssetTypeValueField baseField = FontHelper.GetByteArrayFont(workspace, cont);
             string name = baseField["m_Name"].AsString;
-            name = Extensions.ReplaceInvalidPathChars(name);
+            name = PathUtils.ReplaceInvalidPathChars(name);
 
             byte[] byteData = baseField["m_FontData.Array"].AsByteArray;
 
@@ -231,7 +231,7 @@ namespace FontPlugin
                 SuggestedFileName = $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}"
             });
 
-            string selectedFilePath = Extensions.GetSaveFileDialogFile(selectedFile);
+            string selectedFilePath = FileDialogUtils.GetSaveFileDialogFile(selectedFile);
             if (selectedFilePath == null)
                 return false;
 

@@ -1,0 +1,161 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="650" d:DesignHeight="450"
+        Width="650" Height="450"
+        Icon="/Assets/uabeavalonia16.ico"
+        x:Class="UABEAvalonia.AssetsFileInfoWindow"
+        Title="Assets File Header/Metadata Info">
+<Grid Margin="10">
+  <Grid.RowDefinitions>
+    <RowDefinition Height="*" />
+    <RowDefinition Height="10" />
+    <RowDefinition Height="Auto" />
+    <RowDefinition Height="Auto" />
+  </Grid.RowDefinitions>
+  <TabControl Grid.Row="0" Name="tabControl">
+    <TabItem Header="General Info">
+      <ScrollViewer>
+        <StackPanel Orientation="Vertical" Spacing="10" Margin="10">
+          <HeaderedContentControl Header="Header Info">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+              </Grid.RowDefinitions>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <Label Grid.Column="0" Grid.Row="0">Metadata Size</Label>
+              <Label Grid.Column="0" Grid.Row="1">File Size</Label>
+              <Label Grid.Column="0" Grid.Row="2">Format</Label>
+              <Label Grid.Column="0" Grid.Row="3">First File Offset</Label>
+              <Label Grid.Column="0" Grid.Row="4">Endianness</Label>
+              <TextBox Grid.Column="1" Grid.Row="0" IsReadOnly="True" Name="boxMetadataSize" />
+              <TextBox Grid.Column="1" Grid.Row="1" IsReadOnly="True" Name="boxFileSize" />
+              <TextBox Grid.Column="1" Grid.Row="2" IsReadOnly="True" Name="boxFormat" />
+              <TextBox Grid.Column="1" Grid.Row="3" IsReadOnly="True" Name="boxFirstFileOffset" />
+              <TextBox Grid.Column="1" Grid.Row="4" IsReadOnly="True" Name="boxEndianness" />
+            </Grid>
+          </HeaderedContentControl>
+          <HeaderedContentControl Header="Metadata Info">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+              </Grid.RowDefinitions>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <Label Grid.Column="0" Grid.Row="0">Engine Version</Label>
+              <Label Grid.Column="0" Grid.Row="1">Platform</Label>
+              <Label Grid.Column="0" Grid.Row="2">Type Tree Enabled</Label>
+              <TextBox Grid.Column="1" Grid.Row="0" IsReadOnly="True" Name="boxEngineVersion" />
+              <TextBox Grid.Column="1" Grid.Row="1" IsReadOnly="True" Name="boxPlatform" />
+              <TextBox Grid.Column="1" Grid.Row="2" IsReadOnly="True" Name="boxTypeTree" />
+            </Grid>
+          </HeaderedContentControl>
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+    <TabItem Header="Type Tree">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition />
+          <ColumnDefinition Width="220" />
+        </Grid.ColumnDefinitions>
+        <Grid Grid.Column="0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition />
+          </Grid.ColumnDefinitions>
+          <TreeView Grid.Column="0" Name="treeTypeTreeNode" />
+          <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
+          <ListBox Grid.Column="2" Name="lstTypeTreeType" />
+        </Grid>
+        <StackPanel Grid.Column="1">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition />
+              <RowDefinition />
+              <RowDefinition />
+              <RowDefinition />
+              <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="80" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Label Grid.Column="0" Grid.Row="0">Type</Label>
+            <Label Grid.Column="0" Grid.Row="1">Type ID</Label>
+            <Label Grid.Column="0" Grid.Row="2">Script ID</Label>
+            <Label Grid.Column="0" Grid.Row="3">Hash</Label>
+            <Label Grid.Column="0" Grid.Row="4">Mono Hash</Label>
+            <TextBox Grid.Column="1" Grid.Row="0" IsReadOnly="True" Name="boxTypeTreeType" />
+            <TextBox Grid.Column="1" Grid.Row="1" IsReadOnly="True" Name="boxTypeTreeTypeId" />
+            <TextBox Grid.Column="1" Grid.Row="2" IsReadOnly="True" Name="boxTypeTreeScriptId" />
+            <TextBox Grid.Column="1" Grid.Row="3" IsReadOnly="True" Name="boxTypeTreeHash" />
+            <TextBox Grid.Column="1" Grid.Row="4" IsReadOnly="True" Name="boxTypeTreeMonoHash" />
+          </Grid>
+        </StackPanel>
+      </Grid>
+    </TabItem>
+    <TabItem Header="Dependencies">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ListBox Grid.Row="0" Name="boxDependenciesList">
+          <ListBox.Items>
+            <ListBoxItem>Test</ListBoxItem>
+            <ListBoxItem>Stuff</ListBoxItem>
+            <ListBoxItem>Goes</ListBoxItem>
+            <ListBoxItem>Here</ListBoxItem>
+          </ListBox.Items>
+        </ListBox>
+        <Grid Grid.Row="1">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+          </Grid.ColumnDefinitions>
+          <Button Grid.Column="0" Name="btnAdd">Add</Button>
+          <Button Grid.Column="1" Name="btnEdit">Edit</Button>
+          <Button Grid.Column="2" Name="btnRemove">Remove</Button>
+          <Button Grid.Column="3" Name="btnMoveUp">Move Up</Button>
+          <Button Grid.Column="4" Name="btnMoveDown">Move Down</Button>
+        </Grid>
+      </Grid>
+    </TabItem>
+    <TabItem Header="Script Info">
+      <ListBox Name="boxScriptInfoList" />
+    </TabItem>
+  </TabControl>
+  <ComboBox Grid.Row="2" Height="26" Name="cbxFiles" />
+  <Grid Grid.Row="3">
+    <Grid.RowDefinitions>
+      <RowDefinition></RowDefinition>
+      <RowDefinition></RowDefinition>
+    </Grid.RowDefinitions>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+        <ColumnDefinition Width="*"></ColumnDefinition>
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" Name="btnOk">Ok</Button>
+      <Button Grid.Column="1" Name="btnCancel">Cancel</Button>
+    </Grid>
+  </Grid>
+</Grid>
+</Window>

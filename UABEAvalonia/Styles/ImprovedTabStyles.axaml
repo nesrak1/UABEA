@@ -1,0 +1,75 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Design.PreviewWith>
+    <Border Padding="20">
+      <TabControl>
+        <TabItem Header="Test 1">
+          <Label Width="300" Height="200">Test text</Label>
+        </TabItem>
+        <TabItem Header="Test 2"/>
+        <TabItem Header="Test 3"/>
+        <TabItem Header="Test 4"/>
+        <TabItem Header="Test 5"/>
+      </TabControl>
+    </Border>
+  </Design.PreviewWith>
+  
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Default">
+          <Color x:Key="TabViewBackgroundColor">#EFEFEF</Color>
+          <SolidColorBrush x:Key="TabViewBackgroundBrush" Color="{StaticResource TabViewBackgroundColor}" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <Color x:Key="TabViewBackgroundColor">#202020</Color>
+          <SolidColorBrush x:Key="TabViewBackgroundBrush" Color="{StaticResource TabViewBackgroundColor}" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <Style Selector="TabControl">
+    <Setter Property="Background" Value="{DynamicResource TabViewBackgroundBrush}"/>
+  </Style>
+  
+  <Style Selector="TabControl WrapPanel">
+    <Setter Property="Background" Value="{DynamicResource ThemeBackgroundBrush}" />
+    <Setter Property="Margin" Value="0 -4 0 0" />
+  </Style>
+
+  <Style Selector="TabItem">
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="Height" Value="30"/>
+    <Setter Property="Background" Value="#119EDA"/>
+    <Setter Property="Foreground" Value="#F0F0F0"/>
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0 0 0 0"/>
+    <Setter Property="Padding" Value="10 0"/>
+    <Setter Property="BorderBrush" Value="#119EDA"/>
+  </Style>
+  
+  <Style Selector="TabItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#33AEEA"/>
+  </Style>
+
+  <Style Selector="TabItem:focus">
+    <Setter Property="Foreground" Value="#33AEEA"/>
+    <Setter Property="Margin" Value="0 0 0 0"/>
+    <Setter Property="Padding" Value="10 0"/>
+  </Style>
+  
+  <Style Selector="TabItem:focus /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#F0F0F0"/>
+  </Style>
+
+  <Style Selector="TabItem:selected">
+    <Setter Property="Foreground" Value="#33AEEA"/>
+    <Setter Property="Margin" Value="0 0 0 0"/>
+    <Setter Property="Padding" Value="10 0"/>
+  </Style>
+  
+  <Style Selector="TabItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#F0F0F0"/>
+  </Style>
+</Styles>
