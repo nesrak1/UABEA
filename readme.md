@@ -1,6 +1,8 @@
 <p align="center"><img src="UABEAvalonia/Assets/logo.png" /></p>
 
-[Latest Nightly Build](https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip) | [Latest Release](https://github.com/nesrak1/UABEA/releases)
+**Quick Downloads:**
+
+[Latest Nightly (Windows)](https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip) | [Latest Nightly (Linux)](https://nightly.link/nesrak1/UABEA/workflows/dotnet-ubuntu/master/uabea-ubuntu.zip) | [Latest Release](https://github.com/nesrak1/UABEA/releases)
 
 [![GitHub issues](https://img.shields.io/github/issues/nesrak1/UABEA?logo=GitHub&style=flat-square)](https://github.com/nesrak1/UABEA/issues) [![discord](https://img.shields.io/discord/862035581491478558?label=discord&logo=discord&logoColor=FFFFFF&style=flat-square)](https://discord.gg/hd9VdswwZs)
 
@@ -18,8 +20,16 @@ Many games are also now using addressables. You can tell if the bundle you're op
 
 ## Libraries
 
-* [Avalonia](https://github.com/AvaloniaUI/Avalonia) for UI
-* [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET) for assets reading/writing which uses [detex](https://github.com/hglm/detex) for DXT decoding
-* [ISPC](https://github.com/GameTechDev/ISPCTextureCompressor) for DXT encoding
-* [crnlib](https://github.com/Unity-Technologies/crunch/tree/unity) (crunch) for crunch decompressing and compressing
-* [PVRTexLib](https://developer.imaginationtech.com/downloads/) (PVRTexTool) for all other texture decoding and encoding
+- [Avalonia](https://github.com/AvaloniaUI/Avalonia) (MIT license)
+  - [Dock.Avalonia](https://github.com/wieslawsoltes/Dock) (MIT license)
+  - [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) (MIT license)
+- [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET/tree/upd21-with-inst) (MIT license)
+  - [Cpp2IL](https://github.com/SamboyCoding/Cpp2IL) (MIT license)
+  - [Mono.Cecil](https://github.com/jbevain/cecil) (MIT license)
+  - [AssetRipper.TextureDecoder](https://github.com/AssetRipper/TextureDecoder) (MIT license)
+- [ISPC Texture Compressor](https://github.com/GameTechDev/ISPCTextureCompressor) (MIT license)
+- [Unity crnlib](https://github.com/Unity-Technologies/crunch/tree/unity) (zlib license)
+- [PVRTexLib](https://developer.imaginationtech.com/pvrtextool) (PVRTexTool license)
+- [ImageSharp](https://github.com/SixLabors/ImageSharp) (Apache License 2.0)
+- [Fsb5Sharp](https://github.com/SamboyCoding/Fmod5Sharp) (MIT license)
+- [Font Awesome](https://fontawesome.com) (CC BY 4.0 license)
