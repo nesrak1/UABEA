@@ -439,7 +439,7 @@ namespace UABEAvalonia
                     }
                     else if (StartsWithSpace(check, "FileSize"))
                     {
-                        aw.Write(int.Parse(valueStr));
+                        aw.Write(ulong.Parse(valueStr));
                     }
                     // not seen in the wild? but still part of at
                     // I'm not sure where this list is from
