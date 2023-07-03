@@ -53,9 +53,36 @@ namespace MeshPlugin.ResourceClass
             }
             return null;
         }
+        public byte[] GetResourceBytesFromPath()
+        {
+            string searchPath = path;
+            if (searchPath.StartsWith("archive:/"))
+                searchPath = searchPath.Substring(9);
 
+            var completePath = AFinst.path + "/" + searchPath;
+            if (File.Exists(completePath))
+            {
+                byte[] rawBytes = File.ReadAllBytes(completePath);
+                return rawBytes;
+            }
+            else
+            {
+                ShowResourceError();
+            }
+
+            return null;
+        }
         public byte[] GetData()
         {
+            byte[] buffer = new byte[size];
+            resourceStream.Position = offset;
+            resourceStream.ReadBuffer(buffer, 0, buffer.Length);
+            return buffer;
+        }
+        public byte[] GetDataFromPath()
+        {
+            this.resourceStream = new MemoryStream(GetResourceBytesFromPath());
+
             byte[] buffer = new byte[size];
             resourceStream.Position = offset;
             resourceStream.ReadBuffer(buffer, 0, buffer.Length);
@@ -70,6 +97,11 @@ namespace MeshPlugin.ResourceClass
             {
                 binaryReader.BaseStream.CopyTo(writer, (int)size);
             }
+        }
+        private async void ShowResourceError()
+        {
+            ResourceLoader loader = new ResourceLoader();
+            bool saved = await loader.ShowDialog<bool>(loader);
         }
     }
 }
