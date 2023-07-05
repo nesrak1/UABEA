@@ -735,7 +735,13 @@ namespace UABEAvalonia
                 using (FileStream fs = File.Open(file, FileMode.Create))
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
-                    AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);
+                    AssetTypeValueField? baseField = Workspace.GetBaseField(selectedCont);
+
+                    if (baseField == null)
+                    {
+                        sw.WriteLine("Asset failed to deserialize.");
+                        continue;
+                    }
 
                     AssetImportExport dumper = new AssetImportExport();
                     if (extension == "json")
@@ -773,7 +779,13 @@ namespace UABEAvalonia
             using (FileStream fs = File.Open(selectedFilePath, FileMode.Create))
             using (StreamWriter sw = new StreamWriter(fs))
             {
-                AssetTypeValueField baseField = Workspace.GetBaseField(selectedCont);
+                AssetTypeValueField? baseField = Workspace.GetBaseField(selectedCont);
+
+                if (baseField == null)
+                {
+                    sw.WriteLine("Asset failed to deserialize.");
+                    return;
+                }
 
                 AssetImportExport dumper = new AssetImportExport();
 
