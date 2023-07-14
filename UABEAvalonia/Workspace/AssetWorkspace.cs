@@ -336,6 +336,9 @@ namespace UABEAvalonia
 
         public AssetTypeValueField? GetBaseField(AssetContainer cont)
         {
+            if (cont == null)
+                return null;
+
             if (cont.HasValueField)
                 return cont.BaseValueField;
 
