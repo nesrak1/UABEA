@@ -64,7 +64,7 @@ namespace UABEAvalonia
             affectedBundles = CreateTreeItem("Affected bundles");
             affectedFiles = CreateTreeItem("Affected assets files");
 
-            treeView.Items = new List<TreeViewItem>() { affectedBundles, affectedFiles };
+            treeView.ItemsSource = new List<TreeViewItem>() { affectedBundles, affectedFiles };
 
             string rootPath = boxBaseFolder.Text;
 
@@ -87,7 +87,7 @@ namespace UABEAvalonia
                 obsItems.Add(new ModMakerTreeReplacerInfo(newAsset.Key, newAsset.Value));
             }
 
-            affectedFiles.Items = filesItems;
+            affectedFiles.ItemsSource = filesItems;
 
             builtTree = true;
         }

@@ -101,7 +101,7 @@ namespace UABEAvalonia
             LoadAllAssetsWithDeps(assetsFiles);
             SetupContainers();
             MakeDataGridItems();
-            dataGrid.Items = dataGridItems;
+            dataGrid.ItemsSource = dataGridItems;
 
             dgcv = GetDataGridCollectionView(dataGrid);
 
@@ -1217,7 +1217,7 @@ namespace UABEAvalonia
 
         private void ClearModified()
         {
-            foreach (AssetInfoDataGridItem gridItem in dataGrid.Items)
+            foreach (AssetInfoDataGridItem gridItem in dataGrid.ItemsSource)
             {
                 if (gridItem.Modified != "")
                 {

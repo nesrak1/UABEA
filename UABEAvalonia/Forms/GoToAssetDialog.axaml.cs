@@ -35,7 +35,7 @@ namespace UABEAvalonia
             {
                 loadedFiles.Add($"{index++} - {Path.GetFileName(inst.path)}");
             }
-            ddFileId.Items = loadedFiles;
+            ddFileId.ItemsSource = loadedFiles;
             ddFileId.SelectedIndex = 0;
             boxPathId.Text = "1"; //todo get last id (including new assets)
         }

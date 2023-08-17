@@ -36,7 +36,7 @@ namespace UABEAvalonia
             }
 
             listItems.Sort((x, y) => x.Type.ToString().CompareTo(y.Type.ToString()));
-            listBox.Items = listItems;
+            listBox.ItemsSource = listItems;
         }
 
         private void FilterAssetTypeDialog_Closing(object? sender, System.ComponentModel.CancelEventArgs e)

@@ -79,14 +79,14 @@ namespace UABEAvalonia
                     gridItems.Add(gridItem);
                 }
             }
-            dataGrid.Items = gridItems;
+            dataGrid.ItemsSource = gridItems;
         }
 
         private void DataGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             if (dataGrid.SelectedItem != null && dataGrid.SelectedItem is ImportBatchDataGridItem gridItem)
             {
-                boxMatchingFiles.Items = gridItem.matchingFiles;
+                boxMatchingFiles.ItemsSource = gridItem.matchingFiles;
                 if (gridItem.selectedIndex != -1)
                 {
                     //there's gotta be a better way to do this .-. oh well
@@ -109,7 +109,7 @@ namespace UABEAvalonia
         private void BtnOk_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             List<ImportBatchInfo> importInfos = new List<ImportBatchInfo>();
-            foreach (ImportBatchDataGridItem gridItem in dataGrid.Items)
+            foreach (ImportBatchDataGridItem gridItem in dataGrid.ItemsSource)
             {
                 if (gridItem.selectedIndex != -1)
                 {

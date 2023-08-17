@@ -47,7 +47,7 @@ namespace UABEAvalonia
 
         private void DataWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            treeView.Items = null;
+            treeView.ItemsSource = null;
         }
     }
 }

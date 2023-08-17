@@ -887,7 +887,7 @@ namespace UABEAvalonia
         {
             Workspace.Reset(bundleInst);
 
-            comboBox.Items = Workspace.Files;
+            comboBox.ItemsSource = Workspace.Files;
             comboBox.SelectedIndex = 0;
 
             lblFileName.Text = bundleInst.name;

@@ -141,7 +141,7 @@ namespace UABEAvalonia
                 return;
 
             // clear treeview
-            gameObjectTreeView.Items = new AvaloniaList<object>();
+            gameObjectTreeView.ItemsSource = new AvaloniaList<object>();
 
             foreach (var asset in workspace.LoadedAssets)
             {
