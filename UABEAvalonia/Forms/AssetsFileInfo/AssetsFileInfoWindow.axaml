@@ -115,12 +115,6 @@
           <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <ListBox Grid.Row="0" Name="boxDependenciesList">
-          <ListBox.Items>
-            <ListBoxItem>Test</ListBoxItem>
-            <ListBoxItem>Stuff</ListBoxItem>
-            <ListBoxItem>Goes</ListBoxItem>
-            <ListBoxItem>Here</ListBoxItem>
-          </ListBox.Items>
         </ListBox>
         <Grid Grid.Row="1">
           <Grid.ColumnDefinitions>
