@@ -134,7 +134,7 @@ namespace UABEAvalonia
             if (LoadedFileNames.Contains(fromFilePath))
                 return;
 
-            fromFile.file.GenerateQuickLookupTree();
+            fromFile.file.GenerateQuickLookup();
 
             LoadedFiles.Add(fromFile);
             LoadedFileNames.Add(fromFile.path.ToLower());

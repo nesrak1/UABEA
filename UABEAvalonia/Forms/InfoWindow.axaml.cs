@@ -588,7 +588,7 @@ namespace UABEAvalonia
                             File.Move(filePath, origFilePath);
                             file.file = new AssetsFile();
                             file.file.Read(new AssetsFileReader(File.OpenRead(origFilePath)));
-                            file.file.GenerateQuickLookupTree();
+                            file.file.GenerateQuickLookup();
                         }
 
                         changedFileIds.Add(Workspace.LoadedFiles.IndexOf(file));
