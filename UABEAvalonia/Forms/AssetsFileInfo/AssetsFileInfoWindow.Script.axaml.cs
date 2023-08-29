@@ -40,7 +40,7 @@ namespace UABEAvalonia
                 items.Add($"{i} - {fullName}");
             }
 
-            boxScriptInfoList.Items = items;
+            boxScriptInfoList.ItemsSource = items;
         }
     }
 }

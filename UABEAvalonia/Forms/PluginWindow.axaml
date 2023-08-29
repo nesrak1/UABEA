@@ -8,15 +8,8 @@
         x:Class="UABEAvalonia.PluginWindow"
         Title="Plugins">
   <Grid>
-    <ListBox Margin="10,10,10,45" Name="boxPluginList">
-      <ListBox.Items>
-        <ListBoxItem>Test</ListBoxItem>
-        <ListBoxItem>Stuff</ListBoxItem>
-        <ListBoxItem>Goes</ListBoxItem>
-        <ListBoxItem>Here</ListBoxItem>
-      </ListBox.Items>
-    </ListBox>
-    <Grid Margin="10,10,10,10" VerticalAlignment="Bottom">
+	  <ListBox Margin="10,10,10,45" Name="boxPluginList" />
+        <Grid Margin="10,10,10,10" VerticalAlignment="Bottom">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*"></ColumnDefinition>
         <ColumnDefinition Width="*"></ColumnDefinition>

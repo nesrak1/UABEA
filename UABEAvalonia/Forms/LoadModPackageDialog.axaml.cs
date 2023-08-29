@@ -144,7 +144,7 @@ namespace UABEAvalonia
             affectedBundles = CreateTreeItem("Affected bundles");
             affectedFiles = CreateTreeItem("Affected assets files");
 
-            treeView.Items = new List<TreeViewItem>() { affectedBundles, affectedFiles };
+            treeView.ItemsSource = new List<TreeViewItem>() { affectedBundles, affectedFiles };
 
             filesItems = new ObservableCollection<LoadModPackageTreeFileInfo>();
             fileNames = new HashSet<string>();
@@ -163,7 +163,7 @@ namespace UABEAvalonia
                 }
             }
 
-            affectedFiles.Items = filesItems;
+            affectedFiles.ItemsSource = filesItems;
 
             builtTree = true;
         }

@@ -24,7 +24,7 @@ namespace UABEAvalonia
         private AssetWorkspace workspace;
         private InfoWindow win;
 
-        private AvaloniaList<TreeViewItem> ListItems => (AvaloniaList<TreeViewItem>)Items;
+        private AvaloniaList<TreeViewItem> ListItems => (AvaloniaList<TreeViewItem>)ItemsSource;
 
         private static SolidColorBrush PrimNameBrushDark = SolidColorBrush.Parse("#569cd6");
         private static SolidColorBrush PrimNameBrushLight = SolidColorBrush.Parse("#0000ff");
@@ -91,7 +91,7 @@ namespace UABEAvalonia
             menuCollapseSel.Click += MenuCollapseSel_Click;
 
             ContextMenu = new ContextMenu();
-            ContextMenu.Items = new AvaloniaList<MenuItem>()
+            ContextMenu.ItemsSource = new AvaloniaList<MenuItem>()
             {
                 menuEditAsset,
                 menuVisitAsset,
@@ -171,7 +171,7 @@ namespace UABEAvalonia
 
         public void Reset()
         {
-            Items = new AvaloniaList<TreeViewItem>();
+            ItemsSource = new AvaloniaList<TreeViewItem>();
         }
 
         public void LoadComponent(AssetContainer container)
@@ -186,7 +186,7 @@ namespace UABEAvalonia
                 TreeViewItem errorItem0 = CreateTreeItem("Asset failed to deserialize.");
                 TreeViewItem errorItem1 = CreateTreeItem("The file version may be too new for");
                 TreeViewItem errorItem2 = CreateTreeItem("this tpk or the file format is custom.");
-                errorItem0.Items = new List<TreeViewItem>() { errorItem1, errorItem2 };
+                errorItem0.ItemsSource = new List<TreeViewItem>() { errorItem1, errorItem2 };
                 ListItems.Add(errorItem0);
                 return;
             }
@@ -204,7 +204,7 @@ namespace UABEAvalonia
             TreeViewItem baseItem = CreateTreeItem(baseItemString);
 
             TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
-            baseItem.Items = new AvaloniaList<TreeViewItem>() { arrayIndexTreeItem };
+            baseItem.ItemsSource = new AvaloniaList<TreeViewItem>() { arrayIndexTreeItem };
             ListItems.Add(baseItem);
 
             SetTreeItemEvents(baseItem, container.FileInstance, container.PathId, baseField);
@@ -340,13 +340,13 @@ namespace UABEAvalonia
                         TreeViewItem baseItem = CreateTreeItem($"{baseField.TypeName} {baseField.FieldName}");
 
                         TreeViewItem arrayIndexTreeItem = CreateTreeItem("Loading...");
-                        baseItem.Items = new AvaloniaList<TreeViewItem>() { arrayIndexTreeItem };
-                        item.Items = new AvaloniaList<TreeViewItem>() { baseItem };
+                        baseItem.ItemsSource = new AvaloniaList<TreeViewItem>() { arrayIndexTreeItem };
+                        item.ItemsSource = new AvaloniaList<TreeViewItem>() { baseItem };
                         SetTreeItemEvents(baseItem, cont.FileInstance, fromPathId, baseField);
                     }
                     else
                     {
-                        item.Items = new AvaloniaList<TreeViewItem>() { CreateTreeItem("[null asset]") };
+                        item.ItemsSource = new AvaloniaList<TreeViewItem>() { CreateTreeItem("[null asset]") };
                     }
                 }
             }));
@@ -434,12 +434,12 @@ namespace UABEAvalonia
                     items.Add(arrayIndexTreeItem);
 
                     TreeViewItem childTreeItem = CreateColorTreeItem(childField.TypeName, childField.FieldName, middle, value);
-                    arrayIndexTreeItem.Items = new AvaloniaList<TreeViewItem>() { childTreeItem };
+                    arrayIndexTreeItem.ItemsSource = new AvaloniaList<TreeViewItem>() { childTreeItem };
 
                     if (hasChildren)
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
-                        childTreeItem.Items = new AvaloniaList<TreeViewItem>() { dummyItem };
+                        childTreeItem.ItemsSource = new AvaloniaList<TreeViewItem>() { dummyItem };
                         SetTreeItemEvents(childTreeItem, fromFile, fromPathId, childField);
                     }
 
@@ -469,7 +469,7 @@ namespace UABEAvalonia
                                 TreeViewItem refObjItem = CreateColorTreeItem("ReferencedObject", "data");
 
                                 TreeViewItem managedTypeItem = CreateColorTreeItem("ReferencedManagedType", "type");
-                                managedTypeItem.Items = new AvaloniaList<TreeViewItem>
+                                managedTypeItem.ItemsSource = new AvaloniaList<TreeViewItem>
                                 {
                                     CreateColorTreeItem("string", "class", " = ", $"\"{typeRef.ClassName}\""),
                                     CreateColorTreeItem("string", "ns", " = ", $"\"{typeRef.Namespace}\""),
@@ -479,12 +479,12 @@ namespace UABEAvalonia
                                 TreeViewItem refObjectItem = CreateColorTreeItem("ReferencedObjectData", "data");
 
                                 TreeViewItem dummyItem = CreateTreeItem("Loading...");
-                                refObjectItem.Items = new AvaloniaList<TreeViewItem> { dummyItem };
+                                refObjectItem.ItemsSource = new AvaloniaList<TreeViewItem> { dummyItem };
                                 SetTreeItemEvents(refObjectItem, fromFile, fromPathId, refObj.data);
 
                                 if (registry.version == 1)
                                 {
-                                    refObjItem.Items = new AvaloniaList<TreeViewItem>
+                                    refObjItem.ItemsSource = new AvaloniaList<TreeViewItem>
                                     {
                                         managedTypeItem,
                                         refObjectItem
@@ -492,7 +492,7 @@ namespace UABEAvalonia
                                 }
                                 else if (registry.version == 2)
                                 {
-                                    refObjItem.Items = new AvaloniaList<TreeViewItem>
+                                    refObjItem.ItemsSource = new AvaloniaList<TreeViewItem>
                                     {
                                         CreateColorTreeItem("SInt64", "rid", " = ", refObj.rid.ToString()),
                                         managedTypeItem,
@@ -503,14 +503,14 @@ namespace UABEAvalonia
                                 refObjItems.Add(refObjItem);
                             }
 
-                            refIdsArrayItem.Items = refObjItems;
+                            refIdsArrayItem.ItemsSource = refObjItems;
 
-                            refIdsItem.Items = new AvaloniaList<TreeViewItem>
+                            refIdsItem.ItemsSource = new AvaloniaList<TreeViewItem>
                             {
                                 refIdsArrayItem
                             };
 
-                            childTreeItem.Items = new AvaloniaList<TreeViewItem>
+                            childTreeItem.ItemsSource = new AvaloniaList<TreeViewItem>
                             {
                                 versionItem,
                                 refIdsItem
@@ -519,14 +519,14 @@ namespace UABEAvalonia
                         else
                         {
                             TreeViewItem errorTreeItem = CreateTreeItem($"[unsupported registry version {registry.version}]");
-                            childTreeItem.Items = new AvaloniaList<TreeViewItem> { errorTreeItem };
+                            childTreeItem.ItemsSource = new AvaloniaList<TreeViewItem> { errorTreeItem };
                         }
                     }
                     
                     if (hasChildren)
                     {
                         TreeViewItem dummyItem = CreateTreeItem("Loading...");
-                        childTreeItem.Items = new AvaloniaList<TreeViewItem> { dummyItem };
+                        childTreeItem.ItemsSource = new AvaloniaList<TreeViewItem> { dummyItem };
                         SetTreeItemEvents(childTreeItem, fromFile, fromPathId, childField);
                     }
                 }
@@ -550,12 +550,12 @@ namespace UABEAvalonia
                     items.Add(childTreeItem);
 
                     TreeViewItem dummyItem = CreateTreeItem("Loading...");
-                    childTreeItem.Items = new AvaloniaList<TreeViewItem> { dummyItem };
+                    childTreeItem.ItemsSource = new AvaloniaList<TreeViewItem> { dummyItem };
                     SetPPtrEvents(childTreeItem, fromFile, pathId, cont);
                 }
             }
 
-            treeItem.Items = items;
+            treeItem.ItemsSource = items;
         }
     }
 

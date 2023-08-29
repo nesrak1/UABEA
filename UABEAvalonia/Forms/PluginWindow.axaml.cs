@@ -34,7 +34,7 @@ namespace UABEAvalonia
             this.selection = selection;
 
             plugInfs = plugLoader.GetPluginsThatSupport(workspace.am, selection);
-            boxPluginList.Items = plugInfs;
+            boxPluginList.ItemsSource = plugInfs;
         }
 
         private async void BtnOk_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)

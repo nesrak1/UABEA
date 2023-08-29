@@ -37,11 +37,11 @@ namespace TexturePlugin
             btnSave.Click += BtnSave_Click;
             btnCancel.Click += BtnCancel_Click;
 
-            ddTextureFmt.Items = Enum.GetValues(typeof(TextureFormat));
-            ddFilterMode.Items = Enum.GetValues(typeof(FilterMode));
-            ddWrapModeU.Items = Enum.GetValues(typeof(WrapMode));
-            ddWrapModeV.Items = Enum.GetValues(typeof(WrapMode));
-            ddColorSpace.Items = Enum.GetValues(typeof(ColorSpace));
+            ddTextureFmt.ItemsSource = Enum.GetValues(typeof(TextureFormat));
+            ddFilterMode.ItemsSource = Enum.GetValues(typeof(FilterMode));
+            ddWrapModeU.ItemsSource = Enum.GetValues(typeof(WrapMode));
+            ddWrapModeV.ItemsSource = Enum.GetValues(typeof(WrapMode));
+            ddColorSpace.ItemsSource = Enum.GetValues(typeof(ColorSpace));
         }
 
         public EditDialog(string name, TextureFile tex, AssetTypeValueField baseField, AssetsFileInstance fileInst) : this()

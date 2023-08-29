@@ -70,7 +70,7 @@ namespace UABEAvalonia
                 dependencyMap[file] = dependencies;
             }
 
-            cbxFiles.Items = comboBoxFiles;
+            cbxFiles.ItemsSource = comboBoxFiles;
             cbxFiles.SelectedItem = allFilesItem;
         }
 

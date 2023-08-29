@@ -48,7 +48,7 @@ namespace UABEAvalonia
                     lbDeps.Add(new DependencyListBoxItem(i, workspace.LoadedFiles[i]));
                 }
 
-                boxDependenciesList.Items = lbDeps;
+                boxDependenciesList.ItemsSource = lbDeps;
 
                 SetButtonsEnabled(false);
             }
@@ -63,7 +63,7 @@ namespace UABEAvalonia
                     lbDeps.Add(new DependencyListBoxItem(i + 1, deps[i]));
                 }
 
-                boxDependenciesList.Items = lbDeps;
+                boxDependenciesList.ItemsSource = lbDeps;
 
                 SetButtonsEnabled(true);
             }
