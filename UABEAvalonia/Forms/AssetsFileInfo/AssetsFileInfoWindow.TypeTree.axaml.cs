@@ -1,12 +1,8 @@
-﻿using AssetsTools.NET.Extra;
-using AssetsTools.NET;
+﻿using AssetsTools.NET;
+using AssetsTools.NET.Extra;
 using Avalonia.Controls;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UABEAvalonia
 {
@@ -48,7 +44,10 @@ namespace UABEAvalonia
 
             List<TypeTreeListItem> typeListItems = new List<TypeTreeListItem>();
             AddTypeTreeListItems(typeListItems, meta.TypeTreeTypes, false);
-            AddTypeTreeListItems(typeListItems, meta.RefTypes, true);
+            if (meta.RefTypes != null)
+            {
+                AddTypeTreeListItems(typeListItems, meta.RefTypes, true);
+            }
 
             lstTypeTreeType.ItemsSource = typeListItems;
         }
