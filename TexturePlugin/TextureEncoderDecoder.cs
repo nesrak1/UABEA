@@ -1,15 +1,8 @@
-﻿using AssetsTools.NET;
-using AssetsTools.NET.Extra;
-using AssetsTools.NET.Texture;
-using Avalonia.Controls;
+﻿using AssetsTools.NET.Texture;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TexturePlugin
 {
@@ -416,6 +409,7 @@ namespace TexturePlugin
                 case TextureFormat.ASTC_RGB_12x12:
                 case TextureFormat.ASTC_RGBA_4x4:
                 case TextureFormat.ASTC_RGBA_5x5:
+                case TextureFormat.ASTC_RGBA_6x6:
                 case TextureFormat.ASTC_RGBA_8x8:
                 case TextureFormat.ASTC_RGBA_10x10:
                 case TextureFormat.ASTC_RGBA_12x12:
@@ -496,6 +490,7 @@ namespace TexturePlugin
                 case TextureFormat.ASTC_RGB_12x12:
                 case TextureFormat.ASTC_RGBA_4x4:
                 case TextureFormat.ASTC_RGBA_5x5:
+                case TextureFormat.ASTC_RGBA_6x6:
                 case TextureFormat.ASTC_RGBA_8x8:
                 case TextureFormat.ASTC_RGBA_10x10:
                 case TextureFormat.ASTC_RGBA_12x12:
