@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 576 512"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="asset-text-asset.svg"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1167"
+     inkscape:window-height="914"
+     id="namedview6"
+     showgrid="false"
+     inkscape:snap-bbox="true"
+     inkscape:zoom="1.4453125"
+     inkscape:cx="232.35137"
+     inkscape:cy="261.42997"
+     inkscape:window-x="309"
+     inkscape:window-y="85"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg4"
+     inkscape:document-rotation="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid837" />
+  </sodipodi:namedview>
+  <!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+  <path
+     id="path2"
+     d="M 48 32 C 21.5 32 0 53.5 0 80 L 0 128 C 0 145.7 14.3 160 32 160 C 49.7 160 64 145.7 64 128 L 64 96 L 128 96 L 128 416 L 96 416 C 78.3 416 64 430.3 64 448 C 64 465.7 78.3 480 96 480 L 224 480 C 241.7 480 256 465.7 256 448 C 256 430.3 241.7 416 224 416 L 192 416 L 192 96 L 256 96 L 256 128 C 256 145.7 270.3 160 288 160 C 305.7 160 320 145.7 320 128 L 320 80 C 320 53.5 298.5 32 272 32 L 160 32 L 48 32 z M 304 170.37891 C 277.5 170.37891 256 191.87891 256 218.37891 L 256 266.37891 C 256 284.07891 270.3 298.37891 288 298.37891 C 305.7 298.37891 320 284.07891 320 266.37891 L 320 234.37891 L 384 234.37891 L 384 416 L 352 416 C 334.3 416 320 430.3 320 448 C 320 465.7 334.3 479.99995 352 480 L 480 480 C 497.7 480.00005 512 465.7 512 448 C 512 430.3 497.7 416 480 416 L 448 416 L 448 234.37891 L 512 234.37891 L 512 266.37891 C 512 284.07891 526.3 298.37891 544 298.37891 C 561.7 298.37891 576 284.07891 576 266.37891 L 576 218.37891 C 576 191.87891 554.5 170.37891 528 170.37891 L 416 170.37891 L 304 170.37891 z "
+     style="fill:#616161;fill-opacity:1" />
+</svg>
