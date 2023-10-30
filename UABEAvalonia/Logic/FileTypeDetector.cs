@@ -44,8 +44,8 @@ namespace UABEAvalonia
                     break;
                 }
             }
-            emptyVersion = Regex.Replace(possibleVersion, "[a-zA-Z0-9\\.\\n]", "");
-            fullVersion = Regex.Replace(possibleVersion, "[^a-zA-Z0-9\\.\\n]", "");
+            emptyVersion = Regex.Replace(possibleVersion, "[a-zA-Z0-9\\.\\n\\-]", "");
+            fullVersion = Regex.Replace(possibleVersion, "[^a-zA-Z0-9\\.\\n\\-]", "");
 
             if (possibleBundleHeader == "UnityFS")
             {
