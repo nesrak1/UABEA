@@ -664,6 +664,7 @@ namespace UABEAvalonia
                 AssetsFileInstance selectedInst = selectedCont.FileInstance;
 
                 AssetNameUtils.GetDisplayNameFast(Workspace, selectedCont, false, out string assetName, out string _);
+                assetName = PathUtils.ReplaceInvalidPathChars(assetName);
                 string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}.dat");
 
                 using (FileStream fs = File.Open(file, FileMode.Create))
@@ -680,6 +681,7 @@ namespace UABEAvalonia
             AssetsFileInstance selectedInst = selectedCont.FileInstance;
 
             AssetNameUtils.GetDisplayNameFast(Workspace, selectedCont, false, out string assetName, out string _);
+            assetName = PathUtils.ReplaceInvalidPathChars(assetName);
 
             var selectedFile = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()
             {
