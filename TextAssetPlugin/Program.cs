@@ -2,11 +2,8 @@
 using AssetsTools.NET.Extra;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using UABEAvalonia;
 using UABEAvalonia.Plugins;
@@ -45,7 +42,7 @@ namespace TextAssetPlugin
             }
             return true;
         }
-        
+
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             if (selection.Count > 1)
@@ -99,7 +96,7 @@ namespace TextAssetPlugin
             var filters = new List<FilePickerFileType>()
             {
                 new FilePickerFileType("Text files (*.txt)") { Patterns = new List<string>() { "*.txt" } },
-                new FilePickerFileType("All types (*.*)") { Patterns = new List<string>() { "*.*" } }
+                new FilePickerFileType("All types (*.*)") { Patterns = new List<string>() { "*" } }
             };
 
             string ucontExt = TextAssetHelper.GetUContainerExtension(cont);
@@ -135,7 +132,7 @@ namespace TextAssetPlugin
             return true;
         }
     }
-    
+
     public class ExportTextAssetOption : UABEAPluginOption
     {
         public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
@@ -154,7 +151,7 @@ namespace TextAssetPlugin
             }
             return true;
         }
-        
+
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             if (selection.Count > 1)
@@ -209,7 +206,7 @@ namespace TextAssetPlugin
             var filters = new List<FilePickerFileType>()
             {
                 new FilePickerFileType("Text files (*.txt)") { Patterns = new List<string>() { "*.txt" } },
-                new FilePickerFileType("All types (*.*)") { Patterns = new List<string>() { "*.*" } }
+                new FilePickerFileType("All types (*.*)") { Patterns = new List<string>() { "*" } }
             };
 
             string defaultExtension = "txt";

@@ -4,11 +4,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -151,7 +149,8 @@ namespace UABEAvalonia
 
                 InfoWindow info = new InfoWindow(am, fileInstances, false);
                 info.Show();
-                info.Closing += (sender, _) => {
+                info.Closing += (sender, _) =>
+                {
                     if (sender == null)
                         return;
 
@@ -196,7 +195,7 @@ namespace UABEAvalonia
                 Title = "Open assets or bundle file",
                 FileTypeFilter = new List<FilePickerFileType>()
                 {
-                    new FilePickerFileType("All files") { Patterns = new List<string>() { "*.*" } }
+                    new FilePickerFileType("All files") { Patterns = new List<string>() { "*" } }
                 },
                 AllowMultiple = true
             });
@@ -297,7 +296,7 @@ namespace UABEAvalonia
                     Title = "Open",
                     FileTypeFilter = new List<FilePickerFileType>()
                     {
-                        new FilePickerFileType("All files") { Patterns = new List<string>() { "*.*" } }
+                        new FilePickerFileType("All files") { Patterns = new List<string>() { "*" } }
                     }
                 });
 
@@ -405,7 +404,7 @@ namespace UABEAvalonia
         {
             if (BundleInst == null)
                 return;
-            
+
             var selectedFolders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
             {
                 Title = "Select export directory"
@@ -431,7 +430,7 @@ namespace UABEAvalonia
                     if (!Directory.Exists(bunAssetDir))
                     {
                         Directory.CreateDirectory(bunAssetDir);
-                    }    
+                    }
                 }
 
                 using FileStream fileStream = File.Open(bunAssetPath, FileMode.Create);
@@ -458,7 +457,7 @@ namespace UABEAvalonia
 
             string dir = selectedFolderPaths[0];
 
-            foreach (string filePath in Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories))
+            foreach (string filePath in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
             {
                 string relPath = Path.GetRelativePath(dir, filePath);
                 relPath = relPath.Replace("\\", "/").TrimEnd('/');
@@ -757,9 +756,9 @@ namespace UABEAvalonia
                 {
                     Title = "Select location for merged file",
                     SuggestedStartLocation = await StorageProvider.TryGetFolderFromPathAsync(Path.GetDirectoryName(fileToSplit)!),
-                    SuggestedFileName = Path.GetFileName(fileToSplit[.. ^".split0".Length])
+                    SuggestedFileName = Path.GetFileName(fileToSplit[..^".split0".Length])
                 });
-                
+
                 string? selectedFilePath = FileDialogUtils.GetSaveFileDialogFile(selectedFile);
                 if (selectedFilePath == null)
                     return null;
@@ -813,7 +812,7 @@ namespace UABEAvalonia
                         Title = "Save as...",
                         FileTypeChoices = new List<FilePickerFileType>()
                         {
-                            new FilePickerFileType("All files") { Patterns = new List<string>() { "*.*" } }
+                            new FilePickerFileType("All files") { Patterns = new List<string>() { "*" } }
                         }
                     });
 

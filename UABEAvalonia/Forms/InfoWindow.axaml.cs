@@ -4,10 +4,8 @@ using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -15,7 +13,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using UABEAvalonia.Plugins;
 
 namespace UABEAvalonia
@@ -190,7 +187,7 @@ namespace UABEAvalonia
             HashSet<AssetClassID> usedIds = Workspace.LoadedAssets.Select(a => a.Value.ClassId).Distinct().Cast<AssetClassID>().ToHashSet();
             FilterAssetTypeDialog dialog = new FilterAssetTypeDialog(filteredOutTypeIds, usedIds);
             filteredOutTypeIds = await dialog.ShowDialog<HashSet<AssetClassID>>(this);
-            
+
             var filter = new Func<object, bool>(item => !filteredOutTypeIds.Contains(((AssetInfoDataGridItem)item).TypeClass));
             dgcv.Filter = null; // avalonia bug? idk, doesn't update the filter without doing this
             dgcv.Filter = filter;
@@ -690,7 +687,7 @@ namespace UABEAvalonia
                 FileTypeChoices = new List<FilePickerFileType>()
                 {
                     new FilePickerFileType("Raw Unity Asset (*.dat)") { Patterns = new List<string>() { "*.dat" } },
-                    new FilePickerFileType("All types (*.*)") { Patterns = new List<string>() { "*.*" } }
+                    new FilePickerFileType("All types (*.*)") { Patterns = new List<string>() { "*" } }
                 },
                 DefaultExtension = "dat",
                 SuggestedFileName = $"{assetName}-{Path.GetFileName(selectedInst.path)}-{selectedCont.PathId}"
