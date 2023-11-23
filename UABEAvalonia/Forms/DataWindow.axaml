@@ -7,6 +7,7 @@
         Width="350" Height="550"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.DataWindow"
-        Title="View Data">
+        Title="View Data"
+        WindowStartupLocation="CenterOwner">
   <uabea:AssetDataTreeView Name="treeView" />
 </Window>

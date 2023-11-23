@@ -7,7 +7,8 @@
         Width="800" Height="500"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.InfoWindow"
-        Title="Assets Info">
+        Title="Assets Info"
+        WindowStartupLocation="CenterOwner">
   <Window.Resources>
   	<local:AssetTypeIconConverter x:Key="AssetTypeIconConverter" />
   </Window.Resources>

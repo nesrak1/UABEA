@@ -7,7 +7,8 @@
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.ImportSerializedDialog"
         Title="Import"
-        CanResize="False">
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
   <Grid>
     <TextBlock Margin="10,20,10,0" VerticalAlignment="Top" Text="Is this asset serialized ?" TextAlignment="Center" FontWeight="Bold" FontSize="14" />
     <Grid Margin="10,10,10,10" VerticalAlignment="Bottom">

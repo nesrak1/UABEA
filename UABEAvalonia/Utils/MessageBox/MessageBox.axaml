@@ -5,7 +5,8 @@
 		mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="150"
 		Width="300" Height="150"
 		x:Class="UABEAvalonia.MessageBox"
-		Title="Message Box">
+		Title="Message Box"
+    WindowStartupLocation="CenterOwner">
 	<Grid Margin="10,10,10,10">
 		<Label Grid.Row="0" Name="titleLbl">Title</Label>
 		<Grid.RowDefinitions>

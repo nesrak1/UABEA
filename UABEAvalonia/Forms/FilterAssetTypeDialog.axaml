@@ -5,7 +5,8 @@
         mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="500"
         Width="300" Height="500"
         x:Class="UABEAvalonia.FilterAssetTypeDialog"
-        Title="Type Filter">
+        Title="Type Filter"
+        WindowStartupLocation="CenterOwner">
 	<Grid Margin="10,10,10,10">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="*" />

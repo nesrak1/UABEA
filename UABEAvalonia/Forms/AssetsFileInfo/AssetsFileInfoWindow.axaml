@@ -6,7 +6,8 @@
         Width="650" Height="450"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.AssetsFileInfoWindow"
-        Title="Assets File Header/Metadata Info">
+        Title="Assets File Header/Metadata Info"
+        WindowStartupLocation="CenterOwner">
 <Grid Margin="10">
   <Grid.RowDefinitions>
     <RowDefinition Height="*" />

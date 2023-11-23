@@ -6,7 +6,8 @@
         Width="300" Height="450"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.PluginWindow"
-        Title="Plugins">
+        Title="Plugins"
+        WindowStartupLocation="CenterOwner">
   <Grid>
 	  <ListBox Margin="10,10,10,45" Name="boxPluginList" />
         <Grid Margin="10,10,10,10" VerticalAlignment="Bottom">

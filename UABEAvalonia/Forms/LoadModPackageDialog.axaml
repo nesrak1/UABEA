@@ -7,7 +7,8 @@
         Width="300" Height="400"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.LoadModPackageDialog"
-        Title="Load Package">
+        Title="Load Package"
+        WindowStartupLocation="CenterOwner">
   <Grid Margin="10,10,10,10">
     <Grid Margin="0,0,0,31">
       <Grid.ColumnDefinitions>
