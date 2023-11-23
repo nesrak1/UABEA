@@ -1,7 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="TexturePluginPreview.App"
-             WindowStartupLocation="CenterOwner">
+             x:Class="TexturePluginPreview.App">
     <Application.Styles>
       <SimpleTheme/>
       <StyleInclude Source="avares://UABEAvalonia/Styles/ExtendedControlStyles.axaml"/>
