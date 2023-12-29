@@ -67,7 +67,7 @@ namespace UABEAvalonia
                 if (!anyExtension)
                     matchingFiles = filesInDir
                         .Where(f => extensions.Any(x =>
-                            f.EndsWith(gridItem.GetMatchName(x)) || f.StartsWith(gridItem.importInfo.assetName)))
+                            f.EndsWith(gridItem.GetMatchName(x)) || Path.GetFileName(f).StartsWith(gridItem.importInfo.assetName)))
                         .Select(f => Path.GetFileName(f)).ToList();
                 else
                     matchingFiles = filesInDir
