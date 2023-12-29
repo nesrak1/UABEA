@@ -32,7 +32,8 @@ namespace UABEAvalonia
             ignoreListEvents = false;
         }
 
-        public ImportBatch(AssetWorkspace workspace, List<AssetContainer> selection, string directory, List<string> extensions) : this()
+        public ImportBatch(AssetWorkspace workspace, List<AssetContainer> selection, string directory,
+            List<string> extensions) : this()
         {
             this.workspace = workspace;
             this.directory = directory;
@@ -65,7 +66,8 @@ namespace UABEAvalonia
                 
                 if (!anyExtension)
                     matchingFiles = filesInDir
-                        .Where(f => extensions.Any(x => f.EndsWith(gridItem.GetMatchName(x))))
+                        .Where(f => extensions.Any(x =>
+                            f.EndsWith(gridItem.GetMatchName(x)) || f.StartsWith(gridItem.importInfo.assetName)))
                         .Select(f => Path.GetFileName(f)).ToList();
                 else
                     matchingFiles = filesInDir
@@ -141,9 +143,20 @@ namespace UABEAvalonia
     {
         public ImportBatchInfo importInfo;
 
-        public string Description { get => importInfo.assetName; }
-        public string File { get => importInfo.assetFile; }
-        public long PathID { get => importInfo.pathId; }
+        public string Description
+        {
+            get => importInfo.assetName;
+        }
+
+        public string File
+        {
+            get => importInfo.assetFile;
+        }
+
+        public long PathID
+        {
+            get => importInfo.pathId;
+        }
 
         public List<string> matchingFiles;
         public int selectedIndex;
@@ -157,6 +170,7 @@ namespace UABEAvalonia
             else
                 return $"-{File}-{PathID}";
         }
+
         public void Update(string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
