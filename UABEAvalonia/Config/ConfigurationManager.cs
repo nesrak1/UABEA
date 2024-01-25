@@ -1,10 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UABEAvalonia
 {
@@ -14,7 +10,8 @@ namespace UABEAvalonia
         public static ConfigurationSettings Settings { get; }
         static ConfigurationManager()
         {
-            if (!File.Exists(CONFIG_FILENAME))
+            string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, CONFIG_FILENAME);
+            if (!File.Exists(configPath))
             {
                 Settings = new ConfigurationSettings()
                 {
@@ -24,17 +21,18 @@ namespace UABEAvalonia
             }
             else
             {
-                string configText = File.ReadAllText(CONFIG_FILENAME);
+                string configText = File.ReadAllText(configPath);
                 Settings = JsonConvert.DeserializeObject<ConfigurationSettings>(configText) ?? new ConfigurationSettings();
             }
         }
 
         public static void SaveConfig()
         {
+            string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, CONFIG_FILENAME);
             if (Settings != null) // ConfigLoaded
             {
                 string configText = JsonConvert.SerializeObject(Settings);
-                File.WriteAllText(CONFIG_FILENAME, configText);
+                File.WriteAllText(configPath, configText);
             }
         }
     }
