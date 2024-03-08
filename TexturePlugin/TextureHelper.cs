@@ -1,12 +1,9 @@
-﻿using AssetsTools.NET.Extra;
+﻿using AssetsTools.NET;
+using AssetsTools.NET.Extra;
 using AssetsTools.NET.Texture;
-using AssetsTools.NET;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UABEAvalonia;
 
 namespace TexturePlugin
@@ -30,6 +27,43 @@ namespace TexturePlugin
 
             AssetTypeValueField baseField = textureTemp.MakeValue(tex.FileReader, tex.FilePosition);
             return baseField;
+        }
+
+        public static bool GetResSTexture(TextureFile texFile, AssetsFileInstance fileInst)
+        {
+            TextureFile.StreamingInfo streamInfo = texFile.m_StreamData;
+            if (streamInfo.path != null && streamInfo.path != "" && fileInst.parentBundle != null)
+            {
+                //some versions apparently don't use archive:/
+                string searchPath = streamInfo.path;
+                if (searchPath.StartsWith("archive:/"))
+                    searchPath = searchPath.Substring(9);
+
+                searchPath = Path.GetFileName(searchPath);
+
+                AssetBundleFile bundle = fileInst.parentBundle.file;
+
+                AssetsFileReader reader = bundle.DataReader;
+                AssetBundleDirectoryInfo[] dirInf = bundle.BlockAndDirInfo.DirectoryInfos;
+                for (int i = 0; i < dirInf.Length; i++)
+                {
+                    AssetBundleDirectoryInfo info = dirInf[i];
+                    if (info.Name == searchPath)
+                    {
+                        reader.Position = info.Offset + (long)streamInfo.offset;
+                        texFile.pictureData = reader.ReadBytes((int)streamInfo.size);
+                        texFile.m_StreamData.offset = 0;
+                        texFile.m_StreamData.size = 0;
+                        texFile.m_StreamData.path = "";
+                        return true;
+                    }
+                }
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         public static byte[] GetRawTextureBytes(TextureFile texFile, AssetsFileInstance inst)

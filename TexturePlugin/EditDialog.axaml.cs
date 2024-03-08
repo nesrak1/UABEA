@@ -3,16 +3,12 @@ using AssetsTools.NET.Extra;
 using AssetsTools.NET.Texture;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using UABEAvalonia;
 using Image = SixLabors.ImageSharp.Image;
 
@@ -91,7 +87,23 @@ namespace TexturePlugin
             Image<Rgba32> imgToImport;
             if (imagePath == null)
             {
+                if (!TextureHelper.GetResSTexture(tex, fileInst))
+                {
+                    string dialogText = "Texture uses resS, but the resS file wasn't found";
+                    await MessageBoxUtil.ShowDialog(this, "Error", dialogText);
+                    Close(false);
+                    return;
+                }
+
                 byte[] data = TextureHelper.GetRawTextureBytes(tex, fileInst);
+                if (data == null)
+                {
+                    string dialogText = "Couldn't get texture data";
+                    await MessageBoxUtil.ShowDialog(this, "Error", dialogText);
+                    Close(false);
+                    return;
+                }
+
                 imgToImport = TextureImportExport.Export(data, tex.m_Width, tex.m_Height, (TextureFormat)tex.m_TextureFormat, platform, platformBlob);
             }
             else

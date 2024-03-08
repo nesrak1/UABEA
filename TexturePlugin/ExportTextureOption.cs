@@ -1,16 +1,15 @@
-﻿using AssetsTools.NET.Extra;
+﻿using AssetsTools.NET;
+using AssetsTools.NET.Extra;
 using AssetsTools.NET.Texture;
-using AssetsTools.NET;
 using Avalonia.Controls;
-using System;
+using Avalonia.Platform.Storage;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UABEAvalonia.Plugins;
 using UABEAvalonia;
-using System.IO;
-using Avalonia.Platform.Storage;
+using UABEAvalonia.Plugins;
 
 namespace TexturePlugin
 {
@@ -42,43 +41,6 @@ namespace TexturePlugin
                 return await BatchExport(win, workspace, selection);
             else
                 return await SingleExport(win, workspace, selection);
-        }
-
-        private bool GetResSTexture(TextureFile texFile, AssetContainer cont)
-        {
-            TextureFile.StreamingInfo streamInfo = texFile.m_StreamData;
-            if (streamInfo.path != null && streamInfo.path != "" && cont.FileInstance.parentBundle != null)
-            {
-                //some versions apparently don't use archive:/
-                string searchPath = streamInfo.path;
-                if (searchPath.StartsWith("archive:/"))
-                    searchPath = searchPath.Substring(9);
-
-                searchPath = Path.GetFileName(searchPath);
-
-                AssetBundleFile bundle = cont.FileInstance.parentBundle.file;
-
-                AssetsFileReader reader = bundle.DataReader;
-                AssetBundleDirectoryInfo[] dirInf = bundle.BlockAndDirInfo.DirectoryInfos;
-                for (int i = 0; i < dirInf.Length; i++)
-                {
-                    AssetBundleDirectoryInfo info = dirInf[i];
-                    if (info.Name == searchPath)
-                    {
-                        reader.Position = info.Offset + (long)streamInfo.offset;
-                        texFile.pictureData = reader.ReadBytes((int)streamInfo.size);
-                        texFile.m_StreamData.offset = 0;
-                        texFile.m_StreamData.size = 0;
-                        texFile.m_StreamData.path = "";
-                        return true;
-                    }
-                }
-                return false;
-            }
-            else
-            {
-                return true;
-            }
         }
 
         public async Task<bool> BatchExport(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
@@ -122,7 +84,7 @@ namespace TexturePlugin
                 string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{fileType.ToLower()}");
 
                 //bundle resS
-                if (!GetResSTexture(texFile, cont))
+                if (!TextureHelper.GetResSTexture(texFile, cont.FileInstance))
                 {
                     string resSName = Path.GetFileName(texFile.m_StreamData.path);
                     errorBuilder.AppendLine($"[{errorAssetName}]: resS was detected but {resSName} was not found in bundle");
@@ -195,7 +157,7 @@ namespace TexturePlugin
             string errorAssetName = $"{Path.GetFileName(cont.FileInstance.path)}/{cont.PathId}";
 
             //bundle resS
-            if (!GetResSTexture(texFile, cont))
+            if (!TextureHelper.GetResSTexture(texFile, cont.FileInstance))
             {
                 string resSName = Path.GetFileName(texFile.m_StreamData.path);
                 await MessageBoxUtil.ShowDialog(win, "Error", $"[{errorAssetName}]: resS was detected but {resSName} was not found in bundle");
