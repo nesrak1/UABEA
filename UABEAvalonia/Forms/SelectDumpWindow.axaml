@@ -6,7 +6,8 @@
         Width="300" Height="80"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.SelectDumpWindow"
-        Title="Select dump type">
+        Title="Select dump type"
+        WindowStartupLocation="CenterOwner">
   <Grid Margin="10,10,10,10">
     <ComboBox VerticalAlignment="Top" Height="26" SelectedIndex="0" Name="comboBox">
       <ComboBoxItem Tag="txt">UABE text dump</ComboBoxItem>

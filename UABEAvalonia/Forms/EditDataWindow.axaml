@@ -8,7 +8,8 @@
         Width="350" Height="550"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.EditDataWindow"
-        Title="Edit Data">
+        Title="Edit Data"
+        WindowStartupLocation="CenterOwner">
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="*" />

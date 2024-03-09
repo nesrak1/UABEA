@@ -7,7 +7,8 @@
         Icon="/Assets/uabeavalonia16.ico"
         CanResize="False"
         x:Class="UABEAvalonia.About"
-        Title="About Unity Assets Bundle Extractor Avalonia">
+        Title="About Unity Assets Bundle Extractor Avalonia"
+        WindowStartupLocation="CenterOwner">
   <Grid Margin="10,10,10,10">
     <StackPanel Orientation="Vertical">
       <Image Source="/Assets/uabeavalonia64.png" HorizontalAlignment="Left" Width="64" Height="64" />
