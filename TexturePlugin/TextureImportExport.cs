@@ -1,15 +1,9 @@
-﻿using AssetsTools.NET;
+﻿using AssetsTools.NET.Texture;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Formats.Tga;
-using System;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using AssetsTools.NET.Texture;
-using System.Xml.Linq;
-using AssetsTools.NET.Extra;
 
 namespace TexturePlugin
 {
@@ -155,8 +149,7 @@ namespace TexturePlugin
                     image.SaveAsPng(path);
                     break;
                 case ".tga":
-                    var encoder = new TgaEncoder();
-                    encoder.BitsPerPixel = TgaBitsPerPixel.Pixel32;
+                    var encoder = new TgaEncoder() { BitsPerPixel = TgaBitsPerPixel.Pixel32 };
                     image.SaveAsTga(path, encoder);
                     break;
             }

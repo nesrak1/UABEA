@@ -89,6 +89,8 @@
               <RowDefinition />
               <RowDefinition />
               <RowDefinition />
+              <RowDefinition Height="5" />
+              <RowDefinition />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="80" />
@@ -99,11 +101,13 @@
             <Label Grid.Column="0" Grid.Row="2">Script ID</Label>
             <Label Grid.Column="0" Grid.Row="3">Hash</Label>
             <Label Grid.Column="0" Grid.Row="4">Mono Hash</Label>
+            <Label Grid.Column="0" Grid.Row="6">Aligned</Label>
             <TextBox Grid.Column="1" Grid.Row="0" IsReadOnly="True" Name="boxTypeTreeType" />
             <TextBox Grid.Column="1" Grid.Row="1" IsReadOnly="True" Name="boxTypeTreeTypeId" />
             <TextBox Grid.Column="1" Grid.Row="2" IsReadOnly="True" Name="boxTypeTreeScriptId" />
             <TextBox Grid.Column="1" Grid.Row="3" IsReadOnly="True" Name="boxTypeTreeHash" />
             <TextBox Grid.Column="1" Grid.Row="4" IsReadOnly="True" Name="boxTypeTreeMonoHash" />
+            <TextBox Grid.Column="1" Grid.Row="6" IsReadOnly="True" Name="boxTypeTreeAligned" />
           </Grid>
         </StackPanel>
       </Grid>

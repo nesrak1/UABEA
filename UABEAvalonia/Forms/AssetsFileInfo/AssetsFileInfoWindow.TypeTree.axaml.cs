@@ -11,12 +11,23 @@ namespace UABEAvalonia
         private void SetupTypeTreePageEvents()
         {
             lstTypeTreeType.SelectionChanged += TypeTreeTypeList_SelectionChanged;
+            treeTypeTreeNode.SelectionChanged += TreeTypeTreeNode_SelectionChanged;
+        }
+
+        private void TreeTypeTreeNode_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (treeTypeTreeNode.SelectedItem is TreeViewItem item)
+            {
+                if (item.Tag is TypeTreeNode node)
+                {
+                    FillTypeTreeNodeInfo(node);
+                }
+            }
         }
 
         private void TypeTreeTypeList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            TypeTreeListItem? item = (TypeTreeListItem?)lstTypeTreeType.SelectedItem;
-            if (item != null)
+            if (lstTypeTreeType.SelectedItem is TypeTreeListItem item)
             {
                 FillTypeTreeTypeInfo(item.type);
             }
@@ -127,6 +138,11 @@ namespace UABEAvalonia
 
             if (meta.TypeTreeEnabled)
                 FillTypeTreeNodeTree(type);
+        }
+
+        private void FillTypeTreeNodeInfo(TypeTreeNode node)
+        {
+            boxTypeTreeAligned.Text = (node.MetaFlags & 0x4000) != 0 ? "true" : "false";
         }
 
         private void FillTypeTreeNodeTree(TypeTreeType type)
