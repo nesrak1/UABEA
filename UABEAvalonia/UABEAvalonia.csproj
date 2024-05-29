@@ -56,6 +56,11 @@
     <Resource Include="Grammars\utxt\syntaxes\utxt.tmLanguage.json" />
   </ItemGroup>
   <ItemGroup>
+    <AvaloniaXaml Update="Forms\VersionWindow.axaml">
+      <SubType>Designer</SubType>
+    </AvaloniaXaml>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Update="Forms\ExportBatchChooseTypeDialog.axaml.cs">
       <DependentUpon>ExportBatchChooseTypeDialog.axaml</DependentUpon>
     </Compile>
@@ -64,6 +69,10 @@
     </Compile>
     <Compile Update="Forms\ImportSerializedDialog.axaml.cs">
       <DependentUpon>ImportSerializedDialog.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Forms\VersionWindow.axaml.cs">
+      <SubType>Code</SubType>
+      <DependentUpon>VersionWindow.axaml</DependentUpon>
     </Compile>
   </ItemGroup>
   

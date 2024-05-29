@@ -25,11 +25,9 @@ namespace TexturePlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = am.ClassDatabase.FindAssetClassByName("Texture2D").ClassId;
-
             foreach (AssetContainer cont in selection)
             {
-                if (cont.ClassId != classId)
+                if (cont.ClassId != (int)AssetClassID.Texture2D)
                     return false;
             }
             return true;

@@ -2,7 +2,6 @@
 using AssetsTools.NET.Extra;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,14 +12,14 @@ using UABEAvalonia.Plugins;
 namespace FontPlugin
 {
     public static class FontHelper
-    {        
+    {
         public static AssetTypeValueField GetByteArrayFont(AssetWorkspace workspace, AssetContainer font)
         {
             AssetTypeTemplateField fontTemp = workspace.GetTemplateField(font);
             AssetTypeTemplateField fontData = fontTemp.Children.FirstOrDefault(f => f.Name == "m_FontData");
             if (fontData == null)
                 return null;
-            
+
             // m_FontData.Array
             fontData.Children[0].ValueType = AssetValueType.ByteArray;
 
@@ -46,16 +45,14 @@ namespace FontPlugin
             if (action != UABEAPluginAction.Import)
                 return false;
 
-            int classId = am.ClassDatabase.FindAssetClassByName("Font").ClassId;
-
             foreach (AssetContainer cont in selection)
             {
-                if (cont.ClassId != classId)
+                if (cont.ClassId != (int)AssetClassID.Font)
                     return false;
             }
             return true;
         }
-        
+
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             if (selection.Count > 1)
@@ -135,7 +132,7 @@ namespace FontPlugin
             return true;
         }
     }
-    
+
     public class ExportFontOption : UABEAPluginOption
     {
         public bool SelectionValidForPlugin(AssetsManager am, UABEAPluginAction action, List<AssetContainer> selection, out string name)
@@ -145,16 +142,14 @@ namespace FontPlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = am.ClassDatabase.FindAssetClassByName("Font").ClassId;
-
             foreach (AssetContainer cont in selection)
             {
-                if (cont.ClassId != classId)
+                if (cont.ClassId != (int)AssetClassID.Font)
                     return false;
             }
             return true;
         }
-        
+
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             if (selection.Count > 1)

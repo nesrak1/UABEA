@@ -108,7 +108,7 @@ namespace UABEAvalonia
             {
                 AssetsFileInstance fileInst = am.LoadAssetsFile(selectedFile, true);
 
-                if (!LoadOrAskTypeData(fileInst))
+                if (!await LoadOrAskTypeData(fileInst))
                     return;
 
                 List<AssetsFileInstance> fileInstances = new List<AssetsFileInstance>();
@@ -369,7 +369,7 @@ namespace UABEAvalonia
                 if (BundleInst != null && fileInst.parentBundle == null)
                     fileInst.parentBundle = BundleInst;
 
-                if (!LoadOrAskTypeData(fileInst))
+                if (!await LoadOrAskTypeData(fileInst))
                     return;
 
                 // don't check for info open here
@@ -584,12 +584,32 @@ namespace UABEAvalonia
             }
         }
 
-        private bool LoadOrAskTypeData(AssetsFileInstance fileInst)
+        private async Task<bool> LoadOrAskTypeData(AssetsFileInstance fileInst)
         {
             string uVer = fileInst.file.Metadata.UnityVersion;
             if (uVer == "0.0.0" && fileInst.parentBundle != null)
             {
                 uVer = fileInst.parentBundle.file.Header.EngineVersion;
+            }
+
+            if (uVer == "0.0.0")
+            {
+                VersionWindow window = new VersionWindow(uVer);
+                uVer = await window.ShowDialog<string>(this);
+                if (uVer == string.Empty)
+                {
+                    if (!fileInst.file.Metadata.TypeTreeEnabled)
+                    {
+                        // if we have no type tree, there's no way we're loading anything
+                        await MessageBoxUtil.ShowDialog(this, "Error", "You must enter a Unity version to load a typetree-stripped file.");
+                        return false;
+                    }
+                    else
+                    {
+                        // bad, but we can at least rely on the type tree for most things
+                        uVer = "0.0.0";
+                    }
+                }
             }
 
             am.LoadClassDatabaseFromPackage(uVer);

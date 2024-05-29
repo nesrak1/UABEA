@@ -1,16 +1,15 @@
-﻿using AssetsTools.NET.Extra;
+﻿using AssetsTools.NET;
+using AssetsTools.NET.Extra;
 using AssetsTools.NET.Texture;
-using AssetsTools.NET;
 using Avalonia.Controls;
-using System;
+using Avalonia.Platform.Storage;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UABEAvalonia.Plugins;
 using UABEAvalonia;
-using Avalonia.Platform.Storage;
+using UABEAvalonia.Plugins;
 
 namespace TexturePlugin
 {
@@ -26,11 +25,9 @@ namespace TexturePlugin
             if (selection.Count <= 1)
                 return false;
 
-            int classId = am.ClassDatabase.FindAssetClassByName("Texture2D").ClassId;
-
             foreach (AssetContainer cont in selection)
             {
-                if (cont.ClassId != classId)
+                if (cont.ClassId != (int)AssetClassID.Texture2D)
                     return false;
             }
             return true;

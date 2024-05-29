@@ -33,11 +33,9 @@ namespace TextAssetPlugin
             if (action != UABEAPluginAction.Import)
                 return false;
 
-            int classId = am.ClassDatabase.FindAssetClassByName("TextAsset").ClassId;
-
             foreach (AssetContainer cont in selection)
             {
-                if (cont.ClassId != classId)
+                if (cont.ClassId != (int)AssetClassID.TextAsset)
                     return false;
             }
             return true;
@@ -142,11 +140,9 @@ namespace TextAssetPlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = am.ClassDatabase.FindAssetClassByName("TextAsset").ClassId;
-
             foreach (AssetContainer cont in selection)
             {
-                if (cont.ClassId != classId)
+                if (cont.ClassId != (int)AssetClassID.TextAsset)
                     return false;
             }
             return true;

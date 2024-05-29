@@ -1,16 +1,15 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
+using Fmod5Sharp;
+using Fmod5Sharp.FmodTypes;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using UABEAvalonia;
 using UABEAvalonia.Plugins;
-using Fmod5Sharp;
-using Fmod5Sharp.FmodTypes;
-using Avalonia.Platform.Storage;
 
 namespace AudioPlugin
 {
@@ -37,16 +36,14 @@ namespace AudioPlugin
             if (action != UABEAPluginAction.Export)
                 return false;
 
-            int classId = am.ClassDatabase.FindAssetClassByName("AudioClip").ClassId;
-
             foreach (AssetContainer cont in selection)
             {
-                if (cont.ClassId != classId)
+                if (cont.ClassId != (int)AssetClassID.AudioClip)
                     return false;
             }
             return true;
         }
-        
+
         public async Task<bool> ExecutePlugin(Window win, AssetWorkspace workspace, List<AssetContainer> selection)
         {
             if (selection.Count > 1)
@@ -74,7 +71,7 @@ namespace AudioPlugin
 
                 string name = baseField["m_Name"].AsString;
                 name = PathUtils.ReplaceInvalidPathChars(name);
-                    
+
                 CompressionFormat compressionFormat = (CompressionFormat)baseField["m_CompressionFormat"].AsInt;
                 string extension = GetExtension(compressionFormat);
                 string file = Path.Combine(dir, $"{name}-{Path.GetFileName(cont.FileInstance.path)}-{cont.PathId}.{extension}");
@@ -101,7 +98,7 @@ namespace AudioPlugin
                     // since fmod5sharp gives us malformed wav data, we have to correct it
                     FixWAV(ref sampleData);
                 }
-                    
+
                 File.WriteAllBytes(file, sampleData);
             }
             return true;
@@ -114,8 +111,8 @@ namespace AudioPlugin
             AssetTypeValueField baseField = workspace.GetBaseField(cont);
             string name = baseField["m_Name"].AsString;
             name = PathUtils.ReplaceInvalidPathChars(name);
-            
-            CompressionFormat compressionFormat = (CompressionFormat) baseField["m_CompressionFormat"].AsInt;
+
+            CompressionFormat compressionFormat = (CompressionFormat)baseField["m_CompressionFormat"].AsInt;
 
             string extension = GetExtension(compressionFormat);
             var selectedFile = await win.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()
@@ -142,7 +139,7 @@ namespace AudioPlugin
             {
                 return false;
             }
-                
+
             if (!FsbLoader.TryLoadFsbFromByteArray(resourceData, out FmodSoundBank bank))
             {
                 return false;
@@ -155,7 +152,7 @@ namespace AudioPlugin
                 // since fmod5sharp gives us malformed wav data, we have to correct it
                 FixWAV(ref sampleData);
             }
-                
+
             File.WriteAllBytes(selectedFilePath, sampleData);
 
             return true;
@@ -210,7 +207,7 @@ namespace AudioPlugin
                 _ => ""
             };
         }
-        
+
         private bool GetAudioBytes(AssetContainer cont, string filepath, ulong offset, ulong size, out byte[] audioData)
         {
             if (string.IsNullOrEmpty(filepath))
@@ -265,7 +262,7 @@ namespace AudioPlugin
 
             // if that fails, check current directory
             string resourceFileName = Path.Combine(assetsFileDirectory, Path.GetFileName(filepath));
-            
+
             if (File.Exists(resourceFileName))
             {
                 // read from file
