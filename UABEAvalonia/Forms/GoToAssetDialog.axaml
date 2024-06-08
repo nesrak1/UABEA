@@ -6,7 +6,8 @@
         Width="300" Height="110"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.GoToAssetDialog"
-        Title="Go to asset">
+        Title="Go to asset"
+        WindowStartupLocation="CenterOwner">
   <Grid Margin="10,10,10,10">
     <Grid VerticalAlignment="Top">
       <Grid.ColumnDefinitions>

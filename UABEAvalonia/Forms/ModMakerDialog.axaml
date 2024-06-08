@@ -7,7 +7,8 @@
         Width="500" Height="250"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.ModMakerDialog"
-        Title="Mod Maker Package Creator">
+        Title="Mod Maker Package Creator"
+        WindowStartupLocation="CenterOwner">
   <Grid Margin="10,10,10,10">
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="0.5*"></ColumnDefinition>

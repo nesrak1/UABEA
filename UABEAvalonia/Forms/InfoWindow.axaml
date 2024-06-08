@@ -3,13 +3,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UABEAvalonia"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
-        Width="800" Height="500"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="500"
+        Width="1100" Height="500"
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.InfoWindow"
-        Title="Assets Info">
+        Title="Assets Info"
+        WindowStartupLocation="CenterOwner">
   <Window.Resources>
-  	<local:AssetTypeIconConverter x:Key="AssetTypeIconConverter" />
+    <local:AssetTypeIconConverter x:Key="AssetTypeIconConverter" />
   </Window.Resources>
   <Grid>
     <Menu Height="22" VerticalAlignment="Top">
@@ -38,33 +39,33 @@
     </Menu>
     <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="Assets" />
     <Border Margin="10,53,200,10" BorderBrush="Black" BorderThickness="1">
-	  <DataGrid AutoGenerateColumns="False" CanUserResizeColumns="True" IsReadOnly="True" Name="dataGrid">
-      <DataGrid.RowTheme>
-        <ControlTheme TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
-          <ControlTheme.Children>
-            <Style Selector="^:nth-child(2n)">
-              <Setter Property="Background" Value="#00FFFFFF" />
-            </Style>
-          </ControlTheme.Children>
-        </ControlTheme>
-      </DataGrid.RowTheme>
-      <DataGrid.Columns>
-			  <DataGridTemplateColumn Header=" ">
-				  <DataGridTemplateColumn.CellTemplate>
-					  <DataTemplate>
-				            <Image Source="{Binding TypeClass, Converter={StaticResource AssetTypeIconConverter}}" Width="16" Height="16" />
-					  </DataTemplate>
-				  </DataGridTemplateColumn.CellTemplate>
-		      </DataGridTemplateColumn>
-			  <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
-			  <DataGridTextColumn Header="Container" Binding="{Binding Container}"/>
-			  <DataGridTextColumn Header="Type" Binding="{Binding Type}"/>
-			  <DataGridTextColumn Header="File ID" Binding="{Binding FileID}"/>
-			  <DataGridTextColumn Header="Path ID" Binding="{Binding PathID}"/>
-			  <DataGridTextColumn Header="Size" Binding="{Binding Size}"/>
-			  <DataGridTextColumn Header="Modified" Binding="{Binding Modified}"/>
-		  </DataGrid.Columns>
-	  </DataGrid>
+      <DataGrid AutoGenerateColumns="False" CanUserResizeColumns="True" IsReadOnly="True" Name="dataGrid">
+        <DataGrid.RowTheme>
+          <ControlTheme TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+            <ControlTheme.Children>
+              <Style Selector="^:nth-child(2n)">
+                <Setter Property="Background" Value="#00FFFFFF" />
+              </Style>
+            </ControlTheme.Children>
+          </ControlTheme>
+        </DataGrid.RowTheme>
+        <DataGrid.Columns>
+          <DataGridTemplateColumn Header=" ">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <Image Source="{Binding TypeClass, Converter={StaticResource AssetTypeIconConverter}}" Width="16" Height="16" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
+          <DataGridTextColumn Header="Container" Binding="{Binding Container}"/>
+          <DataGridTextColumn Header="Type" Binding="{Binding Type}"/>
+          <DataGridTextColumn Header="File ID" Binding="{Binding FileID}"/>
+          <DataGridTextColumn Header="Path ID" Binding="{Binding PathID}"/>
+          <DataGridTextColumn Header="Size" Binding="{Binding Size}"/>
+          <DataGridTextColumn Header="Modified" Binding="{Binding Modified}"/>
+        </DataGrid.Columns>
+      </DataGrid>
     </Border>
     <StackPanel Margin="0,53,10,10" HorizontalAlignment="Right" Width="185">
       <Label Content="Name"/>
@@ -75,15 +76,21 @@
       <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxFileId" />
       <Label Content="Type"/>
       <TextBox TextWrapping="WrapWithOverflow" Text="" IsReadOnly="True" Name="boxType" />
-      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Data" Name="btnViewData" />
-      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Scene" Name="btnSceneView" />
-      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Raw" Name="btnExportRaw" />
-      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Dump" Name="btnExportDump" />
-      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Plugins" Name="btnPlugin" />
-      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Raw" Name="btnImportRaw" />
-      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Dump" Name="btnImportDump" />
-      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Edit Data" Name="btnEditData" />
-      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Remove" Name="btnRemove" />
+      <UniformGrid Columns="2"  >
+        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Data" Name="btnViewData" Margin="5"/>
+        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="View Scene" Name="btnSceneView" Margin="5"/>
+
+        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Raw" Name="btnImportRaw" Margin="5"/>
+        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Raw" Name="btnExportRaw" Margin="5"/>
+
+        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Import Dump" Name="btnImportDump" Margin="5"/>
+        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Export Dump" Name="btnExportDump" Margin="5"/>
+
+        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Edit Data" Name="btnEditData" Margin="5"/>
+        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Remove" Name="btnRemove" Margin="5"/>
+      </UniformGrid>
+      <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Plugins" Name="btnPlugin" Margin="5"/>
+
     </StackPanel>
   </Grid>
 </Window>
