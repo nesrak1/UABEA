@@ -112,7 +112,8 @@ namespace UABEAvalonia
                 string scriptName;
                 try
                 {
-                    scriptName = AssetHelper.GetAssetsFileScriptInfo(am, activeFile, type.ScriptTypeIndex).ClassName;
+                    AssetTypeReference? scriptInfo = AssetHelper.GetAssetsFileScriptInfo(am, activeFile, type.ScriptTypeIndex);
+                    scriptName = scriptInfo?.ClassName ?? "UNKNOWN";
                 }
                 catch
                 {
