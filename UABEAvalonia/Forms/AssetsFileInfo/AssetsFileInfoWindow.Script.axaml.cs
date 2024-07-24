@@ -24,8 +24,15 @@ namespace UABEAvalonia
                 AssetTypeValueField? scriptBf = workspace.GetBaseField(selectedFile, pptr.FileId, pptr.PathId);
                 if (scriptBf == null)
                 {
-                    string fileName = selectedFile.file.Metadata.Externals[pptr.FileId - 1].PathName;
-                    items.Add($"{i} - {Path.GetFileName(fileName)}/{pptr.PathId}");
+                    if (pptr.FileId == 0)
+                    {
+                        items.Add($"{i} - {selectedFile.name}/{pptr.PathId}");
+                    }
+                    else
+                    {
+                        string fileName = selectedFile.file.Metadata.Externals[pptr.FileId - 1].PathName;
+                        items.Add($"{i} - {Path.GetFileName(fileName)}/{pptr.PathId}");
+                    }
                     continue;
                 }
 
