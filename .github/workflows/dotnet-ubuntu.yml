@@ -37,7 +37,7 @@ jobs:
       run: find UABEAvalonia/bin/Release/net6.0/runtimes/* -maxdepth 0 ! -name linux-x64 -type d -exec rm -r {} +
       
     - name: Upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: uabea-ubuntu
         path: UABEAvalonia/bin/Release/net6.0
