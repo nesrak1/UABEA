@@ -5,7 +5,8 @@
         mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="100"
         Width="400" Height="100"
         x:Class="UABEAvalonia.ProgressWindow"
-        Title="">
+        Title=""
+        WindowStartupLocation="CenterOwner">
 	<Grid Margin="10,10,10,10">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="*"/>

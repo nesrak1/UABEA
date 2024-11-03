@@ -7,7 +7,8 @@
         Icon="/Assets/uabeavalonia16.ico"
         x:Class="UABEAvalonia.MainWindow"
         Title="UABEA"
-        DragDrop.AllowDrop="True">
+        DragDrop.AllowDrop="True"
+        WindowStartupLocation="CenterOwner">
   <Grid>
     <Menu Height="22" VerticalAlignment="Top" Name="menuMain">
       <MenuItem Header="File">
@@ -21,8 +22,8 @@
         <MenuItem Header="Exit" HotKey="Ctrl+Q" InputGesture="Ctrl+Q" Name="menuExit" />
       </MenuItem>
       <MenuItem Header="Options">
-		<MenuItem Header="Toggle Dark Theme" Name="menuToggleDarkTheme" />
-		<MenuItem Header="Enable/Disable Cpp2Il" Name="menuToggleCpp2Il" />
+        <MenuItem Header="Toggle Dark Theme" Name="menuToggleDarkTheme" />
+        <MenuItem Header="Enable/Disable Cpp2Il" Name="menuToggleCpp2Il" />
       </MenuItem>
       <MenuItem Header="Help">
         <MenuItem Header="About..." Name="menuAbout" />
@@ -30,7 +31,7 @@
     </Menu>
 
     <TextBlock Margin="10,32,10,0" VerticalAlignment="Top" Text="No file opened." TextAlignment="Center" FontWeight="Bold" FontSize="14" Name="lblFileName" />
-    <ComboBox Margin="10,56,10,0" VerticalAlignment="Top" Height="26" IsEnabled="False" Name="comboBox">
+    <ComboBox Margin="10,56,10,0" VerticalAlignment="Top" Height="30" IsEnabled="False" Name="comboBox">
       <ComboBox.ItemTemplate>
         <DataTemplate>
           <TextBlock Text="{Binding}" Foreground="{Binding Color}" />
@@ -43,28 +44,31 @@
         <RowDefinition Height="*"></RowDefinition>
         <RowDefinition Height="*"></RowDefinition>
       </Grid.RowDefinitions>
-		<Grid Grid.Row="0">
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="*"></ColumnDefinition>
-				<ColumnDefinition Width="*"></ColumnDefinition>
-				<ColumnDefinition Width="*"></ColumnDefinition>
-				<ColumnDefinition Width="*"></ColumnDefinition>
-			</Grid.ColumnDefinitions>
-			<Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnExport">Export</Button>
-			<Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnImport">Import</Button>
-			<Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnExportAll">Export All</Button>
-			<Button Grid.Column="3" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnImportAll">Import All</Button>
-		</Grid>
-		<Grid Grid.Row="1">
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="*"></ColumnDefinition>
-				<ColumnDefinition Width="*"></ColumnDefinition>
-				<ColumnDefinition Width="*"></ColumnDefinition>
-			</Grid.ColumnDefinitions>
-			<Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnRename">Rename</Button>
-			<Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnRemove">Remove</Button>
-			<Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False" Name="btnInfo">Info</Button>
-		</Grid>
+      <Grid Grid.Row="0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Button Grid.Column="0" HorizontalAlignment="Left" IsEnabled="False" Name="btnExport" Width="90" Height="26">Export</Button>
+        <Button Grid.Column="1" HorizontalAlignment="Left" IsEnabled="False" Name="btnExportAll" Width="90" Height="26">Export All</Button>
+        <Button Grid.Column="2" HorizontalAlignment="Left" IsEnabled="False" Name="btnRename" Width="90" Height="26">Rename</Button>
+        <Grid  Grid.Column="3" Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,29,19,0">
+          <Button HorizontalAlignment="Left" IsEnabled="False" Name="btnInfo" Width="95" Height="55">Info</Button>
+        </Grid>
+      </Grid>
+      <Grid Grid.Row="1">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+          <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Button Grid.Column="0" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="False" Name="btnImport" Width="90">Import</Button>
+        <Button Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="False" Name="btnImportAll" Width="90">Import All</Button>
+        <Button Grid.Column="2" Grid.Row="1" HorizontalAlignment="Left" IsEnabled="False" Name="btnRemove" Width="90">Remove</Button>
+      </Grid>
     </Grid>
   </Grid>
 </Window>
