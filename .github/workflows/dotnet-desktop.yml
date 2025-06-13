@@ -19,7 +19,7 @@ jobs:
     - name: Install .NET Core
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 8.0.x
 
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.1
@@ -28,10 +28,10 @@ jobs:
       run: msbuild UABEAvalonia.sln /restore /p:Configuration=Release
     
     - name: Remove unused platforms
-      run: Get-ChildItem -Path "UABEAvalonia\bin\Release\net6.0\runtimes" -Directory | Where-Object { $_.Name -notin @("win-x64", "win7-x64", "win") } | Remove-Item -Recurse -Force
+      run: Get-ChildItem -Path "UABEAvalonia\bin\Release\net8.0\runtimes" -Directory | Where-Object { $_.Name -notin @("win-x64", "win7-x64", "win") } | Remove-Item -Recurse -Force
       
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: uabea-windows
-        path: UABEAvalonia/bin/Release/net6.0
+        path: UABEAvalonia/bin/Release/net8.0

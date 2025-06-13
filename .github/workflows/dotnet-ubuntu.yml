@@ -19,7 +19,7 @@ jobs:
     - name: Install .NET Core
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 8.0.x
     
     - name: Remove TexToolWrap VC++ project
       run: dotnet sln UABEAvalonia.sln remove TexToolWrap/TexToolWrap.vcxproj
@@ -31,13 +31,13 @@ jobs:
       run: dotnet build --configuration Release --no-restore
     
     - name: Fix libonigwrap directory
-      run: cp UABEAvalonia/bin/Release/net6.0/runtimes/linux/native/libonigwrap.so UABEAvalonia/bin/Release/net6.0/runtimes/linux-x64/native/libonigwrap.so
+      run: cp UABEAvalonia/bin/Release/net8.0/runtimes/linux/native/libonigwrap.so UABEAvalonia/bin/Release/net8.0/runtimes/linux-x64/native/libonigwrap.so
     
     - name: Remove unused platforms
-      run: find UABEAvalonia/bin/Release/net6.0/runtimes/* -maxdepth 0 ! -name linux-x64 -type d -exec rm -r {} +
+      run: find UABEAvalonia/bin/Release/net8.0/runtimes/* -maxdepth 0 ! -name linux-x64 -type d -exec rm -r {} +
       
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: uabea-ubuntu
-        path: UABEAvalonia/bin/Release/net6.0
+        path: UABEAvalonia/bin/Release/net8.0
