@@ -3,7 +3,6 @@ using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Markup.Xaml;
 using System.Collections.Generic;
 using System.IO;
 
@@ -65,9 +64,9 @@ namespace UABEAvalonia
         private async void ReturnAssetToAdd()
         {
             int fileId = ddFileId.SelectedIndex; //hopefully in order
-            string pathIdText = boxPathId.Text;
-            string typeIdText = boxTypeId.Text;
-            string monoIdText = boxMonoId.Text;
+            string pathIdText = boxPathId.Text ?? "";
+            string typeIdText = boxTypeId.Text ?? "";
+            string monoIdText = boxMonoId.Text ?? "";
             bool createBlankAsset = chkCreateZerodAsset.IsChecked ?? false;
 
             AssetsFileInstance file = workspace.LoadedFiles[fileId];
@@ -98,6 +97,20 @@ namespace UABEAvalonia
                         //has typetree but had to lookup to cldb
                         //we need to add a new typetree entry because this is
                         //probably not a type that existed in this bundle
+
+                        //remove existing types (in case types are corrupted)
+                        List<TypeTreeType> markedForDeletion = new List<TypeTreeType>();
+                        foreach (var type in file.file.Metadata.TypeTreeTypes)
+                        {
+                            if (type.TypeId == typeId)
+                            {
+                                markedForDeletion.Add(type);
+                            }
+                        }
+                        foreach (var markedType in markedForDeletion)
+                        {
+                            file.file.Metadata.TypeTreeTypes.Remove(markedType);
+                        }
                         file.file.Metadata.TypeTreeTypes.Add(ClassDatabaseToTypeTree.Convert(workspace.am.ClassDatabase, typeId));
                     }
                 }
