@@ -83,6 +83,16 @@ namespace UABEAvalonia
                 return;
             }
 
+            if (monoIdText == "-1")
+            {
+                monoId = 0xffff;
+            }
+            else if (!ushort.TryParse(monoIdText, out monoId))
+            {
+                await MessageBoxUtil.ShowDialog(this, "Bad input", "Mono ID was invalid.");
+                return;
+            }
+
             if (file.file.Metadata.TypeTreeEnabled)
             {
                 if (!TryParseTypeTree(file, typeIdText, createBlankAsset, out tempField, out typeId))
@@ -102,7 +112,7 @@ namespace UABEAvalonia
                         List<TypeTreeType> markedForDeletion = new List<TypeTreeType>();
                         foreach (var type in file.file.Metadata.TypeTreeTypes)
                         {
-                            if (type.TypeId == typeId)
+                            if (type.TypeId == typeId && (monoId == 0xffff || type.ScriptTypeIndex == monoId))
                             {
                                 markedForDeletion.Add(type);
                             }
@@ -122,16 +132,6 @@ namespace UABEAvalonia
                     await MessageBoxUtil.ShowDialog(this, "Bad input", "Class type was invalid.");
                     return;
                 }
-            }
-
-            if (monoIdText == "-1")
-            {
-                monoId = 0xffff;
-            }
-            else if (!ushort.TryParse(monoIdText, out monoId))
-            {
-                await MessageBoxUtil.ShowDialog(this, "Bad input", "Mono ID was invalid.");
-                return;
             }
 
             if (createBlankAsset)
