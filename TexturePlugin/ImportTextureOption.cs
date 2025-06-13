@@ -3,6 +3,8 @@ using AssetsTools.NET.Extra;
 using AssetsTools.NET.Texture;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UABEAvalonia;
 using UABEAvalonia.Plugins;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace TexturePlugin
 {
@@ -43,6 +46,7 @@ namespace TexturePlugin
 
                 string errorAssetName = $"{Path.GetFileName(cont.FileInstance.path)}/{cont.PathId}";
                 string selectedFilePath = batchInfo.importFile;
+                using Image<Rgba32> imgToImport = Image.Load<Rgba32>(selectedFilePath);
 
                 if (!cont.HasValueField)
                     continue;
@@ -54,8 +58,14 @@ namespace TexturePlugin
                 uint platform = cont.FileInstance.file.Metadata.TargetPlatform;
 
                 int mips = 1;
-                if (!baseField["m_MipCount"].IsDummy)
+                if (imgToImport.Width == baseField["m_Width"].AsInt && imgToImport.Height == baseField["m_Height"].AsInt)
+                {
                     mips = baseField["m_MipCount"].AsInt;
+                }
+                else if (TextureHelper.IsPo2(imgToImport.Width) && TextureHelper.IsPo2(imgToImport.Height))
+                {
+                    mips = TextureHelper.GetMaxMipCount(imgToImport.Width, imgToImport.Height);
+                }
 
                 byte[] encImageBytes = TextureImportExport.Import(selectedFilePath, fmt, out int width, out int height, ref mips, platform, platformBlob);
 
