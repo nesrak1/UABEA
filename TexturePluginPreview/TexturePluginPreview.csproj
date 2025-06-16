@@ -14,5 +14,6 @@
    </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TexturePlugin\TexturePlugin.csproj" />
+	  <ProjectReference Include="..\MeshPlugin\MeshPlugin.csproj" />
   </ItemGroup>
 </Project>
