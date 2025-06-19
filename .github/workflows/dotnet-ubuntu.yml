@@ -44,3 +44,4 @@ jobs:
       with:
         name: uabea-ubuntu-arm64
         path: UABEAvalonia/bin/Release/net8.0/linux-arm64
+
