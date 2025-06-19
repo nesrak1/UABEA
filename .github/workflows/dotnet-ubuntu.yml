@@ -27,9 +27,9 @@ jobs:
     - name: Restore
       run: dotnet restore
 
-    - name: Publish for arm64
-      run: dotnet publish UABEAvalonia/UABEAvalonia.csproj --configuration Release --no-restore -r linux-arm64 --self-contained false
-
+    - name: Publish for arm64 (tanpa AOT)
+      run: dotnet publish UABEAvalonia/UABEAvalonia.csproj --configuration Release --no-restore -r linux-arm64 /p:PublishAot=false --self-contained false
+  
     - name: Fix libonigwrap directory
       run: |
         mkdir -p UABEAvalonia/bin/Release/net8.0/linux-arm64/runtimes/linux-arm64/native
