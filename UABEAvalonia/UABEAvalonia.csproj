@@ -6,6 +6,7 @@
     <Platforms>AnyCPU;x64;x86</Platforms>
     <ApplicationIcon>uabeavalonia.ico</ApplicationIcon>
     <PublishAot>true</PublishAot>
+	<RuntimeIdentifiers>win-x64;linux-x64;linux-arm64</RuntimeIdentifiers>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
