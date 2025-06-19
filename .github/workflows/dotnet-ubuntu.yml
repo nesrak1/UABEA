@@ -30,11 +30,15 @@ jobs:
     - name: Publish for arm64 (tanpa AOT)
       run: dotnet publish UABEAvalonia/UABEAvalonia.csproj --configuration Release --no-restore -r linux-arm64 /p:PublishAot=false --self-contained false
   
-    - name: Fix libonigwrap directory
+    - name: Try copy libonigwrap if exists
       run: |
         mkdir -p UABEAvalonia/bin/Release/net8.0/linux-arm64/runtimes/linux-arm64/native
-        cp UABEAvalonia/bin/Release/net8.0/linux-arm64/runtimes/linux/native/libonigwrap.so \
-        UABEAvalonia/bin/Release/net8.0/linux-arm64/runtimes/linux-arm64/native/libonigwrap.so
+        if [ -f UABEAvalonia/bin/Release/net8.0/linux-arm64/runtimes/linux/native/libonigwrap.so ]; then
+          cp UABEAvalonia/bin/Release/net8.0/linux-arm64/runtimes/linux/native/libonigwrap.so \
+             UABEAvalonia/bin/Release/net8.0/linux-arm64/runtimes/linux-arm64/native/
+        else
+          echo "libonigwrap.so not found in expected path, skipping copy."
+        fi
 
     - name: Remove unused platforms
       run: find UABEAvalonia/bin/Release/net8.0/linux-arm64/runtimes/* -maxdepth 0 ! -name linux-arm64 -type d -exec rm -r {} +
