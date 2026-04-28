@@ -670,7 +670,7 @@ namespace UABEAvalonia
                 using (FileStream fs = File.Open(file, FileMode.Create))
                 {
                     AssetImportExport dumper = new AssetImportExport();
-                    dumper.DumpRawAsset(fs, selectedCont.FileReader, selectedCont.FilePosition, selectedCont.Size);
+                    dumper.DumpRawAsset(fs, selectedCont.FileReader.BaseStream, selectedCont.FilePosition, selectedCont.Size);
                 }
             }
         }
@@ -702,7 +702,7 @@ namespace UABEAvalonia
             using (FileStream fs = File.Open(selectedFilePath, FileMode.Create))
             {
                 AssetImportExport dumper = new AssetImportExport();
-                dumper.DumpRawAsset(fs, selectedCont.FileReader, selectedCont.FilePosition, selectedCont.Size);
+                dumper.DumpRawAsset(fs, selectedCont.FileReader.BaseStream, selectedCont.FilePosition, selectedCont.Size);
             }
         }
 

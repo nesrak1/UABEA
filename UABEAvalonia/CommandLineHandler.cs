@@ -153,6 +153,100 @@ namespace UABEAvalonia
             }
         }
 
+        private static void BatchExportRaw(string[] args)
+        {
+            var am = new AssetsManager();
+            var workspace = new AssetWorkspace(am, true);
+            string exportDirectory = GetMainFileName(args);
+            if (!Directory.Exists(exportDirectory))
+            {
+                Console.WriteLine("Directory does not exist!");
+                return;
+            }
+
+            HashSet<string> flags = GetFlags(args);
+            foreach (string file in Directory.EnumerateFiles(exportDirectory))
+            {
+                string decompFile = $"{file}.decomp";
+
+                if (flags.Contains("-md"))
+                    decompFile = null;
+
+                if (!File.Exists(file))
+                {
+                    Console.WriteLine($"File {file} does not exist!");
+                    return;
+                }
+
+                DetectedFileType fileType = FileTypeDetector.DetectFileType(file);
+                if (fileType != DetectedFileType.BundleFile)
+                {
+                    continue;
+                }
+
+                var bundleInst = am.LoadBundleFile(file, true);
+                var dirInf = bundleInst.file.BlockAndDirInfo.DirectoryInfos[0];
+                string name = dirInf.Name;
+                long startAddress = dirInf.Offset;
+                long length = dirInf.DecompressedSize;
+                using SegmentStream stream = new SegmentStream(bundleInst.file.DataReader.BaseStream, startAddress, length);
+
+                var memPath = Path.Combine(file, bundleInst.file.BlockAndDirInfo.DirectoryInfos[0].Name);
+                AssetsFileInstance fileInst = am.LoadAssetsFile(stream, memPath, true);
+                LoadTypeData(am, fileInst);
+                SingleExportRaw(fileInst, workspace, exportDirectory, fileInst.AssetsStream, fileInst.file.AssetInfos);
+
+                if (!flags.Contains("-kd") && !flags.Contains("-md") && File.Exists(decompFile))
+                    File.Delete(decompFile);
+
+                Console.WriteLine("Done.");
+            }
+        }
+
+        private static void SingleExportRaw(AssetsFileInstance fileInstance, AssetWorkspace workspace, string exportDirectory, Stream bundleStream, List<AssetFileInfo> assetFiles)
+        {
+            var assetIndex = 0;
+            string dir = exportDirectory;
+
+            foreach (var assetFile in assetFiles)
+            {
+
+                AssetContainer cont = new AssetContainer(assetFile, fileInstance);
+                //var selectedInst = $"{assetFile.TypeId:000}-{assetFile.TypeIdOrIndex:000}-{bundleName}-{assetFile.PathId}"; //selectedCont.FileInstance.path;
+
+                AssetNameUtils.GetDisplayNameFast(workspace, cont, false, out string assetName, out string _);
+                assetName = PathUtils.ReplaceInvalidPathChars(assetName);
+                string file = Path.Combine(dir, $"{assetName}-{Path.GetFileName(fileInstance.path)}-{cont.PathId}.dat");
+
+                var position = assetFile.ByteStart;
+                using (FileStream fs = File.Open(file, FileMode.Create))
+                {
+                    AssetImportExport dumper = new AssetImportExport();
+                    dumper.DumpRawAsset(fs, bundleStream, cont.FilePosition, assetFile.ByteSize);
+                }
+            }
+        }
+        private static void LoadTypeData(AssetsManager am, AssetsFileInstance fileInst)
+        {
+            string classDataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "classdata.tpk");
+            if (File.Exists(classDataPath))
+            {
+                am.LoadClassPackage(classDataPath);
+            }
+            string uVer = fileInst.file.Metadata.UnityVersion;
+            if (uVer == "0.0.0" && fileInst.parentBundle != null)
+            {
+                uVer = fileInst.parentBundle.file.Header.EngineVersion;
+            }
+
+            if (uVer == "0.0.0")
+            {
+                throw new Exception("Couldn't determine Unity version for type data loading!");
+            }
+
+            am.LoadClassDatabaseFromPackage(uVer);
+        }
+
         private static void BatchImportBundle(string[] args)
         {
             string importDirectory = GetMainFileName(args);
@@ -367,6 +461,10 @@ namespace UABEAvalonia
             else if (command == "applyemip")
             {
                 ApplyEmip(args);
+            }
+            else if (command == "batchexportraw")
+            {
+                BatchExportRaw(args);
             }
         }
     }

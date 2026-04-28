@@ -17,15 +17,14 @@ namespace UABEAvalonia
         private StreamReader sr;
         private AssetsFileWriter aw;
 
-        public void DumpRawAsset(FileStream wfs, AssetsFileReader reader, long position, uint size)
+        public void DumpRawAsset(FileStream wfs, Stream assetFileStream, long position, uint size)
         {
-            Stream assetFs = reader.BaseStream;
-            assetFs.Position = position;
+            assetFileStream.Position = position;
             byte[] buf = new byte[4096];
             int bytesLeft = (int)size;
             while (bytesLeft > 0)
             {
-                int readSize = assetFs.Read(buf, 0, Math.Min(bytesLeft, buf.Length));
+                int readSize = assetFileStream.Read(buf, 0, Math.Min(bytesLeft, buf.Length));
                 wfs.Write(buf, 0, readSize);
                 bytesLeft -= readSize;
             }
