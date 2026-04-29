@@ -3,6 +3,7 @@ using AssetsTools.NET.Extra;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace UABEAvalonia
 {
@@ -226,6 +227,80 @@ namespace UABEAvalonia
                 }
             }
         }
+
+        private static void BatchImportRaw(string[] args)
+        {
+            var assetsManager = new AssetsManager();
+            var workspace = new AssetWorkspace(assetsManager, true);
+            string importDirectory = GetMainFileName(args);
+            if (!Directory.Exists(importDirectory))
+            {
+                Console.WriteLine("Directory does not exist!");
+                return;
+            }
+            HashSet<string> flags = GetFlags(args);
+            const string suffix = "_new.dat";
+            foreach (string file in Directory.EnumerateFiles(importDirectory, $"*{suffix}"))
+            {
+                var fileName = Path.GetFileName(file);
+                var endOfBundleName = fileName.IndexOf('-');
+                var startOfPathId = fileName.LastIndexOf('-');
+                var pathId = long.Parse(fileName.Substring(startOfPathId + 1, fileName.Length - (startOfPathId + 1 + suffix.Length)));
+                var containerName = fileName.Substring(endOfBundleName + 1, startOfPathId - endOfBundleName - 1);
+                if (fileName[startOfPathId - 1] == '-')
+                {
+                    pathId = -pathId;
+                    containerName = containerName.Substring(0, containerName.Length - 1);
+                }
+                var bundleFile = Path.Combine(importDirectory, fileName.Substring(0, endOfBundleName) + ".txt");
+                if (!File.Exists(bundleFile)) continue;
+                var bundleInst = assetsManager.LoadBundleFile(bundleFile, true);
+                var dirInf = bundleInst.file.BlockAndDirInfo.DirectoryInfos[0];
+                string name = dirInf.Name;
+                long startAddress = dirInf.Offset;
+                long length = dirInf.DecompressedSize;
+                var segmentStream = new SegmentStream(bundleInst.file.DataReader.BaseStream, startAddress, length);
+                var memPath = Path.Combine(bundleFile, bundleInst.file.BlockAndDirInfo.DirectoryInfos[0].Name);
+                AssetsFileInstance fileInst = assetsManager.LoadAssetsFile(segmentStream, memPath, true);
+                segmentStream.Dispose();
+                LoadTypeData(assetsManager, fileInst);
+                SingleImportRaw(workspace, file, fileInst, pathId, containerName, bundleFile, bundleInst, assetsManager);
+            }
+        }
+
+        private static void SingleImportRaw(AssetWorkspace workspace, string rawFile, AssetsFileInstance fileInstance, long pathId, string containerName, string bundleFile, BundleFileInstance bundleInstance, AssetsManager assetsManager)
+        {
+            if (!(fileInstance.name.Equals(containerName, StringComparison.OrdinalIgnoreCase))) return;
+            var bundleWorkspace = new BundleWorkspace();
+            foreach (var assetInfo in fileInstance.file.AssetInfos)
+            {
+                if (assetInfo.PathId != pathId) continue;
+                AssetContainer cont = new AssetContainer(assetInfo, fileInstance);
+                using (FileStream fs = File.OpenRead(rawFile))
+                {
+                    AssetImportExport importer = new AssetImportExport();
+                    byte[] bytes = importer.ImportRawAsset(fs);
+                    var assetsReplacer = AssetImportExport.CreateAssetReplacer(cont, bytes);
+                    byte[] outputBytes;
+                    using (MemoryStream ms = new MemoryStream())
+                    using (AssetsFileWriter w = new AssetsFileWriter(ms))
+                    {
+                        fileInstance.file.Write(w, 0, new List<AssetsReplacer>() { assetsReplacer });
+                        outputBytes = ms.ToArray();
+                    }
+                    bundleWorkspace.AddOrReplaceFile(new MemoryStream(outputBytes), cont.FileInstance.name, true);
+                }
+                fileInstance.AssetsStream.Dispose();
+                assetsManager.UnloadBundleFile(bundleInstance);
+                List<BundleReplacer> replacers = bundleWorkspace.GetReplacers();
+                using (FileStream fs = File.Open(bundleFile, FileMode.Create))
+                using (AssetsFileWriter w = new AssetsFileWriter(fs))
+                {
+                    bundleInstance.file.Write(w, replacers.ToList());
+                }
+            }
+        }
+
         private static void LoadTypeData(AssetsManager am, AssetsFileInstance fileInst)
         {
             string classDataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "classdata.tpk");
@@ -327,7 +402,7 @@ namespace UABEAvalonia
                 Console.WriteLine("Done.");
             }
         }
-        
+
         private static void ApplyEmip(string[] args)
         {
             HashSet<string> flags = GetFlags(args);
@@ -366,7 +441,7 @@ namespace UABEAvalonia
                     if (flags.Contains("-md"))
                         decompFile = null;
 
-                    Console.WriteLine($"Decompressing {affectedFileName} to {decompFile??"memory"}...");
+                    Console.WriteLine($"Decompressing {affectedFileName} to {decompFile ?? "memory"}...");
                     AssetBundleFile bun = DecompressBundle(affectedFilePath, decompFile);
                     List<BundleReplacer> reps = new List<BundleReplacer>();
 
@@ -388,14 +463,14 @@ namespace UABEAvalonia
                     FileStream mfs = File.Open(modFile, FileMode.Create);
                     AssetsFileWriter mw = new AssetsFileWriter(mfs);
                     bun.Write(mw, reps, instPkg.addedTypes); //addedTypes does nothing atm
-                    
+
                     mfs.Close();
                     bun.Close();
 
                     Console.WriteLine($"Swapping mod file...");
                     File.Move(affectedFilePath, bakFile);
                     File.Move(modFile, affectedFilePath);
-                    
+
                     if (!flags.Contains("-kd") && !flags.Contains("-md") && File.Exists(decompFile))
                         File.Delete(decompFile);
 
@@ -447,7 +522,7 @@ namespace UABEAvalonia
                 PrintHelp();
                 return;
             }
-            
+
             string command = args[0];
 
             if (command == "batchexportbundle")
@@ -465,6 +540,10 @@ namespace UABEAvalonia
             else if (command == "batchexportraw")
             {
                 BatchExportRaw(args);
+            }
+            else if (command == "batchimportraw")
+            {
+                BatchImportRaw(args);
             }
         }
     }
