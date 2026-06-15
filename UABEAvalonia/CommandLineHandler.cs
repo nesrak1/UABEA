@@ -238,8 +238,8 @@ namespace UABEAvalonia
                 Console.WriteLine("Directory does not exist!");
                 return;
             }
+            var suffix = GetSuffix(args);
             HashSet<string> flags = GetFlags(args);
-            const string suffix = "_new.dat";
             foreach (string file in Directory.EnumerateFiles(importDirectory, $"*{suffix}"))
             {
                 var fileName = Path.GetFileName(file);
@@ -266,6 +266,16 @@ namespace UABEAvalonia
                 LoadTypeData(assetsManager, fileInst);
                 SingleImportRaw(workspace, file, fileInst, pathId, containerName, bundleFile, bundleInst, assetsManager);
             }
+        }
+
+        private static string GetSuffix(string[] args)
+        {
+            var suffixHeaderIndex = Array.IndexOf(args, "-suffix");
+            if (suffixHeaderIndex == -1 || suffixHeaderIndex + 1 >= args.Length)
+            {
+                return ".dat";
+            }
+            return args[suffixHeaderIndex + 1];
         }
 
         private static void SingleImportRaw(AssetWorkspace workspace, string rawFile, AssetsFileInstance fileInstance, long pathId, string containerName, string bundleFile, BundleFileInstance bundleInstance, AssetsManager assetsManager)
