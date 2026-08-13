@@ -1,0 +1,112 @@
+name: Check Texture DLL
+
+on:
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Check DLL file
+        shell: pwsh
+        run: |
+          $dll = "Libs/AssetsTools.NET.Texture.dll"
+
+          if (!(Test-Path $dll)) {
+            Write-Error "DLL tidak ditemukan: $dll"
+            exit 1
+          }
+
+          $file = Get-Item $dll
+
+          Write-Host "======================================"
+          Write-Host "FILE INFORMATION"
+          Write-Host "======================================"
+          Write-Host "Name : $($file.Name)"
+          Write-Host "Size : $($file.Length) bytes"
+          Write-Host "Path : $($file.FullName)"
+
+          Write-Host ""
+          Write-Host "======================================"
+          Write-Host "SHA256"
+          Write-Host "======================================"
+
+          Get-FileHash $dll -Algorithm SHA256
+
+      - name: Create inspector project
+        shell: pwsh
+        run: |
+          dotnet new console -n DllInspector
+
+      - name: Create inspector code
+        shell: pwsh
+        run: |
+          @'
+          using System.Reflection;
+
+          string dllPath = Path.GetFullPath(
+              Path.Combine(
+                  "..",
+                  "Libs",
+                  "AssetsTools.NET.Texture.dll"
+              )
+          );
+
+          Console.WriteLine("======================================");
+          Console.WriteLine("ASSEMBLY");
+          Console.WriteLine("======================================");
+          Console.WriteLine(dllPath);
+
+          Assembly assembly = Assembly.LoadFrom(dllPath);
+
+          Console.WriteLine();
+          Console.WriteLine("Full Name:");
+          Console.WriteLine(assembly.FullName);
+
+          Console.WriteLine();
+          Console.WriteLine("======================================");
+          Console.WriteLine("TYPES");
+          Console.WriteLine("======================================");
+
+          foreach (Type type in assembly.GetTypes()
+              .OrderBy(t => t.FullName))
+          {
+              Console.WriteLine();
+              Console.WriteLine("[TYPE]");
+              Console.WriteLine(type.FullName);
+
+              foreach (MethodInfo method in type.GetMethods(
+                  BindingFlags.Public |
+                  BindingFlags.NonPublic |
+                  BindingFlags.Instance |
+                  BindingFlags.Static |
+                  BindingFlags.DeclaredOnly)
+                  .OrderBy(m => m.Name))
+              {
+                  string parameters = string.Join(
+                      ", ",
+                      method.GetParameters()
+                          .Select(p =>
+                              $"{p.ParameterType.Name} {p.Name}")
+                  );
+
+                  Console.WriteLine(
+                      $"  {method.ReturnType.Name} " +
+                      $"{method.Name}({parameters})"
+                  );
+              }
+          }
+          '@ | Set-Content DllInspector/Program.cs
+
+      - name: Run DLL inspector
+        working-directory: DllInspector
+        run: dotnet run
