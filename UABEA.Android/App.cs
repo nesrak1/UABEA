@@ -15,11 +15,7 @@ public sealed class App : Avalonia.Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        if (ApplicationLifetime is IActivityApplicationLifetime androidLifetime)
-        {
-            androidLifetime.MainViewFactory = () => new MainView();
-        }
-        else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewLifetime)
+        if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewLifetime)
         {
             singleViewLifetime.MainView = new MainView();
         }
