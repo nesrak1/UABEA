@@ -20,7 +20,7 @@ Install the .NET 8 SDK, Android SDK/JDK, and the .NET Android workload, then run
 
 ```bash
 dotnet workload install android
-dotnet publish UABEA.Android/UABEA.Android.csproj -c Release -f net8.0-android34.0 -p:AndroidPackageFormat=apk -p:PublishTrimmed=false -p:RunAOTCompilation=false
+dotnet publish UABEA.Android/UABEA.Android.csproj -c Release -f net8.0-android31.0 -p:AndroidPackageFormat=apk -p:PublishTrimmed=false -p:RunAOTCompilation=false
 ```
 
 The Android build workflow runs on pushes to the `android-port` branch and uploads the APK plus a ZIP archive of the complete repository source.
