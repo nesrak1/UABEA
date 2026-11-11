@@ -5,7 +5,7 @@ using Avalonia.Styling;
 
 namespace UABEA.Mobile;
 
-public sealed class App : Application
+public sealed class App : Avalonia.Application
 {
     public override void Initialize()
     {
