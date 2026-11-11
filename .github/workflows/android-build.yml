@@ -40,3 +40,21 @@ jobs:
             UABEA.Android/bin/Release/net8.0-android34.0/publish/*.apk
             UABEA-Mobile-source.zip
           if-no-files-found: error
+
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Package complete source
+        run: git archive --format=zip --output UABEA-Mobile-source.zip HEAD
+
+      - name: Upload source ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: uabea-mobile-source
+          path: UABEA-Mobile-source.zip
+          if-no-files-found: error
