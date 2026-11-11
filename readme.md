@@ -37,3 +37,7 @@ Many games are also now using addressables. You can tell if the bundle you're op
 - [ImageSharp](https://github.com/SixLabors/ImageSharp) (Apache License 2.0)
 - [Fsb5Sharp](https://github.com/SamboyCoding/Fmod5Sharp) (MIT license)
 - [Font Awesome](https://fontawesome.com) (CC BY 4.0 license)
+
+## Android port build
+
+The Android APK is built automatically when changes are pushed to the `android-port` branch. You can also start a build manually from the GitHub Actions tab using the Android build workflow.
