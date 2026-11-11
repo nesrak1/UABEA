@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Button = Avalonia.Controls.Button;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -137,7 +139,7 @@ public sealed class MainView : UserControl
                 _assetsManager = manager;
 
                 var entries = bundle.file.BlockAndDirInfo.DirectoryInfos;
-                _status.Text = $"Bundle opened: {file.Name}\nEntries: {entries.Count}";
+                _status.Text = $"Bundle opened: {file.Name}\nEntries: {entries.Count()}";
 
                 foreach (var entry in entries)
                 {
