@@ -10,7 +10,7 @@
     <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
     <AndroidMinSdkVersion>31</AndroidMinSdkVersion>
     <SupportedOSPlatformVersion>31.0</SupportedOSPlatformVersion>
-    <AndroidSupportedAbis>arm64-v8a</AndroidSupportedAbis>
+    <RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <PublishTrimmed>false</PublishTrimmed>
     <RunAOTCompilation>false</RunAOTCompilation>
