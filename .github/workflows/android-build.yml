@@ -27,7 +27,7 @@ jobs:
         run: dotnet restore UABEA.Android/UABEA.Android.csproj
 
       - name: Build APK
-        run: dotnet publish UABEA.Android/UABEA.Android.csproj -c Release -f net8.0-android31.0 -p:AndroidPackageFormat=apk -p:PublishTrimmed=false -p:RunAOTCompilation=false
+        run: dotnet publish UABEA.Android/UABEA.Android.csproj -c Release -f net8.0-android31.0 -r android-arm64 -p:AndroidPackageFormat=apk -p:PublishTrimmed=false -p:RunAOTCompilation=false
 
       - name: Package complete source
         run: git archive --format=zip --output UABEA-Mobile-source.zip HEAD
