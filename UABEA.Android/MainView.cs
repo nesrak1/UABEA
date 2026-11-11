@@ -123,7 +123,7 @@ public sealed class MainView : UserControl
             }
 
             var manager = new AssetsManager();
-            var signature = new byte[7];
+            var signature = new byte[8];
 
             await using (var headerStream = File.OpenRead(localPath))
             {
@@ -131,7 +131,7 @@ public sealed class MainView : UserControl
             }
 
             var header = Encoding.ASCII.GetString(signature);
-            if (header is "UnityFS" or "UnityRaw" or "UnityW")
+            if (header.StartsWith("UnityFS", StringComparison.Ordinal) || header is "UnityRaw" or "UnityWeb")
             {
                 var bundle = manager.LoadBundleFile(localPath, false);
                 _assetsManager = manager;
