@@ -37,7 +37,7 @@ jobs:
         with:
           name: uabea-mobile-build
           path: |
-            UABEA.Android/bin/Release/net8.0-android34.0/publish/*.apk
+            UABEA.Android/bin/Release/net8.0-android31.0/android-arm64/publish/*.apk
             UABEA-Mobile-source.zip
           if-no-files-found: error
 
