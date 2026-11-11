@@ -158,7 +158,7 @@ public sealed class MainView : UserControl
                 {
                     _items.Children.Add(CreateEntry(
                         $"Path ID {asset.PathId}",
-                        $"Type ID: {asset.GetTypeId()}"));
+                        $"Type ID: {asset.GetTypeId(assetsFile.file)}"));
                 }
 
                 if (assets.Count > 500)
