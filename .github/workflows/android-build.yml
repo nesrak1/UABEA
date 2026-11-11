@@ -23,38 +23,61 @@ jobs:
       - name: Install Android workload
         run: dotnet workload install android
 
-      - name: Restore
-        run: dotnet restore UABEA.Android/UABEA.Android.csproj
+      - name: Prepare stable release signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::Missing repository secret ANDROID_KEYSTORE_BASE64. Add the persistent release keystore secrets before building."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/uabea-release.keystore"
+          test -s "$RUNNER_TEMP/uabea-release.keystore"
 
-      - name: Build APK
-        run: dotnet publish UABEA.Android/UABEA.Android.csproj -c Release -f net8.0-android31.0 -r android-arm64 -p:AndroidPackageFormat=apk -p:PublishTrimmed=false -p:RunAOTCompilation=false
+      - name: Publish signed ARM64 APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing repository secret $name."
+              exit 1
+            fi
+          done
 
-      - name: Package complete source
-        run: git archive --format=zip --output UABEA-Mobile-source.zip HEAD
+          dotnet restore UABEA.Android/UABEA.Android.csproj
+          dotnet publish UABEA.Android/UABEA.Android.csproj \
+            -c Release \
+            -f net8.0-android31.0 \
+            -r android-arm64 \
+            -p:AndroidPackageFormat=apk \
+            -p:AndroidKeyStore=true \
+            -p:AndroidSigningKeyStore="$RUNNER_TEMP/uabea-release.keystore" \
+            -p:AndroidSigningKeyAlias="$ANDROID_KEY_ALIAS" \
+            -p:AndroidSigningStorePass="$ANDROID_KEYSTORE_PASSWORD" \
+            -p:AndroidSigningKeyPass="$ANDROID_KEY_PASSWORD" \
+            -p:PublishTrimmed=false \
+            -p:RunAOTCompilation=false
 
-      - name: Upload APK and source ZIP
+          APK="$(find UABEA.Android/bin/Release/net8.0-android31.0/android-arm64/publish -maxdepth 1 -type f -iname '*signed.apk' | head -n 1)"
+          if [ -z "$APK" ]; then
+            echo "::error::The signed APK was not produced."
+            find UABEA.Android/bin/Release/net8.0-android31.0/android-arm64/publish -maxdepth 1 -type f -print
+            exit 1
+          fi
+
+          cp "$APK" UABEA-Mobile.apk
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          "$APKSIGNER" verify --verbose UABEA-Mobile.apk
+
+      - name: Upload APK only
         uses: actions/upload-artifact@v4
         with:
-          name: uabea-mobile-build
-          path: |
-            UABEA.Android/bin/Release/net8.0-android31.0/android-arm64/publish/*.apk
-            UABEA-Mobile-source.zip
+          name: uabea-mobile-apk
+          path: UABEA-Mobile.apk
           if-no-files-found: error
-
-  source:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Package complete source
-        run: git archive --format=zip --output UABEA-Mobile-source.zip HEAD
-
-      - name: Upload source ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: uabea-mobile-source
-          path: UABEA-Mobile-source.zip
-          if-no-files-found: error
+          compression-level: 0
