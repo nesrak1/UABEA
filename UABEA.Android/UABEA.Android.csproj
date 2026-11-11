@@ -8,7 +8,8 @@
     <ApplicationTitle>UABEA Mobile</ApplicationTitle>
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
-    <AndroidMinSdkVersion>23</AndroidMinSdkVersion>
+    <AndroidMinSdkVersion>31</AndroidMinSdkVersion>
+    <SupportedOSPlatformVersion>31.0</SupportedOSPlatformVersion>
     <AndroidSupportedAbis>arm64-v8a</AndroidSupportedAbis>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <PublishTrimmed>false</PublishTrimmed>
