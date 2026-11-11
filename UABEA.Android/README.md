@@ -23,7 +23,7 @@ dotnet workload install android
 dotnet publish UABEA.Android/UABEA.Android.csproj -c Release -f net8.0-android31.0 -p:AndroidPackageFormat=apk -p:PublishTrimmed=false -p:RunAOTCompilation=false
 ```
 
-The Android build workflow runs on pushes to the `android-port` branch and uploads the APK plus a ZIP archive of the complete repository source.
+The Android build workflow runs on pushes to the `android-port` branch and uploads one artifact named `uabea-mobile-apk` containing only `UABEA-Mobile.apk`. GitHub Actions still wraps downloaded artifacts in a ZIP; the ZIP contains only the APK. A persistent release keystore must be configured in repository Actions secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`. Keep this keystore backed up and reuse it for every build so future APK updates retain the same signing identity.
 
 ## Licensing
 
