@@ -6,7 +6,7 @@ This folder contains the first Android application host for the UABEA fork.
 
 - Separate Android application project; the original desktop project is not modified.
 - Avalonia Android 11.0.1 and .NET 8 Android target.
-- ARM64 APK target for modern Android phones.
+- ARM64 APK target for modern Android phones (minimum Android 12 / API 31, matching the pinned Avalonia Android 11.0.1 package).
 - Android Storage Access Framework file picker; selected content is copied into the app cache before parsing.
 - Initial read-only inspection of UnityFS/UnityRaw/UnityWeb bundles and serialized assets files using the existing AssetsTools.NET assembly.
 
