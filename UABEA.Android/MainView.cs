@@ -855,7 +855,7 @@ public sealed class MainView : UserControl
         button.PointerPressed += (_, _) => suppressNextClick = false;
         button.Holding += (_, args) =>
         {
-            if (args.HoldingState == HoldingState.Started)
+            if (args.HoldingState.ToString() == "Started")
                 suppressNextClick = true;
         };
         button.Click += (_, _) =>
