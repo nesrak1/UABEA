@@ -8,6 +8,7 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -244,7 +245,7 @@ public sealed class MainView : UserControl
                 rows.Add(new RowData(capturedName,
                     $"{kind} • {FormatSize(entry.DecompressedSize)}", () => { }));
             }
-            return new OpenResult(manager, bundle, null, rows,
+            return new OpenResult(manager, bundle, null, rows, new List<AssetRow>(),
                 $"Bundle: {fileName}\nEntries: {rows.Count}", BrowserPage.Bundle);
         }
 
@@ -255,7 +256,7 @@ public sealed class MainView : UserControl
             return new OpenResult(manager, null, assets,
                 rows.Select(row => new RowData(row.Name,
                     $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
-                    () => { })).ToList(),
+                    () => { })).ToList(), rows,
                 $"Assets file: {assets.name}\nAssets: {rows.Count}", BrowserPage.Assets);
         }
 
