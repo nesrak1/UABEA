@@ -17,6 +17,7 @@ using Material.Icons;
 using Material.Icons.Avalonia;
 using Button = Avalonia.Controls.Button;
 using ProgressBar = Avalonia.Controls.ProgressBar;
+using Orientation = Avalonia.Layout.Orientation;
 
 namespace UABEA.Mobile;
 
