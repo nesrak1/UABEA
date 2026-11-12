@@ -1149,7 +1149,7 @@ public sealed class MainView : UserControl
                 {
                     new FilePickerFileType("Unity resource files")
                     {
-                        Patterns = new[] { "*.resource" }
+                        Patterns = new[] { "*.resource", "*.resources", "*.resS", "*.ress" }
                     }
                 }
             });
@@ -1426,6 +1426,8 @@ public sealed class MainView : UserControl
         var loadingCard = AddPreviewLoadingCard("3D Mesh preview", MaterialIconKind.Image);
         MeshPreviewData? meshData = null;
         string? error = null;
+        bool needsExternalResource = false;
+        string streamSource = "";
 
         try
         {
@@ -1434,7 +1436,27 @@ public sealed class MainView : UserControl
                 var field = manager.GetBaseField(instance, asset);
                 if (field == null)
                     throw new InvalidDataException("Mesh data could not be read.");
-                return MeshPreviewDataReader.Read(field);
+
+                MeshStreamInfo stream = MeshPreviewDataReader.ReadStreamInfo(field);
+                streamSource = stream.Path;
+                byte[]? streamedData = null;
+
+                if (stream.Size > 0 && !string.IsNullOrWhiteSpace(stream.Path))
+                {
+                    try
+                    {
+                        streamedData = instance.parentBundle != null
+                            ? ReadBundleResource(instance.parentBundle, stream.Path, stream.Offset, stream.Size)
+                            : ReadExternalResource(instance, stream.Path, stream.Offset, stream.Size);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        needsExternalResource = instance.parentBundle == null;
+                        throw;
+                    }
+                }
+
+                return MeshPreviewDataReader.Read(field, streamedData);
             });
         }
         catch (Exception ex)
@@ -1449,6 +1471,24 @@ public sealed class MainView : UserControl
         }
 
         RemovePreviewLoadingCard(loadingCard);
+
+        if (meshData == null && needsExternalResource && !string.IsNullOrWhiteSpace(streamSource))
+        {
+            bool selected = await ChooseSessionResourceAsync(streamSource, instance);
+            if (selected && _currentAssets == instance && _currentPage == BrowserPage.AssetDetails)
+            {
+                await ShowMeshPreviewAsync(manager, instance, asset);
+                return;
+            }
+
+            _items.Children.Add(CreatePreviewCard("3D Mesh preview", new TextBlock
+            {
+                Text = "This Mesh uses external vertex data. Select its matching .resource or .resS file to preview it.",
+                Foreground = TextBrush,
+                TextWrapping = TextWrapping.Wrap
+            }, MaterialIconKind.Image));
+            return;
+        }
 
         if (meshData == null)
         {
