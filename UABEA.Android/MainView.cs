@@ -972,6 +972,7 @@ public sealed class MainView : UserControl
             Spacing = 5,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8, 0, 0, 0),
             Children =
             {
                 new TextBlock
@@ -994,7 +995,6 @@ public sealed class MainView : UserControl
         var grid = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("34,*"),
-            ColumnSpacing = 8,
             VerticalAlignment = VerticalAlignment.Center
         };
         Grid.SetColumn(icon, 0);
