@@ -413,7 +413,8 @@ internal static class MeshPreviewDataReader
             return;
 
         int safeCount = Math.Min(count - count % 3, 360_000 - output.Count);
-        for (int i = 0; i < safeCount; i++)
+        // Each iteration consumes one complete triangle (three indices).
+        for (int i = 0; i + 2 < safeCount; i += 3)
         {
             int offset = firstByte + i * indexSize;
             long a = (long)ReadRawIndex(bytes, offset, indexSize) + baseVertex;
