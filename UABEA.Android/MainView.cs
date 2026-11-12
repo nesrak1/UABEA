@@ -771,6 +771,243 @@ public sealed class MainView : UserControl
         {
             await ShowTextAssetPreviewAsync(manager, instance, asset);
         }
+        if (typeId == (int)AssetClassID.Texture2D)
+        {
+            await ShowTexturePreviewAsync(manager, instance, asset);
+        }
+        else if (typeId == (int)AssetClassID.Font)
+        {
+            await ShowFontPreviewAsync(manager, instance, asset);
+        }
+    }
+
+    private async Task ShowTexturePreviewAsync(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        _status.Text = "Loading image preview...";
+        SetLoading(true);
+        Avalonia.Media.Imaging.Bitmap? previewBitmap = null;
+        string? error = null;
+
+        try
+        {
+            byte[] png = await Task.Run(() =>
+            {
+                var container = new AssetContainer(asset, instance);
+                var template = manager.GetTemplateBaseField(
+                    instance, container.FileReader, container.FilePosition,
+                    container.ClassId, container.MonoId, AssetReadFlags.None);
+
+                var imageData = template.Children.FirstOrDefault(x => x.Name == "image data");
+                if (imageData == null)
+                    throw new InvalidDataException("Texture image data is not available.");
+                imageData.ValueType = AssetValueType.ByteArray;
+
+                var platformBlob = template.Children.FirstOrDefault(x => x.Name == "m_PlatformBlob");
+                if (platformBlob != null && platformBlob.Children.Count > 0)
+                    platformBlob.Children[0].ValueType = AssetValueType.ByteArray;
+
+                var field = template.MakeValue(container.FileReader, container.FilePosition);
+                var texture = AssetsTools.NET.Texture.TextureFile.ReadTextureFile(field);
+                if (texture.m_Width <= 0 || texture.m_Height <= 0 ||
+                    texture.m_Width > 8192 || texture.m_Height > 8192)
+                    throw new InvalidDataException("Unsupported or invalid image dimensions.");
+
+                byte[] data = texture.pictureData ?? Array.Empty<byte>();
+                if (texture.m_StreamData.size > 0 && !string.IsNullOrWhiteSpace(texture.m_StreamData.path))
+                {
+                    string streamPath = texture.m_StreamData.path;
+                    if (streamPath.StartsWith("archive:/", StringComparison.OrdinalIgnoreCase))
+                        streamPath = Path.GetFileName(streamPath);
+
+                    if (instance.parentBundle != null)
+                    {
+                        var bundle = instance.parentBundle.file;
+                        var entry = bundle.BlockAndDirInfo.DirectoryInfos.FirstOrDefault(x =>
+                            Path.GetFileName(x.Name).Equals(Path.GetFileName(streamPath), StringComparison.OrdinalIgnoreCase));
+                        if (entry == null)
+                            throw new FileNotFoundException("The texture resource was not found inside the bundle.");
+                        bundle.DataReader.Position = entry.Offset + (long)texture.m_StreamData.offset;
+                        data = bundle.DataReader.ReadBytes((int)texture.m_StreamData.size);
+                    }
+                    else
+                    {
+                        string root = Path.GetDirectoryName(instance.path) ?? "";
+                        string fullPath = Path.IsPathRooted(streamPath) ? streamPath : Path.Combine(root, streamPath);
+                        if (!File.Exists(fullPath))
+                            throw new FileNotFoundException("The external texture resource file was not found.");
+                        using var stream = File.OpenRead(fullPath);
+                        stream.Position = (long)texture.m_StreamData.offset;
+                        data = new byte[(int)texture.m_StreamData.size];
+                        int read = 0;
+                        while (read < data.Length)
+                        {
+                            int count = stream.Read(data, read, data.Length - read);
+                            if (count == 0) break;
+                            read += count;
+                        }
+                    }
+                }
+
+                if (data.Length == 0)
+                    throw new InvalidDataException("This texture contains no image data.");
+
+                byte[] rgba = AssetsTools.NET.Texture.TextureFile.DecodeManaged(
+                    data, (AssetsTools.NET.Texture.TextureFormat)texture.m_TextureFormat,
+                    texture.m_Width, texture.m_Height);
+                if (rgba == null || rgba.Length < texture.m_Width * texture.m_Height * 4)
+                    throw new NotSupportedException("This texture format is not supported by the mobile preview decoder.");
+
+                using var image = SixLabors.ImageSharp.Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Rgba32>(
+                    rgba, texture.m_Width, texture.m_Height);
+                using var output = new MemoryStream();
+                image.SaveAsPng(output);
+                return output.ToArray();
+            });
+
+            using var imageStream = new MemoryStream(png);
+            previewBitmap = new Avalonia.Media.Imaging.Bitmap(imageStream);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            SetLoading(false);
+        }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
+        {
+            previewBitmap?.Dispose();
+            return;
+        }
+
+        _items.Children.Add(new Border
+        {
+            Background = SurfaceContainerBrush,
+            BorderBrush = OutlineBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(12),
+            Child = previewBitmap != null
+                ? new StackPanel
+                {
+                    Spacing = 8,
+                    Children =
+                    {
+                        new TextBlock { Text = "Image preview", FontWeight = FontWeight.SemiBold, Foreground = TextBrush },
+                        new Image { Source = previewBitmap, Stretch = Stretch.Uniform, MaxHeight = 360 }
+                    }
+                }
+                : new TextBlock
+                {
+                    Text = "Image preview unavailable: " + error,
+                    Foreground = MutedBrush,
+                    TextWrapping = TextWrapping.Wrap
+                }
+        });
+    }
+
+    private async Task ShowFontPreviewAsync(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        _status.Text = "Loading font preview...";
+        SetLoading(true);
+        Avalonia.Media.Imaging.Bitmap? previewBitmap = null;
+        string? fontName = null;
+        string? error = null;
+        string? tempFontPath = null;
+
+        try
+        {
+            byte[] fontBytes = await Task.Run(() =>
+            {
+                var container = new AssetContainer(asset, instance);
+                var template = manager.GetTemplateBaseField(
+                    instance, container.FileReader, container.FilePosition,
+                    container.ClassId, container.MonoId, AssetReadFlags.None);
+                var fontData = template.Children.FirstOrDefault(x => x.Name == "m_FontData");
+                if (fontData == null || fontData.Children.Count == 0)
+                    throw new InvalidDataException("This Font asset does not contain embedded font data.");
+                fontData.Children[0].ValueType = AssetValueType.ByteArray;
+                var field = template.MakeValue(container.FileReader, container.FilePosition);
+                fontName = field["m_Name"]?.AsString;
+                return field["m_FontData.Array"]?.AsByteArray ?? Array.Empty<byte>();
+            });
+
+            if (fontBytes.Length == 0)
+                throw new InvalidDataException("This font uses an external or built-in font and has no embedded TTF/OTF data.");
+
+            tempFontPath = Path.Combine(Path.GetTempPath(), "uabea-preview-" + Guid.NewGuid().ToString("N") +
+                (fontBytes.Length > 4 && fontBytes[0] == 0x4F && fontBytes[1] == 0x54 ? ".otf" : ".ttf"));
+            await File.WriteAllBytesAsync(tempFontPath, fontBytes);
+
+            using var typeface = Android.Graphics.Typeface.CreateFromFile(tempFontPath);
+            using var bitmap = Android.Graphics.Bitmap.CreateBitmap(900, 360, Android.Graphics.Bitmap.Config.Argb8888!);
+            using (var canvas = new Android.Graphics.Canvas(bitmap))
+            using (var paint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias))
+            {
+                canvas.DrawColor(Android.Graphics.Color.Rgb(23, 23, 23));
+                paint.Color = Android.Graphics.Color.White;
+                paint.Typeface = typeface;
+                paint.TextSize = 62;
+                canvas.DrawText("Aa Bb Cc 123", 28, 105, paint);
+                paint.TextSize = 34;
+                canvas.DrawText("The quick brown fox jumps over the lazy dog.", 28, 180, paint);
+                canvas.DrawText("0123456789  !? @#&", 28, 245, paint);
+                paint.TextSize = 22;
+                canvas.DrawText(fontName ?? "Unity Font", 28, 315, paint);
+            }
+
+            using var pngStream = new MemoryStream();
+            bitmap.Compress(Android.Graphics.Bitmap.CompressFormat.Png!, 100, pngStream);
+            pngStream.Position = 0;
+            previewBitmap = new Avalonia.Media.Imaging.Bitmap(pngStream);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            if (!string.IsNullOrEmpty(tempFontPath))
+            {
+                try { File.Delete(tempFontPath); } catch { }
+            }
+            SetLoading(false);
+        }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
+        {
+            previewBitmap?.Dispose();
+            return;
+        }
+
+        _items.Children.Add(new Border
+        {
+            Background = SurfaceContainerBrush,
+            BorderBrush = OutlineBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(12),
+            Child = previewBitmap != null
+                ? new StackPanel
+                {
+                    Spacing = 8,
+                    Children =
+                    {
+                        new TextBlock { Text = "Font preview • " + (fontName ?? "Unnamed font"), FontWeight = FontWeight.SemiBold, Foreground = TextBrush },
+                        new Image { Source = previewBitmap, Stretch = Stretch.Uniform, MaxHeight = 220 }
+                    }
+                }
+                : new TextBlock
+                {
+                    Text = "Font preview unavailable: " + error,
+                    Foreground = MutedBrush,
+                    TextWrapping = TextWrapping.Wrap
+                }
+        });
     }
 
     private async Task ShowTextAssetPreviewAsync(
