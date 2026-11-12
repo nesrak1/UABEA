@@ -920,9 +920,22 @@ public sealed class MainView : UserControl
         {
             byte[] fontBytes = await Task.Run(() =>
             {
+                // Unity stores Font.m_FontData as a generic array in some class
+                // databases. Reinterpret its element as ByteArray before deserializing,
+                // matching UABEA's FontPlugin implementation.
+                var template = manager.GetTemplateBaseField(instance, asset);
+                if (template == null)
+                    throw new InvalidDataException("Font type information could not be read.");
+
+                var fontDataTemplate = template.Children.FirstOrDefault(x => x.Name == "m_FontData");
+                if (fontDataTemplate == null || fontDataTemplate.Children.Count == 0)
+                    throw new InvalidDataException("This Unity Font has no m_FontData field.");
+
+                fontDataTemplate.Children[0].ValueType = AssetValueType.ByteArray;
                 var field = manager.GetBaseField(instance, asset);
                 if (field == null)
                     throw new InvalidDataException("Font data could not be read.");
+
                 fontName = field["m_Name"]?.AsString;
                 return field["m_FontData.Array"]?.AsByteArray ?? Array.Empty<byte>();
             });
