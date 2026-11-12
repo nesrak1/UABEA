@@ -1066,24 +1066,8 @@ public sealed class MainView : UserControl
                     CornerRadius = new CornerRadius(13),
                     FontWeight = FontWeight.SemiBold
                 };
-                var errorCard = CreatePreviewCard("Audio preview", errorContent, MaterialIconKind.MusicNote);
-                chooseResourceButton.Click += async (_, _) =>
-                {
-                    chooseResourceButton.IsEnabled = false;
-                    _items.Children.Remove(errorCard);
-                    bool selected = await ChooseAudioResourceAsync(
-                        audioResourceSource, instance, asset);
-                    if (!selected && _currentAssets == instance &&
-                        _currentPage == BrowserPage.AssetDetails)
-                    {
-                        _items.Children.Add(errorCard);
-                        chooseResourceButton.IsEnabled = true;
-                    }
-                };
                 errorContent.Children.Add(chooseResourceButton);
-                // Rebuild the card after adding the action button.
-                errorCard = CreatePreviewCard("Audio preview", errorContent, MaterialIconKind.MusicNote);
-                chooseResourceButton.Click -= null;
+                var errorCard = CreatePreviewCard("Audio preview", errorContent, MaterialIconKind.MusicNote);
                 chooseResourceButton.Click += async (_, _) =>
                 {
                     chooseResourceButton.IsEnabled = false;
