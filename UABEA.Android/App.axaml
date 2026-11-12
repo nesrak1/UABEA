@@ -19,10 +19,6 @@
     <Style Selector="ComboBox">
       <Setter Property="MinHeight" Value="46" />
       <Setter Property="FontSize" Value="14" />
-      <Setter Property="MaxDropDownHeight" Value="320" />
-    </Style>
-    <Style Selector="ComboBox /template/ ScrollViewer">
-      <Setter Property="IsScrollChainingEnabled" Value="False" />
     </Style>
   </Application.Styles>
 </Application>
