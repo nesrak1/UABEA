@@ -825,8 +825,8 @@ public sealed class MainView : UserControl
     private async Task ShowTexturePreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
     {
-        _status.Text = "Loading image preview...";
-        SetLoading(true);
+        _status.Text = "Image preview";
+        var loadingCard = AddPreviewLoadingCard("Image preview", MaterialIconKind.Image);
         Avalonia.Media.Imaging.Bitmap? previewBitmap = null;
         string? error = null;
         int previewWidth = 0;
@@ -909,42 +909,39 @@ public sealed class MainView : UserControl
         {
             error = ex.Message;
         }
-        finally
-        {
-            SetLoading(false);
-        }
+        finally { }
 
         if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
         {
+            RemovePreviewLoadingCard(loadingCard);
             previewBitmap?.Dispose();
             return;
         }
 
-        _items.Children.Add(new Border
+        RemovePreviewLoadingCard(loadingCard);
+        if (previewBitmap != null)
         {
-            Background = SurfaceContainerBrush,
-            BorderBrush = OutlineBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(16),
-            Padding = new Thickness(12),
-            Child = previewBitmap != null
-                ? new StackPanel
+            var image = new Image { Source = previewBitmap, Stretch = Stretch.Uniform, MaxHeight = 360 };
+            image.Tapped += (_, _) => OpenImageViewer(previewBitmap);
+            _items.Children.Add(CreatePreviewCard("Image preview", new StackPanel
+            {
+                Spacing = 5,
+                Children =
                 {
-                    Spacing = 8,
-                    Children =
-                    {
-                        new TextBlock { Text = "Image preview", FontWeight = FontWeight.SemiBold, Foreground = TextBrush },
-                        new TextBlock { Text = $"{previewWidth}×{previewHeight} px", FontSize = 12, Foreground = MutedBrush },
-                        new Image { Source = previewBitmap, Stretch = Stretch.Uniform, MaxHeight = 360 }
-                    }
+                    new TextBlock { Text = $"{previewWidth}×{previewHeight} px", FontSize = 12, Foreground = MutedBrush },
+                    image
                 }
-                : new TextBlock
-                {
-                    Text = "Image preview unavailable: " + error,
-                    Foreground = MutedBrush,
-                    TextWrapping = TextWrapping.Wrap
-                }
-        });
+            }, MaterialIconKind.Image));
+        }
+        else
+        {
+            _items.Children.Add(CreatePreviewCard("Image preview", new TextBlock
+            {
+                Text = "Preview unavailable: " + error,
+                Foreground = TextBrush,
+                TextWrapping = TextWrapping.Wrap
+            }, MaterialIconKind.Image));
+        }
     }
 
 
