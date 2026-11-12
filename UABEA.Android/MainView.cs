@@ -15,6 +15,8 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Material.Icons;
 using Material.Icons.Avalonia;
+using Button = Avalonia.Controls.Button;
+using ProgressBar = Avalonia.Controls.ProgressBar;
 
 namespace UABEA.Mobile;
 
