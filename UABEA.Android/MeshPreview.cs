@@ -357,9 +357,9 @@ internal sealed class MeshPreviewControl : Control
         _lastPinchDistance = 0;
     }
 
-    protected override void OnRender(DrawingContext context)
+    public override void Render(DrawingContext context)
     {
-        base.OnRender(context);
+        base.Render(context);
         var bounds = new Rect(Bounds.Size);
         context.FillRectangle(new SolidColorBrush(Color.FromRgb(12, 12, 12)), bounds);
 
