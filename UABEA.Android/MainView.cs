@@ -1502,30 +1502,11 @@ public sealed class MainView : UserControl
             return;
         }
 
-        var viewer = new MeshPreviewControl(meshData.Vertices, meshData.Indices)
+        // Inline preview is intentionally passive; camera controls exist only in fullscreen.
+        var viewer = new MeshPreviewControl(meshData.Vertices, meshData.Indices, interactive: false)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
-
-        var resetButton = new Button
-        {
-            Content = "Reset camera",
-            Background = SurfaceHighBrush,
-            Foreground = TextBrush,
-            CornerRadius = new CornerRadius(12),
-            MinHeight = 42
-        };
-        resetButton.Click += (_, _) => viewer.ResetView();
-
-        var wireframeButton = new Button
-        {
-            Content = "Wireframe",
-            Background = SurfaceHighBrush,
-            Foreground = TextBrush,
-            CornerRadius = new CornerRadius(12),
-            MinHeight = 42
-        };
-        wireframeButton.Click += (_, _) => viewer.ToggleWireframe();
 
         var fullscreenButton = new Button
         {
@@ -1542,7 +1523,7 @@ public sealed class MainView : UserControl
         {
             try
             {
-                var largeViewer = new MeshPreviewControl(meshData.Vertices, meshData.Indices, allowVerticalDrag: true)
+                var largeViewer = new MeshPreviewControl(meshData.Vertices, meshData.Indices, interactive: true)
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     VerticalAlignment = VerticalAlignment.Stretch,
@@ -1575,13 +1556,26 @@ public sealed class MainView : UserControl
                     CornerRadius = new CornerRadius(10),
                     MinHeight = 42
                 };
+                var wireframeLarge = new Button
+                {
+                    Content = "Wireframe",
+                    Background = SurfaceHighBrush,
+                    Foreground = TextBrush,
+                    CornerRadius = new CornerRadius(10),
+                    MinHeight = 42
+                };
 
-                closeButton.Click += (_, _) => _pageLayers.Children.Remove(overlay);
+                closeButton.Click += (_, _) =>
+                {
+                    largeViewer.Dispose();
+                    _pageLayers.Children.Remove(overlay);
+                };
                 resetLarge.Click += (_, _) => largeViewer.ResetView();
+                wireframeLarge.Click += (_, _) => largeViewer.ToggleWireframe();
 
                 var layout = new Grid
                 {
-                    RowDefinitions = new RowDefinitions("Auto,*,Auto"),
+                    RowDefinitions = new RowDefinitions("Auto,*,Auto")
                 };
                 var header = new Grid
                 {
@@ -1605,10 +1599,26 @@ public sealed class MainView : UserControl
 
                 var footer = new StackPanel
                 {
-                    Orientation = Orientation.Horizontal,
+                    Orientation = Orientation.Vertical,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Spacing = 8,
-                    Children = { resetLarge }
+                    Children =
+                    {
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            Spacing = 8,
+                            Children = { resetLarge, wireframeLarge }
+                        },
+                        new TextBlock
+                        {
+                            Text = "Drag to rotate • Pinch to zoom • Two-finger drag to orbit",
+                            Foreground = MutedBrush,
+                            FontSize = 11,
+                            HorizontalAlignment = HorizontalAlignment.Center
+                        }
+                    }
                 };
                 layout.Children.Add(footer);
                 Grid.SetRow(footer, 2);
@@ -1638,14 +1648,6 @@ public sealed class MainView : UserControl
             }
         };
 
-        var controls = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 8,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Children = { resetButton, wireframeButton }
-        };
-
         var content = new StackPanel
         {
             Spacing = 8,
@@ -1653,10 +1655,9 @@ public sealed class MainView : UserControl
             {
                 topBar,
                 viewer,
-                controls,
                 new TextBlock
                 {
-                    Text = "Swipe horizontally to rotate • Two-finger drag to tilt • Pinch to zoom • Swipe vertically to scroll",
+                    Text = "Open full-screen to rotate and zoom the model",
                     FontSize = 11,
                     Foreground = MutedBrush,
                     HorizontalAlignment = HorizontalAlignment.Center
