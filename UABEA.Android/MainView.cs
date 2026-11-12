@@ -24,6 +24,9 @@ public sealed class MainView : UserControl
     private readonly TextBlock _status;
     private readonly StackPanel _items;
     private readonly TextBox _searchBox;
+    private readonly ComboBox _filterBox;
+    private readonly Button _filterButton;
+    private readonly ScrollViewer _scrollViewer;
     private readonly Button _backButton;
     private readonly Button _loadMoreButton;
     private readonly Avalonia.Controls.ProgressBar _loadingBar;
@@ -36,6 +39,8 @@ public sealed class MainView : UserControl
     private List<RowData> _currentRows = new();
     private List<AssetRow> _assetRows = new();
     private int _visibleRows;
+    private bool _isRendering;
+    private bool _isBusy;
 
     private enum BrowserPage { Home, Bundle, Assets, EntryDetails, AssetDetails }
 
@@ -104,7 +109,29 @@ public sealed class MainView : UserControl
             IsVisible = false
         };
         _searchBox.TextChanged += (_, _) => RefreshCurrentList();
-        root.Children.Add(_searchBox);
+
+        _filterButton = new Button
+        {
+            Content = "Sort / Type", MinHeight = 44,
+            Margin = new Thickness(8, 0, 0, 0),
+            Background = Brush.Parse("#263946"), Foreground = Brushes.White
+        };
+        _filterButton.Click += (_, _) => _filterBox.IsVisible = !_filterBox.IsVisible;
+
+        var searchToolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        searchToolbar.Children.Add(_searchBox);
+        Grid.SetColumn(_filterButton, 1);
+        searchToolbar.Children.Add(_filterButton);
+        root.Children.Add(searchToolbar);
+
+        _filterBox = new ComboBox
+        {
+            MinHeight = 42, HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = Brush.Parse("#17232D"), Foreground = Brushes.White,
+            IsVisible = false, ItemsSource = new[] { "All types" }, SelectedIndex = 0
+        };
+        _filterBox.SelectionChanged += (_, _) => RefreshCurrentList();
+        root.Children.Add(_filterBox);
 
         _loadingBar = new Avalonia.Controls.ProgressBar
         {
@@ -148,12 +175,14 @@ public sealed class MainView : UserControl
         root.Children.Add(_loadMoreButton);
 
         // One scroll viewer only. Nested scroll viewers were competing for touch gestures.
-        Content = new ScrollViewer
+        _scrollViewer = new ScrollViewer
         {
             Content = root,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
+        _scrollViewer.ScrollChanged += (_, _) => TryAutoLoadMore();
+        Content = _scrollViewer;
         Background = Brush.Parse("#101820");
     }
 
@@ -167,11 +196,16 @@ public sealed class MainView : UserControl
         var file = selected.FirstOrDefault();
         if (file is null) return;
 
+        if (_isBusy) return;
+        _isBusy = true;
         SetLoading(true, $"Copying {file.Name}...");
         _items.Children.Clear();
         _searchBox.IsVisible = false;
+        _filterButton.IsVisible = false;
+        _filterBox.IsVisible = false;
         _loadMoreButton.IsVisible = false;
         _searchBox.Text = "";
+        SetFilterOptions(new[] { "All types" });
 
         string? localPath = null;
         try
@@ -196,6 +230,11 @@ public sealed class MainView : UserControl
             _assetRows = result.AssetRows;
             _status.Text = result.Summary;
             _searchBox.IsVisible = result.Page is BrowserPage.Bundle or BrowserPage.Assets;
+            _filterButton.IsVisible = _searchBox.IsVisible;
+            _filterBox.IsVisible = false;
+            SetFilterOptions(result.Page == BrowserPage.Assets
+                ? result.AssetRows.Select(row => row.TypeName)
+                : result.Rows.Select(row => GetEntryKind(row.Title)));
             _searchBox.Watermark = result.Page == BrowserPage.Bundle
                 ? "Search bundle entries..." : "Search by asset name or type...";
             _searchBox.Text = "";
@@ -216,6 +255,7 @@ public sealed class MainView : UserControl
         }
         finally
         {
+            _isBusy = false;
             SetLoading(false);
             // Keep the copied file available while AssetsTools has it open.
         }
@@ -252,7 +292,7 @@ public sealed class MainView : UserControl
         if (AssetsFile.IsAssetsFile(path))
         {
             var assets = manager.LoadAssetsFile(path, false);
-            var rows = BuildAssetRows(assets);
+            var rows = BuildAssetRows(manager, assets);
             return new OpenResult(manager, null, assets,
                 rows.Select(row => new RowData(row.Name,
                     $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
@@ -264,47 +304,37 @@ public sealed class MainView : UserControl
         throw new InvalidDataException($"Unsupported or unrecognized Unity file: {fileName}");
     }
 
-    private static List<AssetRow> BuildAssetRows(AssetsFileInstance instance)
+    private static List<AssetRow> BuildAssetRows(AssetsManager manager, AssetsFileInstance instance)
     {
-        var result = new List<AssetRow>(instance.file.AssetInfos.Count);
-        foreach (var info in instance.file.AssetInfos)
+        var infos = instance.file.AssetInfos;
+        var result = new List<AssetRow>(infos.Count);
+        foreach (var info in infos)
         {
             var typeId = info.GetTypeId(instance.file);
             var typeName = Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
-            var name = TryReadAssetName(instance.file, info, typeName);
+            var name = TryReadAssetName(manager, instance, info, typeName);
             result.Add(new AssetRow(info, name, typeName));
         }
         return result;
     }
 
-    private static string TryReadAssetName(AssetsFile file, AssetFileInfo info, string fallbackType)
+    private static string TryReadAssetName(AssetsManager manager, AssetsFileInstance instance,
+        AssetFileInfo info, string fallbackType)
     {
         try
         {
-            var typeId = info.GetTypeId(file);
-            TypeTreeType? typeTree = null;
-            if (typeId == (int)AssetClassID.MonoBehaviour || typeId < 0)
-                typeTree = file.Metadata.FindTypeTreeTypeByScriptIndex(file.GetScriptIndex(info));
-            else
-                typeTree = file.Metadata.FindTypeTreeTypeByID(typeId);
-
-            if (typeTree is not null && typeTree.Nodes.Count > 1 &&
-                typeTree.Nodes[1].GetNameString(typeTree.StringBuffer) == "m_Name")
-            {
-                var reader = file.Reader;
-                var oldPosition = reader.Position;
-                try
-                {
-                    reader.Position = info.GetAbsoluteByteStart(file);
-                    var name = reader.ReadCountStringInt32();
-                    if (!string.IsNullOrWhiteSpace(name)) return name.Trim();
-                }
-                finally { reader.Position = oldPosition; }
-            }
+            // Use the actual TypeTree layout. m_Name is not necessarily the first field.
+            var baseField = manager.GetBaseField(instance, info);
+            var name = baseField["m_Name"]?.AsString;
+            if (!string.IsNullOrWhiteSpace(name))
+                return name.Trim();
         }
-        catch { /* Some Unity versions do not expose a readable m_Name field. */ }
+        catch
+        {
+            // Some asset classes have no m_Name or cannot be deserialized.
+        }
 
-        return $"{fallbackType} (unnamed)";
+        return $"{fallbackType} ({info.PathId})";
     }
 
     private void RefreshCurrentList()
@@ -317,7 +347,9 @@ public sealed class MainView : UserControl
         if (_currentPage == BrowserPage.Bundle && _currentBundle is not null)
         {
             var entries = _currentBundle.file.BlockAndDirInfo.DirectoryInfos;
+            var selectedType = _filterBox.SelectedItem?.ToString() ?? "All types";
             var filtered = entries.Where(entry => (entry.Flags & 0x02) == 0 &&
+                (selectedType == "All types" || GetEntryKind(entry.Name) == selectedType) &&
                 (Matches(entry.Name, query) || Matches(entry.DecompressedSize.ToString(), query)))
                 .ToList();
 
@@ -333,7 +365,9 @@ public sealed class MainView : UserControl
         else if (_currentPage == BrowserPage.Assets && _currentAssets is not null)
         {
             var assetRows = _assetRows;
+            var selectedType = _filterBox.SelectedItem?.ToString() ?? "All types";
             _currentRows = assetRows
+                .Where(row => selectedType == "All types" || row.TypeName == selectedType)
                 .Where(row => Matches(row.Name, query) || Matches(row.TypeName, query))
                 .Select(row => new RowData(row.Name,
                     $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
@@ -355,15 +389,42 @@ public sealed class MainView : UserControl
 
     private void RenderNextPage()
     {
-        var end = Math.Min(_visibleRows + PageSize, _currentRows.Count);
-        for (var i = _visibleRows; i < end; i++)
+        if (_isRendering || _visibleRows >= _currentRows.Count) return;
+        _isRendering = true;
+        try
         {
-            var row = _currentRows[i];
-            _items.Children.Add(CreateActionRow(row.Title, row.Detail, row.Action));
+            var end = Math.Min(_visibleRows + PageSize, _currentRows.Count);
+            for (var i = _visibleRows; i < end; i++)
+            {
+                var row = _currentRows[i];
+                _items.Children.Add(CreateActionRow(row.Title, row.Detail, row.Action));
+            }
+            _visibleRows = end;
+            _loadMoreButton.IsVisible = _visibleRows < _currentRows.Count;
+            _loadMoreButton.Content = $"Load more ({_currentRows.Count - _visibleRows} remaining)";
         }
-        _visibleRows = end;
-        _loadMoreButton.IsVisible = _visibleRows < _currentRows.Count;
-        _loadMoreButton.Content = $"Load more ({_currentRows.Count - _visibleRows} remaining)";
+        finally { _isRendering = false; }
+    }
+
+    private void TryAutoLoadMore()
+    {
+        if (_isRendering || !_loadMoreButton.IsVisible || _visibleRows >= _currentRows.Count)
+            return;
+        if (_scrollViewer.Offset.Y + _scrollViewer.Viewport.Height >= _scrollViewer.Extent.Height - 140)
+            RenderNextPage();
+    }
+
+    private void SetFilterOptions(IEnumerable<string> values)
+    {
+        var options = new[] { "All types" }
+            .Concat(values.Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(value => value, StringComparer.OrdinalIgnoreCase))
+            .ToArray();
+        var previous = _filterBox.SelectedItem?.ToString() ?? "All types";
+        _filterBox.ItemsSource = options;
+        _filterBox.SelectedItem = options.FirstOrDefault(value =>
+            string.Equals(value, previous, StringComparison.OrdinalIgnoreCase)) ?? "All types";
     }
 
     private async Task OpenBundleEntryAsync(string entryName)
@@ -385,7 +446,7 @@ public sealed class MainView : UserControl
                 if ((entry.Flags & 0x04) != 0)
                 {
                     var assets = manager.LoadAssetsFileFromBundle(bundle, index, false);
-                    var rows = BuildAssetRows(assets);
+                    var rows = BuildAssetRows(manager, assets);
                     return (Assets: assets, Rows: rows, IsSerialized: true,
                         Name: entry.Name, Kind: GetEntryKind(entry.Name),
                         Size: entry.DecompressedSize, Offset: entry.Offset);
@@ -406,6 +467,9 @@ public sealed class MainView : UserControl
                     () => ShowAssetDetails(row.Info))).ToList();
                 _status.Text = $"Assets file: {result.Assets.name}\nAssets: {_currentRows.Count}";
                 _searchBox.IsVisible = true;
+                _filterButton.IsVisible = true;
+                _filterBox.IsVisible = false;
+                SetFilterOptions(result.Rows.Select(row => row.TypeName));
                 _searchBox.Watermark = "Search by asset name or type...";
                 _searchBox.Text = "";
                 _visibleRows = 0;
@@ -415,6 +479,8 @@ public sealed class MainView : UserControl
             {
                 _currentPage = BrowserPage.EntryDetails;
                 _searchBox.IsVisible = false;
+                _filterButton.IsVisible = false;
+                _filterBox.IsVisible = false;
                 _items.Children.Clear();
                 AddDetail("Name", result.Name);
                 AddDetail("Kind", result.Kind);
@@ -439,14 +505,14 @@ public sealed class MainView : UserControl
         if (_currentAssets is null) return;
         _currentPage = BrowserPage.AssetDetails;
         _searchBox.IsVisible = false;
-        _status.Text = $"Asset • {TryReadAssetName(_currentAssets.file, asset,
-            Enum.GetName(typeof(AssetClassID), asset.GetTypeId(_currentAssets.file)) ?? "Asset")}";
+        var assetTypeName = Enum.GetName(typeof(AssetClassID), asset.GetTypeId(_currentAssets.file)) ?? "Asset";
+        _status.Text = $"Asset • {TryReadAssetName(_assetsManager!, _currentAssets, asset, assetTypeName)}";
         _items.Children.Clear();
         _loadMoreButton.IsVisible = false;
         UpdateNavigation();
 
         var typeId = asset.GetTypeId(_currentAssets.file);
-        AddDetail("Name", TryReadAssetName(_currentAssets.file, asset,
+        AddDetail("Name", TryReadAssetName(_assetsManager!, _currentAssets, asset,
             Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}"));
         AddDetail("Type", Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}");
         AddDetail("Path ID", asset.PathId.ToString());
@@ -473,6 +539,8 @@ public sealed class MainView : UserControl
             default:
                 _currentPage = BrowserPage.Home;
                 _searchBox.IsVisible = false;
+                _filterButton.IsVisible = false;
+                _filterBox.IsVisible = false;
                 _items.Children.Clear();
                 _currentRows.Clear();
                 _assetRows.Clear();
@@ -488,6 +556,10 @@ public sealed class MainView : UserControl
         if (_currentBundle is null) return;
         _currentPage = BrowserPage.Bundle;
         _searchBox.IsVisible = true;
+        _filterButton.IsVisible = true;
+        _filterBox.IsVisible = false;
+        SetFilterOptions(_currentBundle.file.BlockAndDirInfo.DirectoryInfos
+            .Where(entry => (entry.Flags & 0x02) == 0).Select(entry => GetEntryKind(entry.Name)));
         _searchBox.Watermark = "Search bundle entries...";
         _status.Text = $"Bundle: {_currentFileName}\nEntries: {_currentRows.Count}";
         UpdateNavigation();
@@ -499,6 +571,9 @@ public sealed class MainView : UserControl
         if (_currentAssets is null) return;
         _currentPage = BrowserPage.Assets;
         _searchBox.IsVisible = true;
+        _filterButton.IsVisible = true;
+        _filterBox.IsVisible = false;
+        SetFilterOptions(_assetRows.Select(row => row.TypeName));
         _searchBox.Watermark = "Search by asset name or type...";
         _status.Text = $"Assets file: {_currentAssets.name}\nAssets: {_currentAssets.file.AssetInfos.Count}";
         UpdateNavigation();
