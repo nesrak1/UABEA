@@ -25,7 +25,7 @@ public sealed class MainView : UserControl
     private readonly TextBox _searchBox;
     private readonly Button _backButton;
     private readonly Button _loadMoreButton;
-    private readonly ProgressBar _loadingBar;
+    private readonly Avalonia.Controls.ProgressBar _loadingBar;
 
     private AssetsManager? _assetsManager;
     private BundleFileInstance? _currentBundle;
@@ -105,7 +105,7 @@ public sealed class MainView : UserControl
         _searchBox.TextChanged += (_, _) => RefreshCurrentList();
         root.Children.Add(_searchBox);
 
-        _loadingBar = new ProgressBar
+        _loadingBar = new Avalonia.Controls.ProgressBar
         {
             IsIndeterminate = true,
             Height = 5,
