@@ -724,7 +724,7 @@ internal sealed class MeshPreviewControl : Control, IDisposable
         _frameHeight = height;
         _frameBitmap = new WriteableBitmap(
             new PixelSize(width, height),
-            new Vector(96, 96),
+            new Avalonia.Vector(96, 96),
             PixelFormat.Bgra8888,
             AlphaFormat.Premul);
         _colorBuffer = new int[width * height];
