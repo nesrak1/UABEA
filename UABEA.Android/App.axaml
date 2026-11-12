@@ -57,9 +57,6 @@
       <Setter Property="Background" Value="#171717" />
       <Setter Property="Foreground" Value="#BDBDBD" />
     </Style>
-    <Style Selector="ScrollBar /template/ Track">
-      <Setter Property="Background" Value="#171717" />
-    </Style>
     <Style Selector="ScrollBar /template/ Thumb">
       <Setter Property="Background" Value="#777777" />
     </Style>
