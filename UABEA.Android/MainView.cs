@@ -33,13 +33,15 @@ public sealed class MainView : UserControl
     private string _currentFileName = "";
     private BrowserPage _currentPage = BrowserPage.Home;
     private List<RowData> _currentRows = new();
+    private List<AssetRow> _assetRows = new();
     private int _visibleRows;
 
     private enum BrowserPage { Home, Bundle, Assets, EntryDetails, AssetDetails }
 
     private sealed record RowData(string Title, string Detail, Action Action);
     private sealed record OpenResult(AssetsManager Manager, BundleFileInstance? Bundle,
-        AssetsFileInstance? Assets, List<RowData> Rows, string Summary, BrowserPage Page);
+        AssetsFileInstance? Assets, List<RowData> Rows, List<AssetRow> AssetRows,
+        string Summary, BrowserPage Page);
     private sealed record AssetRow(AssetFileInfo Info, string Name, string TypeName);
 
     public MainView()
@@ -190,6 +192,7 @@ public sealed class MainView : UserControl
             _currentFileName = file.Name;
             _currentPage = result.Page;
             _currentRows = result.Rows;
+            _assetRows = result.AssetRows;
             _status.Text = result.Summary;
             _searchBox.IsVisible = result.Page is BrowserPage.Bundle or BrowserPage.Assets;
             _searchBox.Watermark = result.Page == BrowserPage.Bundle
@@ -206,6 +209,7 @@ public sealed class MainView : UserControl
             _currentBundle = null;
             _currentAssets = null;
             _currentRows.Clear();
+            _assetRows.Clear();
             _currentPage = BrowserPage.Home;
             UpdateNavigation();
         }
@@ -327,7 +331,7 @@ public sealed class MainView : UserControl
         }
         else if (_currentPage == BrowserPage.Assets && _currentAssets is not null)
         {
-            var assetRows = BuildAssetRows(_currentAssets);
+            var assetRows = _assetRows;
             _currentRows = assetRows
                 .Where(row => Matches(row.Name, query) || Matches(row.TypeName, query))
                 .Select(row => new RowData(row.Name,
@@ -394,6 +398,7 @@ public sealed class MainView : UserControl
             if (result.IsSerialized && result.Assets is not null)
             {
                 _currentAssets = result.Assets;
+                _assetRows = result.Rows;
                 _currentPage = BrowserPage.Assets;
                 _currentRows = result.Rows.Select(row => new RowData(row.Name,
                     $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
@@ -469,6 +474,7 @@ public sealed class MainView : UserControl
                 _searchBox.IsVisible = false;
                 _items.Children.Clear();
                 _currentRows.Clear();
+                _assetRows.Clear();
                 _loadMoreButton.IsVisible = false;
                 _status.Text = "Open a Unity AssetBundle or serialized assets file.";
                 UpdateNavigation();
