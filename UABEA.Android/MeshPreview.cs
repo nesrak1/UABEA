@@ -18,6 +18,7 @@ internal sealed record MeshStreamInfo(string Path, ulong Offset, ulong Size);
 
 internal static class MeshPreviewDataReader
 {
+    private const int MaxPreviewIndices = 360_000;
     private sealed record Channel(int Stream, int Offset, int Format, int Dimension);
     private sealed record StreamLayout(int Offset, int Stride);
 
