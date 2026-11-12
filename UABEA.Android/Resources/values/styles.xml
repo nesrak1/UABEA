@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+  <style name="UABEAStartingTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+    <item name="android:windowSplashScreenBackground">#000000</item>
+    <item name="android:windowSplashScreenAnimatedIcon">@android:drawable/sym_def_app_icon</item>
+    <item name="android:postSplashScreenTheme">@style/UABEATheme</item>
+    <item name="android:windowBackground">#000000</item>
+  </style>
   <style name="UABEATheme" parent="@style/Theme.AppCompat.DayNight.NoActionBar">
     <item name="android:fontFamily">sans</item>
-    <item name="android:colorAccent">#56C3F2</item>
+    <item name="android:colorAccent">#FFFFFF</item>
     <item name="android:windowLightStatusBar">false</item>
-    <item name="android:navigationBarColor">#101820</item>
-    <item name="android:statusBarColor">#101820</item>
+    <item name="android:windowLightNavigationBar">false</item>
+    <item name="android:navigationBarColor">#000000</item>
+    <item name="android:statusBarColor">#000000</item>
     <item name="android:windowActionModeOverlay">true</item>
+    <item name="android:windowBackground">#000000</item>
   </style>
 </resources>

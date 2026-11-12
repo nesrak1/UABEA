@@ -25,15 +25,15 @@ public sealed class MainView : UserControl
 {
     private const int PageSize = 150;
 
-    private static readonly IBrush BackgroundBrush = Brush.Parse("#101418");
-    private static readonly IBrush SurfaceBrush = Brush.Parse("#171D23");
-    private static readonly IBrush SurfaceContainerBrush = Brush.Parse("#202830");
-    private static readonly IBrush SurfaceHighBrush = Brush.Parse("#28343E");
-    private static readonly IBrush OutlineBrush = Brush.Parse("#3D4A55");
-    private static readonly IBrush PrimaryBrush = Brush.Parse("#56C3F2");
-    private static readonly IBrush OnPrimaryBrush = Brush.Parse("#06202B");
-    private static readonly IBrush TextBrush = Brush.Parse("#E2EAF0");
-    private static readonly IBrush MutedBrush = Brush.Parse("#A9B7C2");
+    private static readonly IBrush BackgroundBrush = Brush.Parse("#000000");
+    private static readonly IBrush SurfaceBrush = Brush.Parse("#0D0D0D");
+    private static readonly IBrush SurfaceContainerBrush = Brush.Parse("#171717");
+    private static readonly IBrush SurfaceHighBrush = Brush.Parse("#252525");
+    private static readonly IBrush OutlineBrush = Brush.Parse("#414141");
+    private static readonly IBrush PrimaryBrush = Brush.Parse("#FFFFFF");
+    private static readonly IBrush OnPrimaryBrush = Brush.Parse("#000000");
+    private static readonly IBrush TextBrush = Brush.Parse("#FFFFFF");
+    private static readonly IBrush MutedBrush = Brush.Parse("#BDBDBD");
 
     private readonly TextBlock _status;
     private readonly StackPanel _items;

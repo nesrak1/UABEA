@@ -15,10 +15,56 @@
       <Setter Property="CornerRadius" Value="16" />
       <Setter Property="MinHeight" Value="48" />
       <Setter Property="FontSize" Value="14" />
+      <Setter Property="Background" Value="#171717" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="BorderBrush" Value="#414141" />
+      <Setter Property="CaretBrush" Value="#FFFFFF" />
+      <Setter Property="SelectionBrush" Value="#555555" />
     </Style>
     <Style Selector="ComboBox">
       <Setter Property="MinHeight" Value="46" />
       <Setter Property="FontSize" Value="14" />
+      <Setter Property="Background" Value="#171717" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="BorderBrush" Value="#414141" />
+    </Style>
+    <Style Selector="ComboBoxItem">
+      <Setter Property="Background" Value="#171717" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="Padding" Value="14,12" />
+    </Style>
+    <Style Selector="ComboBoxItem:pointerover">
+      <Setter Property="Background" Value="#333333" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected">
+      <Setter Property="Background" Value="#414141" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="ContextMenu">
+      <Setter Property="Background" Value="#171717" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="MenuItem">
+      <Setter Property="Background" Value="#171717" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="MenuItem:pointerover">
+      <Setter Property="Background" Value="#333333" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="ScrollBar">
+      <Setter Property="Background" Value="#171717" />
+      <Setter Property="Foreground" Value="#BDBDBD" />
+    </Style>
+    <Style Selector="ScrollBar / Track">
+      <Setter Property="Background" Value="#171717" />
+    </Style>
+    <Style Selector="ScrollBar / Thumb">
+      <Setter Property="Background" Value="#777777" />
+    </Style>
+    <Style Selector="ScrollBar / Thumb:pointerover">
+      <Setter Property="Background" Value="#FFFFFF" />
     </Style>
   </Application.Styles>
 </Application>

@@ -6,7 +6,7 @@ namespace UABEA.Mobile;
 
 [Activity(
     Label = "UABEA Mobile",
-    Theme = "@style/UABEATheme",
+    Theme = "@style/UABEAStartingTheme",
     MainLauncher = true,
     Exported = true,
     ConfigurationChanges = ConfigChanges.Orientation |
