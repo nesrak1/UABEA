@@ -822,6 +822,10 @@ public sealed class MainView : UserControl
         {
             await ShowFontPreviewAsync(manager, instance, asset);
         }
+        else if (typeId == (int)AssetClassID.Mesh)
+        {
+            await ShowMeshPreviewAsync(manager, instance, asset);
+        }
     }
 
     private async Task ShowTexturePreviewAsync(
@@ -1414,6 +1418,106 @@ public sealed class MainView : UserControl
         BitConverter.GetBytes(wavData.Length - 8).CopyTo(wavData, 4);
         BitConverter.GetBytes(16).CopyTo(wavData, 16);
         BitConverter.GetBytes(wavData.Length - 44).CopyTo(wavData, 40);
+    }
+
+    private async Task ShowMeshPreviewAsync(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        var loadingCard = AddPreviewLoadingCard("3D Mesh preview", MaterialIconKind.Image);
+        MeshPreviewData? meshData = null;
+        string? error = null;
+
+        try
+        {
+            meshData = await Task.Run(() =>
+            {
+                var field = manager.GetBaseField(instance, asset);
+                if (field == null)
+                    throw new InvalidDataException("Mesh data could not be read.");
+                return MeshPreviewDataReader.Read(field);
+            });
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
+        {
+            RemovePreviewLoadingCard(loadingCard);
+            return;
+        }
+
+        RemovePreviewLoadingCard(loadingCard);
+
+        if (meshData == null)
+        {
+            _items.Children.Add(CreatePreviewCard("3D Mesh preview", new TextBlock
+            {
+                Text = "Preview unavailable: " + error,
+                Foreground = TextBrush,
+                TextWrapping = TextWrapping.Wrap
+            }, MaterialIconKind.Image));
+            return;
+        }
+
+        var viewer = new MeshPreviewControl(meshData.Vertices, meshData.Indices)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+
+        var resetButton = new Button
+        {
+            Content = "Reset camera",
+            Background = SurfaceHighBrush,
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(12),
+            MinHeight = 42
+        };
+        resetButton.Click += (_, _) => viewer.ResetView();
+
+        var wireframeButton = new Button
+        {
+            Content = "Wireframe",
+            Background = SurfaceHighBrush,
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(12),
+            MinHeight = 42
+        };
+        wireframeButton.Click += (_, _) => viewer.ToggleWireframe();
+
+        var controls = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Children = { resetButton, wireframeButton }
+        };
+
+        var content = new StackPanel
+        {
+            Spacing = 8,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = $"{meshData.Vertices.Length:N0} vertices • {meshData.Indices.Length / 3:N0} triangles",
+                    FontSize = 12,
+                    Foreground = MutedBrush
+                },
+                viewer,
+                controls,
+                new TextBlock
+                {
+                    Text = "Drag to rotate • Pinch with two fingers to zoom",
+                    FontSize = 11,
+                    Foreground = MutedBrush,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                }
+            }
+        };
+
+        _items.Children.Add(CreatePreviewCard("3D Mesh preview", content, MaterialIconKind.Image));
     }
 
     private async Task ShowFontPreviewAsync(
