@@ -46,6 +46,7 @@ public sealed class MainView : UserControl
     private readonly ComboBox _filterBox;
     private readonly Button _filterButton;
     private readonly ScrollViewer _scrollViewer;
+    private readonly Grid _pageLayers;
     private readonly Button _backButton;
     private readonly Button _loadMoreButton;
     private readonly StackPanel _loadingIndicator;
@@ -276,12 +277,12 @@ public sealed class MainView : UserControl
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
         _scrollViewer.ScrollChanged += (_, _) => TryAutoLoadMore();
-        var pageLayers = new Grid();
-        pageLayers.Children.Add(_scrollViewer);
+        _pageLayers = new Grid();
+        __pageLayers.Children.Add(_scrollViewer);
         _loadingOverlay = new Border { Background = Brush.Parse("#D9000000"), IsVisible = false, HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch, Child = _loadingIndicator };
         _loadingIndicator.HorizontalAlignment = HorizontalAlignment.Center;
         _loadingIndicator.VerticalAlignment = VerticalAlignment.Center;
-        pageLayers.Children.Add(_loadingOverlay);
+        _pageLayers.Children.Add(_loadingOverlay);
         _zoomScale = new ScaleTransform(1, 1);
         _zoomTranslate = new TranslateTransform();
         _zoomImage = new Image { Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch, RenderTransformOrigin = RelativePoint.Center, RenderTransform = new TransformGroup { Children = { _zoomScale, _zoomTranslate } } };
@@ -294,8 +295,8 @@ public sealed class MainView : UserControl
         viewerGrid.Children.Add(_zoomImage);
         viewerGrid.Children.Add(closeViewer);
         _imageViewerOverlay = new Border { Background = Brush.Parse("#FF000000"), IsVisible = false, Child = viewerGrid };
-        pageLayers.Children.Add(_imageViewerOverlay);
-        Content = pageLayers;
+        _pageLayers.Children.Add(_imageViewerOverlay);
+        Content = _pageLayers;
         Background = BackgroundBrush;
     }
 
@@ -1539,71 +1540,87 @@ public sealed class MainView : UserControl
         };
         fullscreenButton.Click += (_, _) =>
         {
-            var largeViewer = new MeshPreviewControl(meshData.Vertices, meshData.Indices)
+            try
             {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
-            Window? fullWindow = null;
-            var closeButton = new Button
-            {
-                Content = "Close",
-                Background = SurfaceHighBrush,
-                Foreground = TextBrush,
-                CornerRadius = new CornerRadius(10),
-                MinHeight = 40
-            };
-            var resetLarge = new Button
-            {
-                Content = "Reset camera",
-                Background = SurfaceHighBrush,
-                Foreground = TextBrush,
-                CornerRadius = new CornerRadius(10),
-                MinHeight = 40
-            };
-            resetLarge.Click += (_, _) => largeViewer.ResetView();
-            closeButton.Click += (_, _) => fullWindow?.Close();
-            fullWindow = new Window
-            {
-                Title = "3D Mesh preview",
-                Background = BackgroundBrush,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                CanResize = false,
-                SystemDecorations = SystemDecorations.None,
-                Content = new Grid
+                var largeViewer = new MeshPreviewControl(meshData.Vertices, meshData.Indices, allowVerticalDrag: true)
+                {
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Stretch,
+                    MinHeight = 0,
+                    Height = double.NaN
+                };
+
+                var overlay = new Border
+                {
+                    Background = BackgroundBrush,
+                    Padding = new Thickness(12),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Stretch
+                };
+
+                var closeButton = new Button
+                {
+                    Content = "Close",
+                    Background = SurfaceHighBrush,
+                    Foreground = TextBrush,
+                    CornerRadius = new CornerRadius(10),
+                    MinHeight = 42,
+                    MinWidth = 76
+                };
+                var resetLarge = new Button
+                {
+                    Content = "Reset camera",
+                    Background = SurfaceHighBrush,
+                    Foreground = TextBrush,
+                    CornerRadius = new CornerRadius(10),
+                    MinHeight = 42
+                };
+
+                closeButton.Click += (_, _) => _pageLayers.Children.Remove(overlay);
+                resetLarge.Click += (_, _) => largeViewer.ResetView();
+
+                var layout = new Grid
                 {
                     RowDefinitions = new RowDefinitions("Auto,*,Auto"),
-                    Margin = new Thickness(12),
+                    RowSpacing = 10
+                };
+                var header = new Grid
+                {
+                    ColumnDefinitions = new ColumnDefinitions("*,Auto"),
                     Children =
                     {
-                        new Grid
+                        new TextBlock
                         {
-                            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-                            Children =
-                            {
-                                new TextBlock
-                                {
-                                    Text = $"{meshData.Vertices.Length:N0} vertices • {meshData.Indices.Length / 3:N0} triangles",
-                                    Foreground = MutedBrush,
-                                    VerticalAlignment = VerticalAlignment.Center
-                                },
-                                closeButton
-                            }
+                            Text = $"3D Mesh preview • {meshData.Vertices.Length:N0} vertices • {meshData.Indices.Length / 3:N0} triangles",
+                            Foreground = MutedBrush,
+                            VerticalAlignment = VerticalAlignment.Center,
+                            TextWrapping = TextWrapping.Wrap
                         },
-                        largeViewer,
-                        new StackPanel
-                        {
-                            Orientation = Orientation.Horizontal,
-                            HorizontalAlignment = HorizontalAlignment.Center,
-                            Spacing = 8,
-                            Children = { resetLarge }
-                        }
+                        closeButton
                     }
-                }
-            };
-            Grid.SetRow(largeViewer, 1);
-            Grid.SetRow((Control)((Grid)fullWindow.Content).Children[2], 2);
-            fullWindow.Show();
+                };
+                Grid.SetColumn(closeButton, 1);
+                layout.Children.Add(header);
+                layout.Children.Add(largeViewer);
+                Grid.SetRow(largeViewer, 1);
+
+                var footer = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Spacing = 8,
+                    Children = { resetLarge }
+                };
+                layout.Children.Add(footer);
+                Grid.SetRow(footer, 2);
+
+                overlay.Child = layout;
+                _pageLayers.Children.Add(overlay);
+            }
+            catch (Exception ex)
+            {
+                _status.Text = "Could not open full-screen Mesh preview: " + ex.Message;
+            }
         };
 
         var topBar = new Grid
@@ -1640,7 +1657,7 @@ public sealed class MainView : UserControl
                 controls,
                 new TextBlock
                 {
-                    Text = "Swipe horizontally to rotate • Pinch to zoom • Swipe vertically to scroll",
+                    Text = "Swipe horizontally to rotate • Two-finger drag to tilt • Pinch to zoom • Swipe vertically to scroll",
                     FontSize = 11,
                     Foreground = MutedBrush,
                     HorizontalAlignment = HorizontalAlignment.Center
