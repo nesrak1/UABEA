@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using AssetsTools.NET.Texture;
+using Fmod5Sharp;
+using Fmod5Sharp.FmodTypes;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -62,6 +64,9 @@ public sealed class MainView : UserControl
     private int _visibleRows;
     private bool _isRendering;
     private bool _isBusy;
+    private global::Android.Media.MediaPlayer? _audioPlayer;
+    private DispatcherTimer? _audioProgressTimer;
+    private string? _audioTempPath;
 
     private enum BrowserPage { Home, Bundle, Assets, EntryDetails, AssetDetails }
 
@@ -725,6 +730,7 @@ public sealed class MainView : UserControl
     private async void ShowAssetDetails(AssetFileInfo asset)
     {
         if (_currentAssets is null || _assetsManager is null) return;
+        StopAudioPlayback();
         var instance = _currentAssets;
         var manager = _assetsManager;
         _currentPage = BrowserPage.AssetDetails;
@@ -776,6 +782,10 @@ public sealed class MainView : UserControl
         {
             await ShowTexturePreviewAsync(manager, instance, asset);
         }
+        else if (typeId == (int)AssetClassID.AudioClip)
+        {
+            await ShowAudioClipPreviewAsync(manager, instance, asset);
+        }
         else if (typeId == (int)AssetClassID.Font)
         {
             await ShowFontPreviewAsync(manager, instance, asset);
@@ -789,10 +799,12 @@ public sealed class MainView : UserControl
         SetLoading(true);
         Avalonia.Media.Imaging.Bitmap? previewBitmap = null;
         string? error = null;
+        int previewWidth = 0;
+        int previewHeight = 0;
 
         try
         {
-            byte[] png = await Task.Run(() =>
+            var imageResult = await Task.Run(() =>
             {
                 var field = manager.GetBaseField(instance, asset);
                 if (field == null)
@@ -864,7 +876,9 @@ public sealed class MainView : UserControl
                     int sourceY = height - 1 - y;
                     for (int x = 0; x < width; x++)
                     {
-                        int sourceX = width - 1 - x;
+                        // Apply the additional horizontal flip requested for the preview.
+                        // The previous horizontal reversal is cancelled; vertical correction remains.
+                        int sourceX = x;
                         int sourceOffset = (sourceY * width + sourceX) * 4;
                         byte blue = bgra[sourceOffset];
                         byte green = bgra[sourceOffset + 1];
@@ -879,10 +893,12 @@ public sealed class MainView : UserControl
                 bitmap.SetPixels(pixels, 0, width, 0, 0, width, height);
                 using var output = new MemoryStream();
                 bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, output);
-                return output.ToArray();
+                return (Png: output.ToArray(), Width: width, Height: height);
             });
 
-            using var imageStream = new MemoryStream(png);
+            previewWidth = imageResult.Width;
+            previewHeight = imageResult.Height;
+            using var imageStream = new MemoryStream(imageResult.Png);
             previewBitmap = new Avalonia.Media.Imaging.Bitmap(imageStream);
         }
         catch (Exception ex)
@@ -914,6 +930,7 @@ public sealed class MainView : UserControl
                     Children =
                     {
                         new TextBlock { Text = "Image preview", FontWeight = FontWeight.SemiBold, Foreground = TextBrush },
+                        new TextBlock { Text = $"{previewWidth}×{previewHeight} px", FontSize = 12, Foreground = MutedBrush },
                         new Image { Source = previewBitmap, Stretch = Stretch.Uniform, MaxHeight = 360 }
                     }
                 }
@@ -924,6 +941,377 @@ public sealed class MainView : UserControl
                     TextWrapping = TextWrapping.Wrap
                 }
         });
+    }
+
+
+    private async Task ShowAudioClipPreviewAsync(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        _status.Text = "Preparing audio preview...";
+        SetLoading(true);
+        string? tempAudioPath = null;
+        string? error = null;
+        string? audioName = null;
+        try
+        {
+            var audioFile = await Task.Run(() =>
+            {
+                var field = manager.GetBaseField(instance, asset);
+                if (field == null)
+                    throw new InvalidDataException("AudioClip data could not be read.");
+
+                audioName = field["m_Name"]?.AsString;
+                string source = field["m_Resource.m_Source"]?.AsString ?? "";
+                ulong offset = field["m_Resource.m_Offset"]?.AsULong ?? 0;
+                ulong size = field["m_Resource.m_Size"]?.AsULong ?? 0;
+                if (string.IsNullOrWhiteSpace(source) || size == 0 || size > int.MaxValue)
+                    throw new InvalidDataException("This AudioClip has no external audio resource or uses embedded data that is not supported yet.");
+
+                byte[] fsbData;
+                if (instance.parentBundle != null)
+                {
+                    string searchPath = source.StartsWith("archive:/", StringComparison.OrdinalIgnoreCase)
+                        ? source.Substring(9) : source;
+                    searchPath = Path.GetFileName(searchPath);
+                    var bundle = instance.parentBundle.file;
+                    var entry = bundle.BlockAndDirInfo.DirectoryInfos.FirstOrDefault(x =>
+                        Path.GetFileName(x.Name).Equals(searchPath, StringComparison.OrdinalIgnoreCase));
+                    if (entry == null)
+                        throw new FileNotFoundException("The AudioClip resource was not found inside the AssetBundle.");
+                    if (offset + size > (ulong)Math.Max(0, entry.DecompressedSize))
+                    {
+                        // Bundle offsets are relative to the resource entry; rely on the reader's bounds check below.
+                    }
+                    bundle.DataReader.Position = entry.Offset + (long)offset;
+                    fsbData = bundle.DataReader.ReadBytes((int)size);
+                }
+                else
+                {
+                    string root = Path.GetDirectoryName(instance.path) ?? "";
+                    string fullPath = Path.IsPathRooted(source) ? source : Path.Combine(root, source);
+                    if (!File.Exists(fullPath))
+                    {
+                        string fallback = Path.Combine(root, Path.GetFileName(source));
+                        if (File.Exists(fallback)) fullPath = fallback;
+                        else throw new FileNotFoundException("The AudioClip resource file was not found beside the assets file.");
+                    }
+                    using var stream = File.OpenRead(fullPath);
+                    if (offset > (ulong)stream.Length || size > (ulong)stream.Length - offset)
+                        throw new InvalidDataException("The AudioClip resource range is outside the resource file.");
+                    stream.Position = (long)offset;
+                    fsbData = new byte[(int)size];
+                    int read = 0;
+                    while (read < fsbData.Length)
+                    {
+                        int count = stream.Read(fsbData, read, fsbData.Length - read);
+                        if (count == 0) throw new EndOfStreamException("The AudioClip resource ended unexpectedly.");
+                        read += count;
+                    }
+                }
+
+                if (fsbData.Length == 0)
+                    throw new InvalidDataException("The AudioClip resource is empty.");
+                if (!FsbLoader.TryLoadFsbFromByteArray(fsbData, out FmodSoundBank bank) ||
+                    bank.Samples == null || bank.Samples.Count == 0)
+                    throw new InvalidDataException("This AudioClip's FMOD sound bank could not be decoded.");
+
+                bank.Samples[0].RebuildAsStandardFileFormat(out byte[] sampleData, out string sampleExtension);
+                if (sampleData == null || sampleData.Length == 0)
+                    throw new InvalidDataException("The audio decoder returned an empty sample.");
+
+                sampleExtension = (sampleExtension ?? "").Trim().TrimStart('.').ToLowerInvariant();
+                if (sampleExtension == "wav")
+                    FixPreviewWav(ref sampleData);
+                if (sampleExtension is not ("wav" or "ogg" or "mp3" or "aac" or "m4a"))
+                    throw new NotSupportedException("This AudioClip uses a format that Android cannot preview directly (" +
+                        (string.IsNullOrEmpty(sampleExtension) ? "unknown" : sampleExtension) + ").");
+
+                return (Data: sampleData, Extension: sampleExtension);
+            });
+
+            tempAudioPath = Path.Combine(Path.GetTempPath(),
+                "uabea-audio-" + Guid.NewGuid().ToString("N") + "." + audioFile.Extension);
+            await File.WriteAllBytesAsync(tempAudioPath, audioFile.Data);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            SetLoading(false);
+        }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
+        {
+            if (!string.IsNullOrEmpty(tempAudioPath))
+            {
+                try { File.Delete(tempAudioPath); } catch { }
+            }
+            return;
+        }
+
+        if (string.IsNullOrEmpty(tempAudioPath))
+        {
+            _items.Children.Add(new Border
+            {
+                Background = SurfaceContainerBrush,
+                BorderBrush = OutlineBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(16),
+                Padding = new Thickness(12),
+                Child = new TextBlock
+                {
+                    Text = "Audio preview unavailable: " + error,
+                    Foreground = MutedBrush,
+                    TextWrapping = TextWrapping.Wrap
+                }
+            });
+            return;
+        }
+
+        _audioTempPath = tempAudioPath;
+        BuildAudioPlayerCard(tempAudioPath, audioName ?? "AudioClip");
+    }
+
+    private void BuildAudioPlayerCard(string audioPath, string audioName)
+    {
+        var playButton = new Button
+        {
+            Content = "▶ Play",
+            MinHeight = 44,
+            Background = PrimaryBrush,
+            Foreground = OnPrimaryBrush,
+            CornerRadius = new CornerRadius(13),
+            FontWeight = FontWeight.SemiBold
+        };
+        var loopCheck = new CheckBox
+        {
+            Content = "Loop",
+            Foreground = TextBrush,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var volumeLabel = new TextBlock
+        {
+            Text = "Volume 100%",
+            FontSize = 12,
+            Foreground = MutedBrush,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var volumeSlider = new Slider
+        {
+            Minimum = 0,
+            Maximum = 1,
+            Value = 1,
+            MinWidth = 120
+        };
+        var positionSlider = new Slider
+        {
+            Minimum = 0,
+            Maximum = 1,
+            Value = 0,
+            MinWidth = 160
+        };
+        var timeLabel = new TextBlock
+        {
+            Text = "00:00 / 00:00",
+            FontSize = 12,
+            Foreground = MutedBrush,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        var playerStatus = new TextBlock
+        {
+            Text = "Ready to play",
+            FontSize = 12,
+            Foreground = MutedBrush
+        };
+
+        global::Android.Media.MediaPlayer? player = null;
+        bool updatingPosition = false;
+        bool isPrepared = false;
+
+        void UpdateTime()
+        {
+            if (player == null || !isPrepared) return;
+            int duration = Math.Max(0, player.Duration);
+            int current = Math.Clamp(player.CurrentPosition, 0, Math.Max(1, duration));
+            updatingPosition = true;
+            positionSlider.Maximum = Math.Max(1, duration);
+            positionSlider.Value = current;
+            updatingPosition = false;
+            timeLabel.Text = $"{FormatAudioTime(current)} / {FormatAudioTime(duration)}";
+        }
+
+        try
+        {
+            player = new global::Android.Media.MediaPlayer();
+            player.SetDataSource(audioPath);
+            player.Prepare();
+            isPrepared = true;
+            _audioPlayer = player;
+            player.IsLooping = loopCheck.IsChecked == true;
+            player.SetVolume(1f, 1f);
+            UpdateTime();
+            playerStatus.Text = "Ready";
+        }
+        catch (Exception ex)
+        {
+            player?.Release();
+            player?.Dispose();
+            _audioPlayer = null;
+            playerStatus.Text = "Could not initialize audio: " + ex.Message;
+            playButton.IsEnabled = false;
+        }
+
+        playButton.Click += (_, _) =>
+        {
+            if (player == null || !isPrepared) return;
+            try
+            {
+                if (player.IsPlaying)
+                {
+                    player.Pause();
+                    playButton.Content = "▶ Play";
+                    playerStatus.Text = "Paused";
+                }
+                else
+                {
+                    if (player.CurrentPosition >= player.Duration)
+                        player.SeekTo(0);
+                    player.Start();
+                    playButton.Content = "Ⅱ Pause";
+                    playerStatus.Text = "Playing";
+                }
+                UpdateTime();
+            }
+            catch (Exception ex)
+            {
+                playerStatus.Text = "Playback error: " + ex.Message;
+            }
+        };
+
+        loopCheck.IsCheckedChanged += (_, _) =>
+        {
+            if (player != null)
+                player.IsLooping = loopCheck.IsChecked == true;
+        };
+
+        volumeSlider.PropertyChanged += (_, args) =>
+        {
+            if (args.Property == RangeBase.ValueProperty)
+            {
+                float volume = (float)Math.Clamp(volumeSlider.Value, 0, 1);
+                volumeLabel.Text = $"Volume {(int)Math.Round(volume * 100)}%";
+                player?.SetVolume(volume, volume);
+            }
+        };
+
+        positionSlider.PropertyChanged += (_, args) =>
+        {
+            if (args.Property == RangeBase.ValueProperty && !updatingPosition && player != null && isPrepared)
+            {
+                int target = (int)Math.Clamp(positionSlider.Value, 0, Math.Max(0, player.Duration));
+                try { player.SeekTo(target); } catch { }
+                timeLabel.Text = $"{FormatAudioTime(target)} / {FormatAudioTime(Math.Max(0, player.Duration))}";
+            }
+        };
+
+        if (player != null)
+        {
+            player.Completion += (_, _) =>
+            {
+                playButton.Content = "▶ Play";
+                playerStatus.Text = loopCheck.IsChecked == true ? "Looping" : "Finished";
+                UpdateTime();
+            };
+            _audioProgressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            _audioProgressTimer.Tick += (_, _) =>
+            {
+                if (player.IsPlaying)
+                    UpdateTime();
+            };
+            _audioProgressTimer.Start();
+        }
+
+        _items.Children.Add(new Border
+        {
+            Background = SurfaceContainerBrush,
+            BorderBrush = OutlineBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(12),
+            Child = new StackPanel
+            {
+                Spacing = 10,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Audio preview • " + audioName,
+                        FontWeight = FontWeight.SemiBold,
+                        Foreground = TextBrush,
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    playerStatus,
+                    playButton,
+                    positionSlider,
+                    timeLabel,
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 8,
+                        Children = { loopCheck }
+                    },
+                    new TextBlock { Text = "Volume", FontSize = 12, Foreground = MutedBrush },
+                    volumeSlider,
+                    volumeLabel
+                }
+            }
+        });
+    }
+
+    private void StopAudioPlayback()
+    {
+        try { _audioProgressTimer?.Stop(); } catch { }
+        _audioProgressTimer = null;
+        try
+        {
+            if (_audioPlayer != null)
+            {
+                if (_audioPlayer.IsPlaying) _audioPlayer.Stop();
+                _audioPlayer.Release();
+                _audioPlayer.Dispose();
+            }
+        }
+        catch { }
+        _audioPlayer = null;
+        if (!string.IsNullOrEmpty(_audioTempPath))
+        {
+            try { File.Delete(_audioTempPath); } catch { }
+            _audioTempPath = null;
+        }
+    }
+
+    private static string FormatAudioTime(int milliseconds)
+    {
+        int seconds = Math.Max(0, milliseconds / 1000);
+        return $"{seconds / 60:00}:{seconds % 60:00}";
+    }
+
+    private static void FixPreviewWav(ref byte[] wavData)
+    {
+        if (wavData.Length < 44 ||
+            System.Text.Encoding.ASCII.GetString(wavData, 0, 4) != "RIFF" ||
+            System.Text.Encoding.ASCII.GetString(wavData, 8, 4) != "WAVE")
+            return;
+
+        int originalLength = wavData.Length;
+        for (int i = 36; i < originalLength - 2; i++)
+            wavData[i] = wavData[i + 2];
+        Array.Resize(ref wavData, originalLength - 2);
+        BitConverter.GetBytes(wavData.Length - 8).CopyTo(wavData, 4);
+        BitConverter.GetBytes(16).CopyTo(wavData, 16);
+        BitConverter.GetBytes(wavData.Length - 44).CopyTo(wavData, 40);
     }
 
     private async Task ShowFontPreviewAsync(
@@ -1105,6 +1493,8 @@ public sealed class MainView : UserControl
 
     private void GoBack()
     {
+        if (_currentPage == BrowserPage.AssetDetails)
+            StopAudioPlayback();
         switch (_currentPage)
         {
             case BrowserPage.Assets when _currentBundle is not null:
