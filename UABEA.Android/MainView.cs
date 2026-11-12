@@ -1623,7 +1623,7 @@ public sealed class MainView : UserControl
         });
         panel.Children.Add(titleRow);
         panel.Children.Add(content);
-        return new Border
+        var card = new Border
         {
             Background = SurfaceContainerBrush,
             CornerRadius = new CornerRadius(16),
@@ -1631,6 +1631,23 @@ public sealed class MainView : UserControl
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = panel
         };
+        FadeIn(card);
+        return card;
+    }
+
+    private static void FadeIn(Control control)
+    {
+        control.Opacity = 0;
+        int frame = 0;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(24) };
+        timer.Tick += (_, _) =>
+        {
+            frame++;
+            control.Opacity = Math.Min(1, frame / 5.0);
+            if (frame >= 5)
+                timer.Stop();
+        };
+        timer.Start();
     }
 
     private Border AddPreviewLoadingCard(string title, MaterialIconKind iconKind)
