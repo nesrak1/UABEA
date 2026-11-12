@@ -220,9 +220,9 @@ internal static class MeshPreviewDataReader
 
     private static AssetTypeValueField Child(AssetTypeValueField parent, string name)
     {
-        if (parent == null || parent.IsDummy)
-            return default;
-        return parent.Children.FirstOrDefault(x => x.Name == name) ?? default;
+        if (parent == null)
+            return null!;
+        return parent[name];
     }
 
     private static int ReadInt(AssetTypeValueField field, int fallback)
