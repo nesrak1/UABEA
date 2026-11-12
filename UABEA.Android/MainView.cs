@@ -766,6 +766,80 @@ public sealed class MainView : UserControl
         AddDetail("Absolute file offset",
             asset.GetAbsoluteByteStart(instance.file).ToString("N0") + " bytes");
         AddDetail("Source file", instance.name);
+
+        if (typeId == (int)AssetClassID.TextAsset)
+        {
+            await ShowTextAssetPreviewAsync(manager, instance, asset);
+        }
+    }
+
+    private async Task ShowTextAssetPreviewAsync(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        _status.Text = "Loading text preview...";
+        SetLoading(true);
+
+        string preview;
+        try
+        {
+            preview = await Task.Run(() =>
+            {
+                var field = manager.GetBaseField(instance, asset);
+                var bytes = field["m_Script"].AsByteArray ?? Array.Empty<byte>();
+                const int maxPreviewBytes = 1024 * 1024;
+                bool truncated = bytes.Length > maxPreviewBytes;
+                int length = Math.Min(bytes.Length, maxPreviewBytes);
+
+                string text;
+                if (length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
+                    text = Encoding.Unicode.GetString(bytes, 2, length - 2);
+                else if (length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+                    text = Encoding.BigEndianUnicode.GetString(bytes, 2, length - 2);
+                else if (length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+                    text = Encoding.UTF8.GetString(bytes, 3, length - 3);
+                else
+                    text = Encoding.UTF8.GetString(bytes, 0, length);
+
+                return truncated
+                    ? text + "\\n\\n[Preview limited to the first 1 MB. Export the asset to view the complete content.]"
+                    : text;
+            });
+        }
+        catch (Exception ex)
+        {
+            preview = $"Could not read TextAsset content: {ex.Message}";
+        }
+        finally
+        {
+            SetLoading(false);
+        }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
+            return;
+
+        _status.Text = "TextAsset preview";
+        _items.Children.Add(new Border
+        {
+            Background = SurfaceContainerBrush,
+            BorderBrush = OutlineBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(12),
+            Child = new ScrollViewer
+            {
+                MaxHeight = 520,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = new TextBlock
+                {
+                    Text = string.IsNullOrEmpty(preview) ? "(This TextAsset is empty.)" : preview,
+                    FontFamily = new FontFamily("monospace"),
+                    FontSize = 13,
+                    Foreground = TextBrush,
+                    TextWrapping = TextWrapping.NoWrap
+                }
+            }
+        });
     }
 
     private void GoBack()
