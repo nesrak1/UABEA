@@ -1594,6 +1594,125 @@ public sealed class MainView : UserControl
         return data;
     }
 
+    private Border CreatePreviewCard(string title, Control content, MaterialIconKind iconKind = MaterialIconKind.Image)
+    {
+        var panel = new StackPanel { Spacing = 9, VerticalAlignment = VerticalAlignment.Center };
+        panel.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.SemiBold, FontSize = 13, Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap });
+        panel.Children.Add(content);
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("34,*") };
+        var icon = CreateIcon(iconKind, 20, PrimaryBrush);
+        Grid.SetColumn(icon, 0); Grid.SetColumn(panel, 1);
+        grid.Children.Add(icon); grid.Children.Add(panel);
+        return new Border { Background = SurfaceContainerBrush, CornerRadius = new CornerRadius(16), Padding = new Thickness(14), HorizontalAlignment = HorizontalAlignment.Stretch, Child = grid };
+    }
+
+    private Border AddPreviewLoadingCard(string title, MaterialIconKind iconKind)
+    {
+        var rotation = new RotateTransform();
+        _previewSpinnerRotations.Add(rotation);
+        var spinner = new TextBlock { Text = "◌", FontSize = 34, Foreground = PrimaryBrush, HorizontalAlignment = HorizontalAlignment.Center, RenderTransform = rotation };
+        var label = new TextBlock { Text = "Loading preview...", FontSize = 12, Foreground = MutedBrush, HorizontalAlignment = HorizontalAlignment.Center };
+        var content = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center };
+        content.Children.Add(spinner); content.Children.Add(label);
+        var card = CreatePreviewCard(title, content, iconKind);
+        card.Tag = rotation;
+        _items.Children.Add(card);
+        if (!_spinnerTimer.IsEnabled) _spinnerTimer.Start();
+        return card;
+    }
+
+    private void RemovePreviewLoadingCard(Border card)
+    {
+        if (card.Tag is RotateTransform rotation) _previewSpinnerRotations.Remove(rotation);
+        _items.Children.Remove(card);
+        if (!_loadingOverlay.IsVisible && _previewSpinnerRotations.Count == 0) _spinnerTimer.Stop();
+    }
+
+    private void OpenImageViewer(Avalonia.Media.Imaging.Bitmap bitmap)
+    {
+        _zoomImage.Source = bitmap;
+        _zoomScale.ScaleX = _zoomScale.ScaleY = 1;
+        _zoomTranslate.X = _zoomTranslate.Y = 0;
+        _zoomPointers.Clear();
+        _lastZoomTap = 0;
+        _imageViewerOverlay.IsVisible = true;
+    }
+
+    private void CloseImageViewer()
+    {
+        _imageViewerOverlay.IsVisible = false;
+        _zoomImage.Source = null;
+        _zoomPointers.Clear();
+        _zoomScale.ScaleX = _zoomScale.ScaleY = 1;
+        _zoomTranslate.X = _zoomTranslate.Y = 0;
+    }
+
+    private void OnZoomPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        _zoomPointers[e.Pointer] = e.GetPosition(_zoomImage);
+        e.Pointer.Capture(_zoomImage);
+        _zoomGestureUsed = false;
+        if (_zoomPointers.Count == 1) _lastPanPoint = e.GetPosition(_zoomImage);
+        else if (_zoomPointers.Count == 2)
+        {
+            var points = _zoomPointers.Values.ToArray();
+            _pinchStartDistance = Distance(points[0], points[1]);
+            _pinchStartScale = _zoomScale.ScaleX;
+            _zoomGestureUsed = true;
+        }
+    }
+
+    private void OnZoomPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (!_zoomPointers.ContainsKey(e.Pointer)) return;
+        Point current = e.GetPosition(_zoomImage);
+        _zoomPointers[e.Pointer] = current;
+        if (_zoomPointers.Count >= 2)
+        {
+            var points = _zoomPointers.Values.Take(2).ToArray();
+            double distance = Distance(points[0], points[1]);
+            if (_pinchStartDistance > 0)
+            {
+                double scale = Math.Clamp(_pinchStartScale * distance / _pinchStartDistance, 1, 6);
+                _zoomScale.ScaleX = _zoomScale.ScaleY = scale;
+            }
+            _zoomGestureUsed = true;
+        }
+        else if (_zoomScale.ScaleX > 1)
+        {
+            _zoomTranslate.X += current.X - _lastPanPoint.X;
+            _zoomTranslate.Y += current.Y - _lastPanPoint.Y;
+        }
+        _lastPanPoint = current;
+    }
+
+    private void OnZoomPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        bool single = _zoomPointers.Count == 1;
+        _zoomPointers.Remove(e.Pointer);
+        e.Pointer.Capture(null);
+        if (single && !_zoomGestureUsed)
+        {
+            long now = Environment.TickCount64;
+            if (now - _lastZoomTap <= 320)
+            {
+                double next = _zoomScale.ScaleX >= 5.5 ? 1 : Math.Min(6, Math.Max(2, _zoomScale.ScaleX * 2));
+                _zoomScale.ScaleX = _zoomScale.ScaleY = next;
+                if (next == 1) _zoomTranslate.X = _zoomTranslate.Y = 0;
+                _lastZoomTap = 0;
+            }
+            else _lastZoomTap = now;
+        }
+        if (_zoomPointers.Count < 2) _pinchStartDistance = 0;
+        if (_zoomPointers.Count == 0) _zoomGestureUsed = false;
+    }
+
+    private static double Distance(Point a, Point b)
+    {
+        double dx = a.X - b.X; double dy = a.Y - b.Y;
+        return Math.Sqrt(dx * dx + dy * dy);
+    }
+
     private void AddDetail(string label, string value)
     {
         var icon = label switch
