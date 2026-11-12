@@ -239,7 +239,7 @@ public sealed class MainView : UserControl
 
     public void RefreshTheme()
     {
-        var dark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
+        var dark = Avalonia.Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
         BackgroundBrush.Color = Color.Parse(dark ? "#101418" : "#F3F6F8");
         SurfaceBrush.Color = Color.Parse(dark ? "#171D23" : "#FFFFFF");
         SurfaceContainerBrush.Color = Color.Parse(dark ? "#202830" : "#E8EEF2");
