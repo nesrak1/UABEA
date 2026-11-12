@@ -278,7 +278,7 @@ public sealed class MainView : UserControl
         };
         _scrollViewer.ScrollChanged += (_, _) => TryAutoLoadMore();
         _pageLayers = new Grid();
-        __pageLayers.Children.Add(_scrollViewer);
+        _pageLayers.Children.Add(_scrollViewer);
         _loadingOverlay = new Border { Background = Brush.Parse("#D9000000"), IsVisible = false, HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch, Child = _loadingIndicator };
         _loadingIndicator.HorizontalAlignment = HorizontalAlignment.Center;
         _loadingIndicator.VerticalAlignment = VerticalAlignment.Center;
@@ -1582,7 +1582,6 @@ public sealed class MainView : UserControl
                 var layout = new Grid
                 {
                     RowDefinitions = new RowDefinitions("Auto,*,Auto"),
-                    RowSpacing = 10
                 };
                 var header = new Grid
                 {
