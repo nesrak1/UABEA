@@ -277,7 +277,7 @@ public sealed class MainView : UserControl
         _scrollViewer.ScrollChanged += (_, _) => TryAutoLoadMore();
         var pageLayers = new Grid();
         pageLayers.Children.Add(_scrollViewer);
-        _loadingOverlay = new Border { Background = Brush.Parse("#B8000000"), IsVisible = false, HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch, Child = _loadingIndicator };
+        _loadingOverlay = new Border { Background = Brush.Parse("#D9000000"), IsVisible = false, HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch, Child = _loadingIndicator };
         _loadingIndicator.HorizontalAlignment = HorizontalAlignment.Center;
         _loadingIndicator.VerticalAlignment = VerticalAlignment.Center;
         pageLayers.Children.Add(_loadingOverlay);
@@ -408,7 +408,7 @@ public sealed class MainView : UserControl
             header.StartsWith("UnityRaw", StringComparison.Ordinal) ||
             header.StartsWith("UnityWeb", StringComparison.Ordinal))
         {
-            var bundle = manager.LoadBundleFile(path, false);
+            var bundle = manager.LoadBundleFile(path, true);
             var rows = new List<RowData>();
             var entries = bundle.file.BlockAndDirInfo.DirectoryInfos;
             foreach (var entry in entries)
@@ -825,7 +825,6 @@ public sealed class MainView : UserControl
     private async Task ShowTexturePreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
     {
-        _status.Text = "Image preview";
         var loadingCard = AddPreviewLoadingCard("Image preview", MaterialIconKind.Image);
         Avalonia.Media.Imaging.Bitmap? previewBitmap = null;
         string? error = null;
@@ -845,13 +844,14 @@ public sealed class MainView : UserControl
                     throw new InvalidDataException("Unsupported or invalid image dimensions.");
 
                 byte[] data = texture.pictureData ?? Array.Empty<byte>();
-                if (texture.m_StreamData.size > 0 && !string.IsNullOrWhiteSpace(texture.m_StreamData.path))
+                ulong streamOffset = ReadUnsignedField(field["m_StreamData"]["offset"]);
+                ulong streamSize = ReadUnsignedField(field["m_StreamData"]["size"]);
+                string streamPath = field["m_StreamData"]["path"]?.AsString ?? texture.m_StreamData.path ?? "";
+                if (streamSize > 0 && !string.IsNullOrWhiteSpace(streamPath))
                 {
                     data = instance.parentBundle != null
-                        ? ReadBundleResource(instance.parentBundle, texture.m_StreamData.path,
-                            texture.m_StreamData.offset, texture.m_StreamData.size)
-                        : ReadExternalResource(instance, texture.m_StreamData.path,
-                            texture.m_StreamData.offset, texture.m_StreamData.size);
+                        ? ReadBundleResource(instance.parentBundle, streamPath, streamOffset, streamSize)
+                        : ReadExternalResource(instance, streamPath, streamOffset, streamSize);
                 }
 
                 if (data.Length == 0)
@@ -948,7 +948,6 @@ public sealed class MainView : UserControl
     private async Task ShowAudioClipPreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
     {
-        _status.Text = "Audio preview";
         var loadingCard = AddPreviewLoadingCard("Audio preview", MaterialIconKind.MusicNote);
         string? tempAudioPath = null;
         string? error = null;
@@ -962,11 +961,13 @@ public sealed class MainView : UserControl
                     throw new InvalidDataException("AudioClip data could not be read.");
 
                 audioName = field["m_Name"]?.AsString;
-                string source = field["m_Resource.m_Source"]?.AsString ?? "";
-                ulong offset = field["m_Resource.m_Offset"]?.AsULong ?? 0;
-                ulong size = field["m_Resource.m_Size"]?.AsULong ?? 0;
+                var resource = field["m_Resource"];
+                var sourceField = resource["m_Source"];
+                string source = sourceField.IsDummy ? "" : sourceField.AsString;
+                ulong offset = ReadUnsignedField(resource["m_Offset"]);
+                ulong size = ReadUnsignedField(resource["m_Size"]);
                 if (string.IsNullOrWhiteSpace(source) || size == 0 || size > int.MaxValue)
-                    throw new InvalidDataException("This AudioClip has no external audio resource or uses embedded data that is not supported yet.");
+                    throw new InvalidDataException("This AudioClip has no external FMOD resource. Embedded audio data is not supported by this preview yet.");
 
                 byte[] fsbData = instance.parentBundle != null
                     ? ReadBundleResource(instance.parentBundle, source, offset, size)
@@ -1207,7 +1208,7 @@ public sealed class MainView : UserControl
                 volumeLabel
             }
         };
-        _items.Children.Add(CreatePreviewCard("Audio preview • " + audioName, playerContent, MaterialIconKind.MusicNote));
+        _items.Children.Add(CreatePreviewCard(audioName, playerContent, MaterialIconKind.MusicNote));
     }
 
     private void StopAudioPlayback()
@@ -1257,7 +1258,6 @@ public sealed class MainView : UserControl
     private async Task ShowFontPreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
     {
-        _status.Text = "Font preview";
         var loadingCard = AddPreviewLoadingCard("Font preview", MaterialIconKind.FormatFont);
         Avalonia.Media.Imaging.Bitmap? previewBitmap = null;
         string? fontName = null;
@@ -1346,7 +1346,6 @@ public sealed class MainView : UserControl
     private async Task ShowTextAssetPreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
     {
-        _status.Text = "Text preview";
         var loadingCard = AddPreviewLoadingCard("Text preview", MaterialIconKind.FileDocumentOutline);
 
         string preview;
@@ -1407,8 +1406,14 @@ public sealed class MainView : UserControl
         _items.Children.Add(CreatePreviewCard("TextAsset preview", textContent, MaterialIconKind.FileDocumentOutline));
     }
 
-    private void GoBack()
+    private async void GoBack()
     {
+        if (_currentPage == BrowserPage.Home || _isBusy)
+            return;
+
+        SetLoading(true, "Going back...");
+        await Task.Yield();
+
         if (_currentPage == BrowserPage.AssetDetails)
             StopAudioPlayback();
         switch (_currentPage)
@@ -1435,6 +1440,7 @@ public sealed class MainView : UserControl
                 UpdateNavigation();
                 break;
         }
+        SetLoading(false);
     }
 
     private void ShowBundleContents()
@@ -1468,6 +1474,7 @@ public sealed class MainView : UserControl
 
     private void SetLoading(bool loading, string? message = null)
     {
+        _loadingIndicator.IsVisible = loading;
         _loadingOverlay.IsVisible = loading;
         if (loading || _previewSpinnerRotations.Count > 0)
         {
@@ -1490,6 +1497,25 @@ public sealed class MainView : UserControl
             path = path.Substring("archive:/".Length);
         while (path.StartsWith("/", StringComparison.Ordinal)) path = path.Substring(1);
         return path;
+    }
+
+    private static ulong ReadUnsignedField(AssetTypeValueField field)
+    {
+        if (field == null || field.IsDummy || field.Value == null)
+            return 0;
+
+        return field.Value.ValueType switch
+        {
+            AssetValueType.UInt8 => field.AsByte,
+            AssetValueType.UInt16 => field.AsUShort,
+            AssetValueType.UInt32 => field.AsUInt,
+            AssetValueType.UInt64 => field.AsULong,
+            AssetValueType.Int8 => checked((ulong)field.AsSByte),
+            AssetValueType.Int16 => checked((ulong)field.AsShort),
+            AssetValueType.Int32 => checked((ulong)field.AsInt),
+            AssetValueType.Int64 => checked((ulong)field.AsLong),
+            _ => throw new InvalidDataException($"Unexpected numeric field type: {field.Value.ValueType}.")
+        };
     }
 
     private static byte[] ReadBundleResource(BundleFileInstance bundleInstance, string source, ulong offset, ulong size)
