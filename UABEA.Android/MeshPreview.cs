@@ -327,6 +327,8 @@ internal static class MeshPreviewDataReader
 internal sealed class MeshPreviewControl : Control
 {
     private readonly Dictionary<IPointer, Point> _pointers = new();
+    private readonly Dictionary<IPointer, Point> _gestureStarts = new();
+    private readonly HashSet<IPointer> _capturedPointers = new();
     private Vector3[] _vertices;
     private int[] _indices;
     private double _yaw = -0.55;
@@ -361,9 +363,19 @@ internal sealed class MeshPreviewControl : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        _pointers[e.Pointer] = e.GetPosition(this);
-        e.Pointer.Capture(this);
-        e.Handled = true;
+        Point position = e.GetPosition(this);
+        _pointers[e.Pointer] = position;
+        _gestureStarts[e.Pointer] = position;
+        if (_pointers.Count >= 2)
+        {
+            foreach (var pointer in _pointers.Keys)
+            {
+                pointer.Capture(this);
+                _capturedPointers.Add(pointer);
+            }
+            _lastPinchDistance = 0;
+            e.Handled = true;
+        }
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -375,6 +387,19 @@ internal sealed class MeshPreviewControl : Control
         Point current = e.GetPosition(this);
         Point previous = _pointers[e.Pointer];
         _pointers[e.Pointer] = current;
+
+        if (_pointers.Count == 1 && !_capturedPointers.Contains(e.Pointer))
+        {
+            Point start = _gestureStarts[e.Pointer];
+            double dx = current.X - start.X;
+            double dy = current.Y - start.Y;
+            if (Math.Abs(dy) > Math.Abs(dx) * 1.15 && Math.Abs(dy) > 5)
+                return;
+            if (Math.Abs(dx) < 7 || Math.Abs(dx) < Math.Abs(dy) * 1.15)
+                return;
+            e.Pointer.Capture(this);
+            _capturedPointers.Add(e.Pointer);
+        }
 
         if (_pointers.Count >= 2)
         {
@@ -400,8 +425,15 @@ internal sealed class MeshPreviewControl : Control
     {
         base.OnPointerReleased(e);
         _pointers.Remove(e.Pointer);
-        e.Pointer.Capture(null);
+        _gestureStarts.Remove(e.Pointer);
+        if (_capturedPointers.Remove(e.Pointer))
+            e.Pointer.Capture(null);
         _lastPinchDistance = 0;
+        if (_pointers.Count == 1)
+        {
+            var remaining = _pointers.Keys.First();
+            _gestureStarts[remaining] = _pointers[remaining];
+        }
         e.Handled = true;
     }
 
@@ -409,6 +441,8 @@ internal sealed class MeshPreviewControl : Control
     {
         base.OnPointerCaptureLost(e);
         _pointers.Clear();
+        _gestureStarts.Clear();
+        _capturedPointers.Clear();
         _lastPinchDistance = 0;
     }
 
@@ -486,7 +520,9 @@ internal sealed class MeshPreviewControl : Control
             float light = Math.Clamp(Math.Abs(Vector3.Dot(normal, Vector3.Normalize(new Vector3(-0.35f, 0.65f, 0.7f)))), 0.18f, 1f);
             byte shade = (byte)(48 + light * 165);
             var fill = new SolidColorBrush(Color.FromRgb(shade, (byte)Math.Min(255, shade + 8), (byte)Math.Min(255, shade + 18)));
-            var pen = new Pen(new SolidColorBrush(Color.FromRgb(20, 25, 32)), _wireframe ? 1.15 : 0.45);
+            var pen = _wireframe
+                ? new Pen(new SolidColorBrush(Color.FromRgb(12, 16, 22)), 1.0)
+                : null;
 
             var geometry = new StreamGeometry();
             using (var g = geometry.Open())
