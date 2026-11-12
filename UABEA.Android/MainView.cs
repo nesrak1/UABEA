@@ -841,22 +841,42 @@ public sealed class MainView : UserControl
                 if (data.Length == 0)
                     throw new InvalidDataException("This texture contains no image data.");
 
-                byte[] rgba = TextureFile.DecodeManaged(
+                // TextureFile.DecodeManaged returns pixels in BGRA byte order.
+                // Android Bitmap.SetPixels expects packed ARGB integers, so swap
+                // the red/blue channels while preserving the source alpha.
+                byte[] bgra = TextureFile.DecodeManaged(
                     data, (TextureFormat)texture.m_TextureFormat,
                     texture.m_Width, texture.m_Height);
-                if (rgba == null || rgba.Length < texture.m_Width * texture.m_Height * 4)
+                if (bgra == null || bgra.Length < texture.m_Width * texture.m_Height * 4)
                     throw new NotSupportedException("This texture format is not supported by the mobile preview decoder.");
 
+                int width = texture.m_Width;
+                int height = texture.m_Height;
                 using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(
-                    texture.m_Width, texture.m_Height, global::Android.Graphics.Bitmap.Config.Argb8888!);
-                var pixels = new int[texture.m_Width * texture.m_Height];
-                for (int i = 0; i < pixels.Length; i++)
+                    width, height, global::Android.Graphics.Bitmap.Config.Argb8888!);
+                var pixels = new int[width * height];
+
+                // Unity texture pixel data is bottom-left oriented. The current
+                // decoder output is also horizontally reversed for this preview
+                // path, so map both axes to restore the expected top-left image.
+                for (int y = 0; y < height; y++)
                 {
-                    int offset = i * 4;
-                    pixels[i] = unchecked((int)0xFF000000) |
-                        (rgba[offset] << 16) | (rgba[offset + 1] << 8) | rgba[offset + 2];
+                    int sourceY = height - 1 - y;
+                    for (int x = 0; x < width; x++)
+                    {
+                        int sourceX = width - 1 - x;
+                        int sourceOffset = (sourceY * width + sourceX) * 4;
+                        byte blue = bgra[sourceOffset];
+                        byte green = bgra[sourceOffset + 1];
+                        byte red = bgra[sourceOffset + 2];
+                        byte alpha = bgra[sourceOffset + 3];
+
+                        pixels[y * width + x] =
+                            (alpha << 24) | (red << 16) | (green << 8) | blue;
+                    }
                 }
-                bitmap.SetPixels(pixels, 0, texture.m_Width, 0, 0, texture.m_Width, texture.m_Height);
+
+                bitmap.SetPixels(pixels, 0, width, 0, 0, width, height);
                 using var output = new MemoryStream();
                 bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, output);
                 return output.ToArray();
