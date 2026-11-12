@@ -329,17 +329,21 @@ internal sealed class MeshPreviewControl : Control
     private readonly Dictionary<IPointer, Point> _pointers = new();
     private readonly Dictionary<IPointer, Point> _gestureStarts = new();
     private readonly HashSet<IPointer> _capturedPointers = new();
-    private Vector3[] _vertices;
-    private int[] _indices;
+    private readonly bool _allowVerticalDrag;
+    private readonly Vector3[] _vertices;
+    private readonly int[] _indices;
     private double _yaw = -0.55;
     private double _pitch = 0.25;
     private double _zoom = 1.0;
     private bool _wireframe;
+    private double _lastPinchDistance;
+    private Point _lastPinchCenter;
 
-    public MeshPreviewControl(Vector3[] vertices, int[] indices)
+    public MeshPreviewControl(Vector3[] vertices, int[] indices, bool allowVerticalDrag = false)
     {
         _vertices = vertices ?? Array.Empty<Vector3>();
         _indices = indices ?? Array.Empty<int>();
+        _allowVerticalDrag = allowVerticalDrag;
         MinHeight = 300;
         Height = 360;
         ClipToBounds = true;
@@ -366,6 +370,7 @@ internal sealed class MeshPreviewControl : Control
         Point position = e.GetPosition(this);
         _pointers[e.Pointer] = position;
         _gestureStarts[e.Pointer] = position;
+
         if (_pointers.Count >= 2)
         {
             foreach (var pointer in _pointers.Keys)
@@ -373,7 +378,9 @@ internal sealed class MeshPreviewControl : Control
                 pointer.Capture(this);
                 _capturedPointers.Add(pointer);
             }
-            _lastPinchDistance = 0;
+            var pair = _pointers.Values.Take(2).ToArray();
+            _lastPinchDistance = Distance(pair[0], pair[1]);
+            _lastPinchCenter = Midpoint(pair[0], pair[1]);
             e.Handled = true;
         }
     }
@@ -381,60 +388,74 @@ internal sealed class MeshPreviewControl : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        if (!_pointers.ContainsKey(e.Pointer))
+        if (!_pointers.TryGetValue(e.Pointer, out Point previous))
             return;
 
         Point current = e.GetPosition(this);
-        Point previous = _pointers[e.Pointer];
         _pointers[e.Pointer] = current;
-
-        if (_pointers.Count == 1 && !_capturedPointers.Contains(e.Pointer))
-        {
-            Point start = _gestureStarts[e.Pointer];
-            double dx = current.X - start.X;
-            double dy = current.Y - start.Y;
-            if (Math.Abs(dy) > Math.Abs(dx) * 1.15 && Math.Abs(dy) > 5)
-                return;
-            if (Math.Abs(dx) < 7 || Math.Abs(dx) < Math.Abs(dy) * 1.15)
-                return;
-            e.Pointer.Capture(this);
-            _capturedPointers.Add(e.Pointer);
-        }
 
         if (_pointers.Count >= 2)
         {
             var pair = _pointers.Values.Take(2).ToArray();
             double distance = Distance(pair[0], pair[1]);
+            Point center = Midpoint(pair[0], pair[1]);
+
             if (_lastPinchDistance > 0)
                 _zoom = Math.Clamp(_zoom * (distance / _lastPinchDistance), 0.35, 4.0);
+
+            double centerDx = center.X - _lastPinchCenter.X;
+            double centerDy = center.Y - _lastPinchCenter.Y;
+            _yaw += centerDx * 0.009;
+            _pitch = Math.Clamp(_pitch + centerDy * 0.009, -1.45, 1.45);
             _lastPinchDistance = distance;
+            _lastPinchCenter = center;
+            InvalidateVisual();
+            e.Handled = true;
+            return;
         }
-        else
+
+        if (!_capturedPointers.Contains(e.Pointer))
         {
-            _yaw += (current.X - previous.X) * 0.009;
-            _pitch = Math.Clamp(_pitch + (current.Y - previous.Y) * 0.009, -1.45, 1.45);
+            Point start = _gestureStarts[e.Pointer];
+            double dx = current.X - start.X;
+            double dy = current.Y - start.Y;
+            bool horizontalIntent = Math.Abs(dx) >= 7 && Math.Abs(dx) >= Math.Abs(dy) * 1.10;
+            bool verticalIntent = Math.Abs(dy) >= 7 && Math.Abs(dy) > Math.Abs(dx) * 1.10;
+
+            if (!horizontalIntent && !(_allowVerticalDrag && verticalIntent))
+                return;
+
+            e.Pointer.Capture(this);
+            _capturedPointers.Add(e.Pointer);
         }
+
+        double deltaX = current.X - previous.X;
+        double deltaY = current.Y - previous.Y;
+        _yaw += deltaX * 0.009;
+        if (_allowVerticalDrag)
+            _pitch = Math.Clamp(_pitch + deltaY * 0.009, -1.45, 1.45);
 
         InvalidateVisual();
         e.Handled = true;
     }
-
-    private double _lastPinchDistance;
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
         _pointers.Remove(e.Pointer);
         _gestureStarts.Remove(e.Pointer);
-        if (_capturedPointers.Remove(e.Pointer))
+        bool wasCaptured = _capturedPointers.Remove(e.Pointer);
+        if (wasCaptured)
             e.Pointer.Capture(null);
+
         _lastPinchDistance = 0;
         if (_pointers.Count == 1)
         {
             var remaining = _pointers.Keys.First();
             _gestureStarts[remaining] = _pointers[remaining];
         }
-        e.Handled = true;
+        if (wasCaptured)
+            e.Handled = true;
     }
 
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
