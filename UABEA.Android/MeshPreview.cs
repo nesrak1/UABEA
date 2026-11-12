@@ -557,6 +557,9 @@ internal sealed class MeshPreviewControl : Control
         }
     }
 
+    private static Point Midpoint(Point a, Point b) =>
+        new((a.X + b.X) * 0.5, (a.Y + b.Y) * 0.5);
+
     private static double Distance(Point a, Point b)
     {
         double x = a.X - b.X;
