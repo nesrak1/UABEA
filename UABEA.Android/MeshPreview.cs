@@ -100,9 +100,15 @@ internal static class MeshPreviewDataReader
         if (vertexCount <= 0 || vertexCount > 500_000)
             throw new InvalidOperationException("The Mesh vertex count is invalid or exceeds the mobile preview limit.");
 
-        byte[] data = streamedVertexData ?? ReadBytes(Child(vertexData, "m_DataSize"));
+        // Unity stores the actual vertex payload in m_Data (TypelessData).
+        // m_DataSize is only a byte count in several serialized versions.
+        byte[] data = streamedVertexData ?? ReadBytes(Child(vertexData, "m_Data"));
         if (data.Length == 0)
-            throw new InvalidOperationException("The Mesh vertex buffer is empty.");
+            data = ReadBytes(Child(vertexData, "_typelessdata"));
+        if (data.Length == 0)
+            data = ReadBytes(Child(vertexData, "m_DataSize"));
+        if (data.Length == 0)
+            throw new InvalidOperationException("The Mesh vertex payload (m_Data) is empty or unavailable.");
 
         var channelsArray = Child(Child(vertexData, "m_Channels"), "Array");
         var channels = new List<Channel>();
@@ -460,22 +466,63 @@ internal static class MeshPreviewDataReader
         if (field == null || field.IsDummy)
             return Array.Empty<byte>();
 
-        try
+        byte[] direct = TryReadByteArray(field);
+        if (direct.Length > 0)
+            return direct;
+
+        // TypelessData is a struct: { size, data: UInt8[] }.
+        // Some Unity type trees expose the byte vector directly as Array.
+        foreach (string childName in new[] { "data", "m_Data", "_typelessdata", "Array" })
         {
-            byte[] direct = field.AsByteArray ?? Array.Empty<byte>();
+            var child = Child(field, childName);
+            if (child == null || child.IsDummy)
+                continue;
+
+            direct = TryReadByteArray(child);
             if (direct.Length > 0)
                 return direct;
+
+            var array = Child(child, "Array");
+            if (array != null && !array.IsDummy && array.Children.Count > 0)
+            {
+                var bytes = new byte[array.Children.Count];
+                for (int i = 0; i < bytes.Length; i++)
+                    bytes[i] = ReadByte(array.Children[i]);
+                return bytes;
+            }
         }
-        catch { }
 
-        var array = Child(field, "Array");
-        if (array == null || array.IsDummy || array.Children.Count == 0)
-            return Array.Empty<byte>();
+        return Array.Empty<byte>();
+    }
 
-        var bytes = new byte[array.Children.Count];
-        for (int i = 0; i < bytes.Length; i++)
-            bytes[i] = (byte)Math.Clamp(ReadInt(array.Children[i], 0), 0, 255);
-        return bytes;
+    private static byte[] TryReadByteArray(AssetTypeValueField field)
+    {
+        try
+        {
+            var bytes = field.AsByteArray;
+            return bytes ?? Array.Empty<byte>();
+        }
+        catch { return Array.Empty<byte>(); }
+    }
+
+    private static byte ReadByte(AssetTypeValueField field)
+    {
+        if (field == null || field.IsDummy || field.Value == null)
+            return 0;
+        try
+        {
+            return field.Value.ValueType switch
+            {
+                AssetValueType.UInt8 => field.AsByte,
+                AssetValueType.Int8 => unchecked((byte)field.AsSByte),
+                AssetValueType.UInt16 => (byte)field.AsUShort,
+                AssetValueType.Int16 => unchecked((byte)field.AsShort),
+                AssetValueType.UInt32 => (byte)field.AsUInt,
+                AssetValueType.Int32 => unchecked((byte)field.AsInt),
+                _ => (byte)Math.Clamp(ReadInt(field, 0), 0, 255)
+            };
+        }
+        catch { return 0; }
     }
 
     private static string ReadString(AssetTypeValueField field)
