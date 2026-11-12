@@ -21,11 +21,17 @@
     <PackageReference Include="Avalonia" Version="11.0.1" />
     <PackageReference Include="Avalonia.Android" Version="11.0.1" />
     <PackageReference Include="Avalonia.Themes.Simple" Version="11.0.1" />
+    <PackageReference Include="Material.Icons.Avalonia" Version="2.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="AssetsTools.NET">
       <HintPath>..\Libs\AssetsTools.NET.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\ReleaseFiles\classdata.tpk"
+                      LogicalName="UABEA.Mobile.classdata.tpk" />
   </ItemGroup>
 </Project>
