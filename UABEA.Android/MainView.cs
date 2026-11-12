@@ -952,6 +952,8 @@ public sealed class MainView : UserControl
         string? tempAudioPath = null;
         string? error = null;
         string? audioName = null;
+        string? audioResourceSource = null;
+        bool needsExternalResource = false;
         try
         {
             var audioFile = await Task.Run(() =>
@@ -965,6 +967,7 @@ public sealed class MainView : UserControl
                 // exposes these streamed-resource members as flattened field names.
                 var sourceField = field["m_Resource.m_Source"];
                 string source = sourceField.IsDummy ? "" : sourceField.AsString;
+                audioResourceSource = source;
                 ulong offset = ReadUnsignedField(field["m_Resource.m_Offset"]);
                 ulong size = ReadUnsignedField(field["m_Resource.m_Size"]);
                 if (string.IsNullOrWhiteSpace(source) || size == 0 || size > int.MaxValue)
@@ -1018,6 +1021,8 @@ public sealed class MainView : UserControl
         catch (Exception ex)
         {
             error = ex.Message;
+            needsExternalResource = ex is FileNotFoundException &&
+                ex.Message.Contains("external resource file was not found", StringComparison.OrdinalIgnoreCase);
         }
         finally { }
 
@@ -1034,17 +1039,127 @@ public sealed class MainView : UserControl
         RemovePreviewLoadingCard(loadingCard);
         if (string.IsNullOrEmpty(tempAudioPath))
         {
-            _items.Children.Add(CreatePreviewCard("Audio preview", new TextBlock
+            var errorContent = new StackPanel { Spacing = 10 };
+            errorContent.Children.Add(new TextBlock
             {
                 Text = "Preview unavailable: " + error,
                 Foreground = TextBrush,
                 TextWrapping = TextWrapping.Wrap
-            }, MaterialIconKind.MusicNote));
+            });
+
+            if (needsExternalResource && !string.IsNullOrWhiteSpace(audioResourceSource))
+            {
+                errorContent.Children.Add(new TextBlock
+                {
+                    Text = "Select the matching .resource, .resources or .resS file. It will be linked to this AudioClip automatically.",
+                    Foreground = MutedBrush,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 12
+                });
+                var chooseResourceButton = new Button
+                {
+                    Content = "Choose audio resource file",
+                    MinHeight = 44,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Background = PrimaryBrush,
+                    Foreground = OnPrimaryBrush,
+                    CornerRadius = new CornerRadius(13),
+                    FontWeight = FontWeight.SemiBold
+                };
+                var errorCard = CreatePreviewCard("Audio preview", errorContent, MaterialIconKind.MusicNote);
+                chooseResourceButton.Click += async (_, _) =>
+                {
+                    chooseResourceButton.IsEnabled = false;
+                    _items.Children.Remove(errorCard);
+                    bool selected = await ChooseAudioResourceAsync(
+                        audioResourceSource, instance, asset);
+                    if (!selected && _currentAssets == instance &&
+                        _currentPage == BrowserPage.AssetDetails)
+                    {
+                        _items.Children.Add(errorCard);
+                        chooseResourceButton.IsEnabled = true;
+                    }
+                };
+                errorContent.Children.Add(chooseResourceButton);
+                // Rebuild the card after adding the action button.
+                errorCard = CreatePreviewCard("Audio preview", errorContent, MaterialIconKind.MusicNote);
+                chooseResourceButton.Click -= null;
+                chooseResourceButton.Click += async (_, _) =>
+                {
+                    chooseResourceButton.IsEnabled = false;
+                    _items.Children.Remove(errorCard);
+                    bool selected = await ChooseAudioResourceAsync(
+                        audioResourceSource, instance, asset);
+                    if (!selected && _currentAssets == instance &&
+                        _currentPage == BrowserPage.AssetDetails)
+                    {
+                        _items.Children.Add(errorCard);
+                        chooseResourceButton.IsEnabled = true;
+                    }
+                };
+                _items.Children.Add(errorCard);
+            }
+            else
+            {
+                _items.Children.Add(CreatePreviewCard("Audio preview", errorContent, MaterialIconKind.MusicNote));
+            }
             return;
         }
 
         _audioTempPath = tempAudioPath;
         BuildAudioPlayerCard(tempAudioPath, audioName ?? "AudioClip");
+    }
+
+    private async Task<bool> ChooseAudioResourceAsync(
+        string source, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is null)
+            return false;
+
+        var selected = await topLevel.StorageProvider.OpenFilePickerAsync(
+            new FilePickerOpenOptions
+            {
+                Title = "Select the AudioClip resource file",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Unity audio resource files")
+                    {
+                        Patterns = new[] { "*.resource", "*.resources", "*.resS", "*.ress" }
+                    }
+                }
+            });
+
+        if (selected.Count == 0)
+            return false;
+
+        string root = GetExternalResourceDirectory(instance);
+        Directory.CreateDirectory(root);
+        string expectedName = Path.GetFileName(NormalizeResourcePath(source));
+        if (string.IsNullOrWhiteSpace(expectedName))
+            expectedName = selected[0].Name;
+        string destination = Path.Combine(root, expectedName);
+
+        try
+        {
+            await using var input = await selected[0].OpenReadAsync();
+            await using var output = File.Create(destination);
+            await input.CopyToAsync(output);
+        }
+        catch (Exception ex)
+        {
+            _items.Children.Add(CreatePreviewCard("Audio resource", new TextBlock
+            {
+                Text = "Could not copy the selected resource: " + ex.Message,
+                Foreground = TextBrush,
+                TextWrapping = TextWrapping.Wrap
+            }, MaterialIconKind.MusicNote));
+            return false;
+        }
+
+        await ShowAudioClipPreviewAsync(_assetsManager!, instance, asset);
+        return true;
     }
 
     private void BuildAudioPlayerCard(string audioPath, string audioName)
@@ -1567,11 +1682,17 @@ public sealed class MainView : UserControl
         return data;
     }
 
-    private static byte[] ReadExternalResource(AssetsFileInstance instance, string source, ulong offset, ulong size)
+    private static string GetExternalResourceDirectory(AssetsFileInstance instance)
     {
         string root = Path.GetDirectoryName(instance.path) ?? "";
         if (instance.parentBundle != null)
             root = Path.GetDirectoryName(root) ?? root;
+        return root;
+    }
+
+    private static byte[] ReadExternalResource(AssetsFileInstance instance, string source, ulong offset, ulong size)
+    {
+        string root = GetExternalResourceDirectory(instance);
         string normalized = NormalizeResourcePath(source);
         string relative = normalized.Replace('/', Path.DirectorySeparatorChar);
         var candidates = new List<string>();
@@ -1845,32 +1966,8 @@ public sealed class MainView : UserControl
         Grid.SetColumn((Control)((Grid)button.Content).Children[1], 1);
         Grid.SetColumn((Control)((Grid)button.Content).Children[2], 2);
         ToolTip.SetTip(button, $"Open {title}");
-        button.Classes.Add("asset-row");
         var suppressNextClick = false;
-        Point pressPoint = default;
-        bool pointerMoved = false;
-        button.PointerPressed += (_, args) =>
-        {
-            suppressNextClick = false;
-            pointerMoved = false;
-            pressPoint = args.GetPosition(button);
-        };
-        button.PointerMoved += (_, args) =>
-        {
-            if (pointerMoved || !args.GetCurrentPoint(button).Properties.IsLeftButtonPressed)
-                return;
-
-            Point current = args.GetPosition(button);
-            double dx = current.X - pressPoint.X;
-            double dy = current.Y - pressPoint.Y;
-            if (Math.Sqrt(dx * dx + dy * dy) >= 10)
-            {
-                pointerMoved = true;
-                suppressNextClick = true;
-                button.Classes.Add("dragging");
-            }
-        };
-        button.PointerReleased += (_, _) => button.Classes.Remove("dragging");
+        button.PointerPressed += (_, _) => suppressNextClick = false;
         button.Holding += (_, args) =>
         {
             if (args.HoldingState.ToString() == "Started")
