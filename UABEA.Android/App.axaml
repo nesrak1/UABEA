@@ -57,13 +57,13 @@
       <Setter Property="Background" Value="#171717" />
       <Setter Property="Foreground" Value="#BDBDBD" />
     </Style>
-    <Style Selector="ScrollBar / Track">
+    <Style Selector="ScrollBar /template/ Track">
       <Setter Property="Background" Value="#171717" />
     </Style>
-    <Style Selector="ScrollBar / Thumb">
+    <Style Selector="ScrollBar /template/ Thumb">
       <Setter Property="Background" Value="#777777" />
     </Style>
-    <Style Selector="ScrollBar / Thumb:pointerover">
+    <Style Selector="ScrollBar /template/ Thumb:pointerover">
       <Setter Property="Background" Value="#FFFFFF" />
     </Style>
   </Application.Styles>
