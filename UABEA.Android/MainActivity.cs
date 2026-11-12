@@ -14,4 +14,11 @@ namespace UABEA.Mobile;
                            ConfigChanges.UiMode)]
 public sealed class MainActivity : AvaloniaMainActivity<App>
 {
+    public override void OnBackPressed()
+    {
+        if (App.CurrentMainView?.HandleSystemBack() == true)
+            return;
+
+        base.OnBackPressed();
+    }
 }
