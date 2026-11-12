@@ -13,7 +13,6 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using Avalonia.Styling;
 using Material.Icons;
 using Material.Icons.Avalonia;
 using Button = Avalonia.Controls.Button;
@@ -24,17 +23,17 @@ namespace UABEA.Mobile;
 
 public sealed class MainView : UserControl
 {
-    private const int PageSize = 48;
+    private const int PageSize = 150;
 
-    private static readonly SolidColorBrush BackgroundBrush = new(Color.Parse("#101418"));
-    private static readonly SolidColorBrush SurfaceBrush = new(Color.Parse("#171D23"));
-    private static readonly SolidColorBrush SurfaceContainerBrush = new(Color.Parse("#202830"));
-    private static readonly SolidColorBrush SurfaceHighBrush = new(Color.Parse("#28343E"));
-    private static readonly SolidColorBrush OutlineBrush = new(Color.Parse("#3D4A55"));
-    private static readonly SolidColorBrush PrimaryBrush = new(Color.Parse("#56C3F2"));
-    private static readonly SolidColorBrush OnPrimaryBrush = new(Color.Parse("#06202B"));
-    private static readonly SolidColorBrush TextBrush = new(Color.Parse("#E2EAF0"));
-    private static readonly SolidColorBrush MutedBrush = new(Color.Parse("#A9B7C2"));
+    private static readonly IBrush BackgroundBrush = Brush.Parse("#101418");
+    private static readonly IBrush SurfaceBrush = Brush.Parse("#171D23");
+    private static readonly IBrush SurfaceContainerBrush = Brush.Parse("#202830");
+    private static readonly IBrush SurfaceHighBrush = Brush.Parse("#28343E");
+    private static readonly IBrush OutlineBrush = Brush.Parse("#3D4A55");
+    private static readonly IBrush PrimaryBrush = Brush.Parse("#56C3F2");
+    private static readonly IBrush OnPrimaryBrush = Brush.Parse("#06202B");
+    private static readonly IBrush TextBrush = Brush.Parse("#E2EAF0");
+    private static readonly IBrush MutedBrush = Brush.Parse("#A9B7C2");
 
     private readonly TextBlock _status;
     private readonly StackPanel _items;
@@ -68,7 +67,6 @@ public sealed class MainView : UserControl
 
     public MainView()
     {
-        RefreshTheme();
         var root = new StackPanel
         {
             Spacing = 16,
@@ -228,28 +226,12 @@ public sealed class MainView : UserControl
         _scrollViewer = new ScrollViewer
         {
             Content = root,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
-            IsScrollChainingEnabled = false
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
         _scrollViewer.ScrollChanged += (_, _) => TryAutoLoadMore();
         Content = _scrollViewer;
         Background = BackgroundBrush;
-    }
-
-    public void RefreshTheme()
-    {
-        var dark = Avalonia.Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
-        BackgroundBrush.Color = Color.Parse(dark ? "#101418" : "#F3F6F8");
-        SurfaceBrush.Color = Color.Parse(dark ? "#171D23" : "#FFFFFF");
-        SurfaceContainerBrush.Color = Color.Parse(dark ? "#202830" : "#E8EEF2");
-        SurfaceHighBrush.Color = Color.Parse(dark ? "#28343E" : "#DCE5EA");
-        OutlineBrush.Color = Color.Parse(dark ? "#3D4A55" : "#C2CDD4");
-        PrimaryBrush.Color = Color.Parse("#56C3F2");
-        OnPrimaryBrush.Color = Color.Parse("#06202B");
-        TextBrush.Color = Color.Parse(dark ? "#E2EAF0" : "#17232C");
-        MutedBrush.Color = Color.Parse(dark ? "#A9B7C2" : "#596B78");
-        InvalidateVisual();
     }
 
     public bool HandleSystemBack()
@@ -610,7 +592,7 @@ public sealed class MainView : UserControl
                 if (index < 0) throw new InvalidDataException("Bundle entry not found.");
                 var entry = entries[index];
 
-                if (bundle.file.IsAssetsFile(index))
+                if ((entry.Flags & 0x04) != 0)
                 {
                     var assets = manager.LoadAssetsFileFromBundle(bundle, index, false);
                     var version = assets.file.Metadata.UnityVersion;
@@ -674,19 +656,15 @@ public sealed class MainView : UserControl
 
     private void ShowAssetDetails(AssetFileInfo asset)
     {
-        if (_currentAssets is null) return;
+        if (_currentAssets is null || _assetsManager is null) return;
         _currentPage = BrowserPage.AssetDetails;
         _searchBox.IsVisible = false;
         _filterButton.IsVisible = false;
         _filterBox.IsVisible = false;
 
-        // Reuse values resolved during background parsing; avoid deserializing
-        // the asset again on the UI thread when opening its details.
-        var cached = _assetRows.FirstOrDefault(row => row.Info.PathId == asset.PathId);
         var typeId = asset.GetTypeId(_currentAssets.file);
-        var typeName = cached?.TypeName ??
-            Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
-        var name = cached?.Name ?? $"{typeName} ({asset.PathId})";
+        var typeName = Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
+        var name = TryReadAssetName(_assetsManager, _currentAssets, asset, typeName);
         _status.Text = $"Asset • {name}";
         _items.Children.Clear();
         _loadMoreButton.IsVisible = false;
@@ -853,7 +831,6 @@ public sealed class MainView : UserControl
         ToolTip.SetTip(button, $"Open {title}");
         button.Click += (_, _) => action();
 
-        // ContextRequested is raised by Avalonia for touch long-press.
         if (exportAction is not null || openAction is not null)
         {
             var menu = new ContextMenu();
@@ -880,25 +857,21 @@ public sealed class MainView : UserControl
             Background = SurfaceContainerBrush,
             CornerRadius = new CornerRadius(16),
             Padding = new Thickness(14),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = new Grid
             {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                ColumnDefinitions = new ColumnDefinitions("36,*"),
+                ColumnDefinitions = new ColumnDefinitions("34,*"),
                 Children =
                 {
                     CreateIcon(iconKind, 20, PrimaryBrush),
                     new StackPanel
                     {
-                        Spacing = 5,
-                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        Spacing = 4,
                         Margin = new Thickness(10, 0, 0, 0),
                         Children =
                         {
                             new TextBlock
                             {
                                 Text = title,
-                                TextWrapping = TextWrapping.Wrap,
                                 FontWeight = FontWeight.SemiBold,
                                 FontSize = 13,
                                 Foreground = MutedBrush
@@ -907,7 +880,6 @@ public sealed class MainView : UserControl
                             {
                                 Text = detail,
                                 FontSize = 14,
-                                HorizontalAlignment = HorizontalAlignment.Stretch,
                                 TextWrapping = TextWrapping.Wrap,
                                 Foreground = TextBrush
                             }
