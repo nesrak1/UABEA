@@ -1536,7 +1536,6 @@ public sealed class MainView : UserControl
             Height = 40,
             Padding = new Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Right,
-            ToolTip = "Open full-screen preview"
         };
         fullscreenButton.Click += (_, _) =>
         {
@@ -1563,12 +1562,12 @@ public sealed class MainView : UserControl
                 MinHeight = 40
             };
             resetLarge.Click += (_, _) => largeViewer.ResetView();
-            closeButton.Click += (_, _) => fullWindow.Close();
+            closeButton.Click += (_, _) => fullWindow?.Close();
             fullWindow = new Window
             {
                 Title = "3D Mesh preview",
                 Background = BackgroundBrush,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 CanResize = false,
                 SystemDecorations = SystemDecorations.None,
                 Content = new Grid
@@ -1604,7 +1603,7 @@ public sealed class MainView : UserControl
             };
             Grid.SetRow(largeViewer, 1);
             Grid.SetRow((Control)((Grid)fullWindow.Content).Children[2], 2);
-            fullWindow.Show(this);
+            fullWindow.Show();
         };
 
         var topBar = new Grid
