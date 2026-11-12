@@ -941,7 +941,7 @@ public sealed class MainView : UserControl
             {
                 canvas.DrawColor(global::Android.Graphics.Color.Rgb(23, 23, 23));
                 paint.Color = global::Android.Graphics.Color.White;
-                paint.Typeface = typeface;
+                paint.SetTypeface(typeface);
                 paint.TextSize = 62;
                 canvas.DrawText("Aa Bb Cc 123", 28, 105, paint);
                 paint.TextSize = 34;
