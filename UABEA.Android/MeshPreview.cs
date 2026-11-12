@@ -7,6 +7,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using System.Runtime.InteropServices;
 
 namespace UABEA.Mobile;
 
@@ -669,6 +672,42 @@ internal sealed class MeshPreviewControl : Control, IDisposable
                     _colorBuffer[pixel] = color;
                 }
             }
+        }
+
+        if (_wireframe)
+        {
+            const int wireColor = unchecked((int)0xFF17202A);
+            DrawDepthLine(pa, pb, za, zb, width, height, wireColor);
+            DrawDepthLine(pb, pc, zb, zc, width, height, wireColor);
+            DrawDepthLine(pc, pa, zc, za, width, height, wireColor);
+        }
+    }
+
+    private void DrawDepthLine(Point start, Point end, float startDepth, float endDepth,
+        int width, int height, int color)
+    {
+        float dx = (float)(end.X - start.X);
+        float dy = (float)(end.Y - start.Y);
+        int steps = Math.Max(1, (int)MathF.Ceiling(Math.Max(Math.Abs(dx), Math.Abs(dy))));
+        float inverseStart = 1f / startDepth;
+        float inverseEnd = 1f / endDepth;
+
+        for (int i = 0; i <= steps; i++)
+        {
+            float t = i / (float)steps;
+            int x = (int)MathF.Round((float)start.X + dx * t);
+            int y = (int)MathF.Round((float)start.Y + dy * t);
+            if ((uint)x >= width || (uint)y >= height)
+                continue;
+
+            float inverseDepth = inverseStart + (inverseEnd - inverseStart) * t;
+            if (inverseDepth <= 0)
+                continue;
+
+            float depth = 1f / inverseDepth;
+            int pixel = y * width + x;
+            if (depth <= _depthBuffer[pixel] + 0.002f)
+                _colorBuffer[pixel] = color;
         }
     }
 
