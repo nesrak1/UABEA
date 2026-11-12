@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using AssetsTools.NET.Texture;
-using UABEAvalonia;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -795,21 +794,9 @@ public sealed class MainView : UserControl
         {
             byte[] png = await Task.Run(() =>
             {
-                var container = new AssetContainer(asset, instance);
-                var template = manager.GetTemplateBaseField(
-                    instance, container.FileReader, container.FilePosition,
-                    container.ClassId, container.MonoId, AssetReadFlags.None);
-
-                var imageData = template.Children.FirstOrDefault(x => x.Name == "image data");
-                if (imageData == null)
-                    throw new InvalidDataException("Texture image data is not available.");
-                imageData.ValueType = AssetValueType.ByteArray;
-
-                var platformBlob = template.Children.FirstOrDefault(x => x.Name == "m_PlatformBlob");
-                if (platformBlob != null && platformBlob.Children.Count > 0)
-                    platformBlob.Children[0].ValueType = AssetValueType.ByteArray;
-
-                var field = template.MakeValue(container.FileReader, container.FilePosition);
+                var field = manager.GetBaseField(instance, asset);
+                if (field == null)
+                    throw new InvalidDataException("Texture data could not be read.");
                 var texture = TextureFile.ReadTextureFile(field);
                 if (texture.m_Width <= 0 || texture.m_Height <= 0 ||
                     texture.m_Width > 8192 || texture.m_Height > 8192)
@@ -933,15 +920,9 @@ public sealed class MainView : UserControl
         {
             byte[] fontBytes = await Task.Run(() =>
             {
-                var container = new AssetContainer(asset, instance);
-                var template = manager.GetTemplateBaseField(
-                    instance, container.FileReader, container.FilePosition,
-                    container.ClassId, container.MonoId, AssetReadFlags.None);
-                var fontData = template.Children.FirstOrDefault(x => x.Name == "m_FontData");
-                if (fontData == null || fontData.Children.Count == 0)
-                    throw new InvalidDataException("This Font asset does not contain embedded font data.");
-                fontData.Children[0].ValueType = AssetValueType.ByteArray;
-                var field = template.MakeValue(container.FileReader, container.FilePosition);
+                var field = manager.GetBaseField(instance, asset);
+                if (field == null)
+                    throw new InvalidDataException("Font data could not be read.");
                 fontName = field["m_Name"]?.AsString;
                 return field["m_FontData.Array"]?.AsByteArray ?? Array.Empty<byte>();
             });
