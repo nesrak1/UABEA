@@ -1646,24 +1646,72 @@ public sealed class MainView : UserControl
 
     private static byte[] ReadBundleResource(BundleFileInstance bundleInstance, string source, ulong offset, ulong size)
     {
+        if (size == 0 || size > int.MaxValue)
+            throw new InvalidDataException("The AudioClip resource size is invalid.");
+
         var entries = bundleInstance.file.BlockAndDirInfo.DirectoryInfos;
         string wanted = NormalizeResourcePath(source);
         string basename = Path.GetFileName(wanted);
-        var exact = entries.Where(x => string.Equals(NormalizeResourcePath(x.Name), wanted, StringComparison.OrdinalIgnoreCase)).ToList();
-        var suffix = entries.Where(x => NormalizeResourcePath(x.Name).EndsWith("/" + wanted, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        // UABEA stores the AudioClip resource path as archive:/<entry>. On Android
+        // some bundles expose a different directory prefix, so compare both the
+        // normalized full path and the basename, case-insensitively.
+        var exact = entries.Where(x =>
+            string.Equals(NormalizeResourcePath(x.Name), wanted, StringComparison.OrdinalIgnoreCase)).ToList();
+        var suffix = entries.Where(x =>
+            NormalizeResourcePath(x.Name).EndsWith("/" + wanted, StringComparison.OrdinalIgnoreCase)).ToList();
         var matches = exact.Count > 0 ? exact : suffix;
+        if (matches.Count == 0 && !string.IsNullOrWhiteSpace(basename))
+        {
+            matches = entries.Where(x =>
+                string.Equals(Path.GetFileName(NormalizeResourcePath(x.Name)), basename,
+                    StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        // Some Unity bundles have a stale/virtual m_Source name while keeping
+        // the actual stream as the only non-serialized resource entry. Only use
+        // this fallback when the requested byte range fits exactly one resource.
         if (matches.Count == 0)
-            matches = entries.Where(x => string.Equals(Path.GetFileName(NormalizeResourcePath(x.Name)), basename, StringComparison.OrdinalIgnoreCase)).ToList();
+        {
+            var possible = entries.Where(x =>
+            {
+                string name = x.Name ?? "";
+                bool serialized = (x.Flags & 0x04) != 0;
+                bool resourceLike = name.EndsWith(".resS", StringComparison.OrdinalIgnoreCase) ||
+                    name.EndsWith(".resource", StringComparison.OrdinalIgnoreCase) ||
+                    name.EndsWith(".resources", StringComparison.OrdinalIgnoreCase) ||
+                    name.EndsWith(".ress", StringComparison.OrdinalIgnoreCase);
+                return !serialized && resourceLike &&
+                    offset <= (ulong)x.DecompressedSize &&
+                    size <= (ulong)x.DecompressedSize - offset;
+            }).ToList();
+
+            if (possible.Count == 1)
+                matches = possible;
+        }
+
         if (matches.Count != 1)
-            throw new FileNotFoundException(matches.Count == 0 ? "The resource path was not found inside the AssetBundle." : "The resource name is ambiguous inside the AssetBundle.");
+            throw new FileNotFoundException(matches.Count == 0
+                ? $"AudioClip resource '{source}' was not found in the AssetBundle. Bundle entries: {entries.Length}."
+                : $"AudioClip resource '{source}' matches multiple AssetBundle entries.");
+
         var entry = matches[0];
         if (offset > (ulong)entry.DecompressedSize || size > (ulong)entry.DecompressedSize - offset)
-            throw new InvalidDataException("The requested resource range is outside the AssetBundle entry.");
+            throw new InvalidDataException($"AudioClip byte range ({offset}, {size}) exceeds bundle entry '{entry.Name}' ({entry.DecompressedSize} bytes).");
+
+        // Use a bounded stream instead of mutating the shared bundle reader's
+        // cursor. This is the same stream strategy used by bundle-entry export.
         var reader = bundleInstance.file.DataReader;
-        reader.Position = entry.Offset + (long)offset;
-        byte[] data = reader.ReadBytes(checked((int)size));
-        if ((ulong)data.Length != size) throw new EndOfStreamException("The AssetBundle resource ended unexpectedly.");
-        return data;
+        lock (reader)
+        {
+            using var segment = new SegmentStream(reader.BaseStream, entry.Offset + (long)offset, (long)size);
+            using var output = new MemoryStream(checked((int)size));
+            segment.CopyTo(output);
+            byte[] data = output.ToArray();
+            if ((ulong)data.Length != size)
+                throw new EndOfStreamException($"Bundle entry '{entry.Name}' ended before the requested AudioClip data was read.");
+            return data;
+        }
     }
 
     private static string GetExternalResourceDirectory(AssetsFileInstance instance)
