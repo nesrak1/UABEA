@@ -36,16 +36,33 @@ internal static class MeshPreviewDataReader
     public static MeshPreviewData Read(AssetTypeValueField mesh, byte[]? streamedVertexData = null)
     {
         var vertexData = Child(mesh, "m_VertexData");
-        Vector3[] vertices = vertexData == null || vertexData.IsDummy
-            ? ReadLegacyVertices(mesh)
-            : ReadVertexData(vertexData, streamedVertexData);
+        Vector3[] vertices;
+        if (vertexData == null || vertexData.IsDummy)
+        {
+            vertices = ReadLegacyVertices(mesh);
+            if (vertices.Length < 3)
+                vertices = ReadCompressedVertices(mesh);
+        }
+        else
+        {
+            try
+            {
+                vertices = ReadVertexData(vertexData, streamedVertexData);
+            }
+            catch when (HasCompressedVertices(mesh))
+            {
+                vertices = ReadCompressedVertices(mesh);
+            }
+        }
 
         if (vertices.Length < 3)
             throw new InvalidOperationException("This Mesh does not contain readable vertex positions.");
 
         int[] indices = ReadIndices(mesh, vertices.Length);
         if (indices.Length < 3)
-            throw new InvalidOperationException("This Mesh does not contain a readable triangle index buffer.");
+            indices = ReadCompressedIndices(mesh, vertices.Length);
+        if (indices.Length < 3)
+            throw new InvalidOperationException("This Mesh has no supported triangle index data. The preview stopped instead of drawing a fake sequential index list.");
 
         return new MeshPreviewData(vertices, indices);
     }
@@ -142,6 +159,175 @@ internal static class MeshPreviewDataReader
         return result;
     }
 
+    private static bool HasCompressedVertices(AssetTypeValueField mesh)
+    {
+        var packed = Child(Child(mesh, "m_CompressedMesh"), "m_Vertices");
+        return ReadInt(Child(packed, "m_NumItems"), 0) >= 9;
+    }
+
+    private static Vector3[] ReadCompressedVertices(AssetTypeValueField mesh)
+    {
+        var packed = Child(Child(mesh, "m_CompressedMesh"), "m_Vertices");
+        int itemCount = ReadInt(Child(packed, "m_NumItems"), 0);
+        int bitSize = ReadInt(Child(packed, "m_BitSize"), 0);
+        float range = ReadFloat(Child(packed, "m_Range"), 0);
+        float start = ReadFloat(Child(packed, "m_Start"), 0);
+        byte[] data = ReadBytes(Child(packed, "m_Data"));
+
+        if (itemCount < 9 || itemCount % 3 != 0 || itemCount > 1_500_000)
+            return Array.Empty<Vector3>();
+
+        uint[] values = UnpackPackedValues(data, itemCount, bitSize);
+        if (values.Length != itemCount)
+            return Array.Empty<Vector3>();
+
+        double maxValue = bitSize == 32 ? uint.MaxValue : (1UL << bitSize) - 1UL;
+        var vertices = new Vector3[itemCount / 3];
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            float x = (float)(values[i * 3] / maxValue * range + start);
+            float y = (float)(values[i * 3 + 1] / maxValue * range + start);
+            float z = (float)(values[i * 3 + 2] / maxValue * range + start);
+            vertices[i] = new Vector3(x, y, z);
+        }
+        return vertices;
+    }
+
+    private static int[] ReadCompressedIndices(AssetTypeValueField mesh, int vertexCount)
+    {
+        var packed = Child(Child(mesh, "m_CompressedMesh"), "m_Triangles");
+        int itemCount = ReadInt(Child(packed, "m_NumItems"), 0);
+        int bitSize = ReadInt(Child(packed, "m_BitSize"), 0);
+        byte[] data = ReadBytes(Child(packed, "m_Data"));
+        if (itemCount < 3 || itemCount > 1_080_000)
+            return Array.Empty<int>();
+
+        uint[] values = UnpackPackedValues(data, itemCount, bitSize);
+        if (values.Length != itemCount)
+            return Array.Empty<int>();
+
+        int indexFormat = ReadInt(Child(mesh, "m_IndexFormat"), vertexCount > ushort.MaxValue ? 1 : 0);
+        int indexSize = indexFormat == 1 ? 4 : 2;
+        var subMeshes = Child(Child(mesh, "m_SubMeshes"), "Array");
+        var result = new List<int>(Math.Min(itemCount, MaxPreviewIndices));
+
+        if (subMeshes != null && !subMeshes.IsDummy && subMeshes.Children.Count > 0)
+        {
+            foreach (var subMesh in subMeshes.Children)
+            {
+                int topology = ReadInt(Child(subMesh, "topology"), 0);
+                int firstByte = ReadInt(Child(subMesh, "firstByte"), 0);
+                int count = ReadInt(Child(subMesh, "indexCount"), 0);
+                int baseVertex = ReadInt(Child(subMesh, "baseVertex"), 0);
+                int firstIndex = firstByte / indexSize;
+                if (topology == 0)
+                    AppendPackedTriangleRange(values, firstIndex, count, baseVertex, vertexCount, result);
+                else if (topology == 1)
+                    AppendPackedStripRange(values, firstIndex, count, baseVertex, vertexCount, result);
+                else if (topology == 2)
+                    AppendPackedQuadRange(values, firstIndex, count, baseVertex, vertexCount, result);
+            }
+        }
+        else
+        {
+            AppendPackedTriangleRange(values, 0, values.Length, 0, vertexCount, result);
+        }
+
+        return result.Count >= 3 ? result.ToArray() : Array.Empty<int>();
+    }
+
+    private static void AppendPackedTriangleRange(uint[] values, int first, int count,
+        int baseVertex, int vertexCount, List<int> output)
+    {
+        if (first < 0 || count < 3 || first > values.Length ||
+            (long)first + count > values.Length)
+            return;
+
+        int usable = Math.Min(count - count % 3, MaxPreviewIndices - output.Count);
+        for (int i = 0; i < usable; i += 3)
+        {
+            long a = (long)values[first + i] + baseVertex;
+            long b = (long)values[first + i + 1] + baseVertex;
+            long c = (long)values[first + i + 2] + baseVertex;
+            if ((ulong)a >= (ulong)vertexCount || (ulong)b >= (ulong)vertexCount ||
+                (ulong)c >= (ulong)vertexCount || a == b || b == c || a == c)
+                continue;
+            output.Add((int)a); output.Add((int)b); output.Add((int)c);
+        }
+    }
+
+    private static void AppendPackedStripRange(uint[] values, int first, int count,
+        int baseVertex, int vertexCount, List<int> output)
+    {
+        if (first < 0 || count < 3 || first > values.Length ||
+            (long)first + count > values.Length)
+            return;
+
+        int end = Math.Min(count, MaxPreviewIndices - output.Count);
+        for (int i = 0; i + 2 < end; i++)
+        {
+            long a = (long)values[first + i] + baseVertex;
+            long b = (long)values[first + i + 1] + baseVertex;
+            long c = (long)values[first + i + 2] + baseVertex;
+            if ((ulong)a >= (ulong)vertexCount || (ulong)b >= (ulong)vertexCount ||
+                (ulong)c >= (ulong)vertexCount || a == b || b == c || a == c)
+                continue;
+            if ((i & 1) == 0)
+            {
+                output.Add((int)a); output.Add((int)b); output.Add((int)c);
+            }
+            else
+            {
+                output.Add((int)a); output.Add((int)c); output.Add((int)b);
+            }
+        }
+    }
+
+    private static void AppendPackedQuadRange(uint[] values, int first, int count,
+        int baseVertex, int vertexCount, List<int> output)
+    {
+        if (first < 0 || count < 4 || first > values.Length ||
+            (long)first + count > values.Length)
+            return;
+
+        int usable = Math.Min(count - count % 4, Math.Max(0, MaxPreviewIndices - output.Count) / 6 * 4);
+        for (int i = 0; i < usable; i += 4)
+        {
+            long a = (long)values[first + i] + baseVertex;
+            long b = (long)values[first + i + 1] + baseVertex;
+            long c = (long)values[first + i + 2] + baseVertex;
+            long d = (long)values[first + i + 3] + baseVertex;
+            if ((ulong)a >= (ulong)vertexCount || (ulong)b >= (ulong)vertexCount ||
+                (ulong)c >= (ulong)vertexCount || (ulong)d >= (ulong)vertexCount)
+                continue;
+            output.Add((int)a); output.Add((int)b); output.Add((int)c);
+            output.Add((int)a); output.Add((int)c); output.Add((int)d);
+        }
+    }
+
+    private static uint[] UnpackPackedValues(byte[] data, int count, int bitSize)
+    {
+        if (count <= 0 || count > 1_500_000 || bitSize <= 0 || bitSize > 32 ||
+            data.Length == 0 || (long)data.Length * 8 < (long)count * bitSize)
+            return Array.Empty<uint>();
+
+        var values = new uint[count];
+        long bitOffset = 0;
+        for (int i = 0; i < count; i++)
+        {
+            uint value = 0;
+            for (int bit = 0; bit < bitSize; bit++, bitOffset++)
+            {
+                int byteIndex = (int)(bitOffset >> 3);
+                int bitIndex = (int)(bitOffset & 7);
+                if ((data[byteIndex] & (1 << bitIndex)) != 0)
+                    value |= 1u << bit;
+            }
+            values[i] = value;
+        }
+        return values;
+    }
+
     private static int[] ReadIndices(AssetTypeValueField mesh, int vertexCount)
     {
         byte[] indexBytes = ReadBytes(Child(mesh, "m_IndexBuffer"));
@@ -179,13 +365,6 @@ internal static class MeshPreviewDataReader
                 if (value >= 0 && value < vertexCount)
                     indices.Add(value);
             }
-        }
-
-        if (indices.Count == 0 && vertexCount % 3 == 0)
-        {
-            int count = Math.Min(vertexCount, 75_000);
-            for (int i = 0; i < count; i++)
-                indices.Add(i);
         }
 
         int usable = Math.Min(indices.Count - indices.Count % 3, 360_000);
@@ -230,10 +409,15 @@ internal static class MeshPreviewDataReader
         for (int i = 0; i < safeCount; i++)
         {
             int offset = firstByte + i * indexSize;
-            int value = ReadRawIndex(bytes, offset, indexSize);
-            long adjusted = (long)value + baseVertex;
-            if (adjusted >= 0 && adjusted < vertexCount)
-                output.Add((int)adjusted);
+            long a = (long)ReadRawIndex(bytes, offset, indexSize) + baseVertex;
+            long b = (long)ReadRawIndex(bytes, offset + indexSize, indexSize) + baseVertex;
+            long c = (long)ReadRawIndex(bytes, offset + indexSize * 2, indexSize) + baseVertex;
+            if ((ulong)a >= (ulong)vertexCount || (ulong)b >= (ulong)vertexCount ||
+                (ulong)c >= (ulong)vertexCount || a == b || b == c || a == c)
+                continue;
+            output.Add((int)a);
+            output.Add((int)b);
+            output.Add((int)c);
         }
     }
 
@@ -272,10 +456,25 @@ internal static class MeshPreviewDataReader
 
     private static byte[] ReadBytes(AssetTypeValueField field)
     {
-        if (field == null || field.IsDummy || field.Value == null)
+        if (field == null || field.IsDummy)
             return Array.Empty<byte>();
-        try { return field.AsByteArray ?? Array.Empty<byte>(); }
-        catch { return Array.Empty<byte>(); }
+
+        try
+        {
+            byte[] direct = field.AsByteArray ?? Array.Empty<byte>();
+            if (direct.Length > 0)
+                return direct;
+        }
+        catch { }
+
+        var array = Child(field, "Array");
+        if (array == null || array.IsDummy || array.Children.Count == 0)
+            return Array.Empty<byte>();
+
+        var bytes = new byte[array.Children.Count];
+        for (int i = 0; i < bytes.Length; i++)
+            bytes[i] = (byte)Math.Clamp(ReadInt(array.Children[i], 0), 0, 255);
+        return bytes;
     }
 
     private static string ReadString(AssetTypeValueField field)
