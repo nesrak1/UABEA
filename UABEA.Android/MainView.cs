@@ -275,7 +275,26 @@ public sealed class MainView : UserControl
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
         _scrollViewer.ScrollChanged += (_, _) => TryAutoLoadMore();
-        Content = _scrollViewer;
+        var pageLayers = new Grid();
+        pageLayers.Children.Add(_scrollViewer);
+        _loadingOverlay = new Border { Background = Brush.Parse("#B8000000"), IsVisible = false, HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch, Child = _loadingIndicator };
+        _loadingIndicator.HorizontalAlignment = HorizontalAlignment.Center;
+        _loadingIndicator.VerticalAlignment = VerticalAlignment.Center;
+        pageLayers.Children.Add(_loadingOverlay);
+        _zoomScale = new ScaleTransform(1, 1);
+        _zoomTranslate = new TranslateTransform();
+        _zoomImage = new Image { Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch, RenderTransformOrigin = RelativePoint.Center, RenderTransform = new TransformGroup { Children = { _zoomScale, _zoomTranslate } } };
+        _zoomImage.PointerPressed += OnZoomPointerPressed;
+        _zoomImage.PointerMoved += OnZoomPointerMoved;
+        _zoomImage.PointerReleased += OnZoomPointerReleased;
+        var closeViewer = new Button { Content = "✕", Width = 48, Height = 48, Margin = new Thickness(14), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Background = SurfaceHighBrush, Foreground = TextBrush, CornerRadius = new CornerRadius(24) };
+        closeViewer.Click += (_, _) => CloseImageViewer();
+        var viewerGrid = new Grid();
+        viewerGrid.Children.Add(_zoomImage);
+        viewerGrid.Children.Add(closeViewer);
+        _imageViewerOverlay = new Border { Background = Brush.Parse("#FF000000"), IsVisible = false, Child = viewerGrid };
+        pageLayers.Children.Add(_imageViewerOverlay);
+        Content = pageLayers;
         Background = BackgroundBrush;
     }
 
@@ -1564,8 +1583,8 @@ public sealed class MainView : UserControl
 
     private void SetLoading(bool loading, string? message = null)
     {
-        _loadingIndicator.IsVisible = loading;
-        if (loading)
+        _loadingOverlay.IsVisible = loading;
+        if (loading || _previewSpinnerRotations.Count > 0)
         {
             if (!_spinnerTimer.IsEnabled) _spinnerTimer.Start();
         }
