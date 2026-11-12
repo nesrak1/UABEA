@@ -1287,10 +1287,11 @@ public sealed class MainView : UserControl
                 fontDataTemplate.Children[0].ValueType = AssetValueType.ByteArray;
 
                 AssetTypeValueField field;
-                lock (instance.LockReader)
+                var reader = instance.file.Reader;
+                lock (reader)
                 {
                     long absolutePosition = asset.GetAbsoluteByteStart(instance.file);
-                    field = template.MakeValue(instance.file.Reader, absolutePosition, null);
+                    field = template.MakeValue(reader, absolutePosition, null);
                 }
 
                 fontName = field["m_Name"]?.AsString;
