@@ -14,6 +14,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.Platform.Storage;
@@ -54,7 +55,19 @@ public sealed class MainView : UserControl
     private readonly System.Threading.SemaphoreSlim _assetNameLock = new(1, 1);
 
     private AssetsManager? _assetsManager;
-    private string? _currentTempPath;
+    private string? _currentTempDirectory;
+    private Border _loadingOverlay = null!;
+    private Border _imageViewerOverlay = null!;
+    private Image _zoomImage = null!;
+    private ScaleTransform _zoomScale = null!;
+    private TranslateTransform _zoomTranslate = null!;
+    private readonly Dictionary<IPointer, Point> _zoomPointers = new();
+    private readonly List<RotateTransform> _previewSpinnerRotations = new();
+    private double _pinchStartDistance;
+    private double _pinchStartScale = 1;
+    private Point _lastPanPoint;
+    private long _lastZoomTap;
+    private bool _zoomGestureUsed;
     private BundleFileInstance? _currentBundle;
     private AssetsFileInstance? _currentAssets;
     private string _currentFileName = "";
@@ -210,8 +223,7 @@ public sealed class MainView : UserControl
             }
         };
         _spinnerTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(45) };
-        _spinnerTimer.Tick += (_, _) => _spinnerRotation.Angle = (_spinnerRotation.Angle + 18) % 360;
-        root.Children.Add(_loadingIndicator);
+        _spinnerTimer.Tick += (_, _) => { _spinnerRotation.Angle = (_spinnerRotation.Angle + 18) % 360; foreach (var rotation in _previewSpinnerRotations) rotation.Angle = (rotation.Angle + 18) % 360; };
 
         var statusCard = new Border
         {
