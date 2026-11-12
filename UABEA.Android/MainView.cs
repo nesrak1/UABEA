@@ -847,37 +847,11 @@ public sealed class MainView : UserControl
                 byte[] data = texture.pictureData ?? Array.Empty<byte>();
                 if (texture.m_StreamData.size > 0 && !string.IsNullOrWhiteSpace(texture.m_StreamData.path))
                 {
-                    string streamPath = texture.m_StreamData.path;
-                    if (streamPath.StartsWith("archive:/", StringComparison.OrdinalIgnoreCase))
-                        streamPath = Path.GetFileName(streamPath);
-
-                    if (instance.parentBundle != null)
-                    {
-                        var bundle = instance.parentBundle.file;
-                        var entry = bundle.BlockAndDirInfo.DirectoryInfos.FirstOrDefault(x =>
-                            Path.GetFileName(x.Name).Equals(Path.GetFileName(streamPath), StringComparison.OrdinalIgnoreCase));
-                        if (entry == null)
-                            throw new FileNotFoundException("The texture resource was not found inside the bundle.");
-                        bundle.DataReader.Position = entry.Offset + (long)texture.m_StreamData.offset;
-                        data = bundle.DataReader.ReadBytes((int)texture.m_StreamData.size);
-                    }
-                    else
-                    {
-                        string root = Path.GetDirectoryName(instance.path) ?? "";
-                        string fullPath = Path.IsPathRooted(streamPath) ? streamPath : Path.Combine(root, streamPath);
-                        if (!File.Exists(fullPath))
-                            throw new FileNotFoundException("The external texture resource file was not found.");
-                        using var stream = File.OpenRead(fullPath);
-                        stream.Position = (long)texture.m_StreamData.offset;
-                        data = new byte[(int)texture.m_StreamData.size];
-                        int read = 0;
-                        while (read < data.Length)
-                        {
-                            int count = stream.Read(data, read, data.Length - read);
-                            if (count == 0) break;
-                            read += count;
-                        }
-                    }
+                    data = instance.parentBundle != null
+                        ? ReadBundleResource(instance.parentBundle, texture.m_StreamData.path,
+                            texture.m_StreamData.offset, texture.m_StreamData.size)
+                        : ReadExternalResource(instance, texture.m_StreamData.path,
+                            texture.m_StreamData.offset, texture.m_StreamData.size);
                 }
 
                 if (data.Length == 0)
@@ -997,47 +971,9 @@ public sealed class MainView : UserControl
                 if (string.IsNullOrWhiteSpace(source) || size == 0 || size > int.MaxValue)
                     throw new InvalidDataException("This AudioClip has no external audio resource or uses embedded data that is not supported yet.");
 
-                byte[] fsbData;
-                if (instance.parentBundle != null)
-                {
-                    string searchPath = source.StartsWith("archive:/", StringComparison.OrdinalIgnoreCase)
-                        ? source.Substring(9) : source;
-                    searchPath = Path.GetFileName(searchPath);
-                    var bundle = instance.parentBundle.file;
-                    var entry = bundle.BlockAndDirInfo.DirectoryInfos.FirstOrDefault(x =>
-                        Path.GetFileName(x.Name).Equals(searchPath, StringComparison.OrdinalIgnoreCase));
-                    if (entry == null)
-                        throw new FileNotFoundException("The AudioClip resource was not found inside the AssetBundle.");
-                    if (offset + size > (ulong)Math.Max(0, entry.DecompressedSize))
-                    {
-                        // Bundle offsets are relative to the resource entry; rely on the reader's bounds check below.
-                    }
-                    bundle.DataReader.Position = entry.Offset + (long)offset;
-                    fsbData = bundle.DataReader.ReadBytes((int)size);
-                }
-                else
-                {
-                    string root = Path.GetDirectoryName(instance.path) ?? "";
-                    string fullPath = Path.IsPathRooted(source) ? source : Path.Combine(root, source);
-                    if (!File.Exists(fullPath))
-                    {
-                        string fallback = Path.Combine(root, Path.GetFileName(source));
-                        if (File.Exists(fallback)) fullPath = fallback;
-                        else throw new FileNotFoundException("The AudioClip resource file was not found beside the assets file.");
-                    }
-                    using var stream = File.OpenRead(fullPath);
-                    if (offset > (ulong)stream.Length || size > (ulong)stream.Length - offset)
-                        throw new InvalidDataException("The AudioClip resource range is outside the resource file.");
-                    stream.Position = (long)offset;
-                    fsbData = new byte[(int)size];
-                    int read = 0;
-                    while (read < fsbData.Length)
-                    {
-                        int count = stream.Read(fsbData, read, fsbData.Length - read);
-                        if (count == 0) throw new EndOfStreamException("The AudioClip resource ended unexpectedly.");
-                        read += count;
-                    }
-                }
+                byte[] fsbData = instance.parentBundle != null
+                    ? ReadBundleResource(instance.parentBundle, source, offset, size)
+                    : ReadExternalResource(instance, source, offset, size);
 
                 if (fsbData.Length == 0)
                     throw new InvalidDataException("The AudioClip resource is empty.");
@@ -1596,6 +1532,70 @@ public sealed class MainView : UserControl
     }
 
     private void UpdateNavigation() => _backButton.IsVisible = _currentPage != BrowserPage.Home;
+
+    private static string NormalizeResourcePath(string path)
+    {
+        path = path.Replace('\\', '/');
+        if (path.StartsWith("archive:/", StringComparison.OrdinalIgnoreCase))
+            path = path.Substring("archive:/".Length);
+        while (path.StartsWith("/", StringComparison.Ordinal)) path = path.Substring(1);
+        return path;
+    }
+
+    private static byte[] ReadBundleResource(BundleFileInstance bundleInstance, string source, ulong offset, ulong size)
+    {
+        var entries = bundleInstance.file.BlockAndDirInfo.DirectoryInfos;
+        string wanted = NormalizeResourcePath(source);
+        string basename = Path.GetFileName(wanted);
+        var exact = entries.Where(x => string.Equals(NormalizeResourcePath(x.Name), wanted, StringComparison.OrdinalIgnoreCase)).ToList();
+        var suffix = entries.Where(x => NormalizeResourcePath(x.Name).EndsWith("/" + wanted, StringComparison.OrdinalIgnoreCase)).ToList();
+        var matches = exact.Count > 0 ? exact : suffix;
+        if (matches.Count == 0)
+            matches = entries.Where(x => string.Equals(Path.GetFileName(NormalizeResourcePath(x.Name)), basename, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (matches.Count != 1)
+            throw new FileNotFoundException(matches.Count == 0 ? "The resource path was not found inside the AssetBundle." : "The resource name is ambiguous inside the AssetBundle.");
+        var entry = matches[0];
+        if (offset > (ulong)entry.DecompressedSize || size > (ulong)entry.DecompressedSize - offset)
+            throw new InvalidDataException("The requested resource range is outside the AssetBundle entry.");
+        var reader = bundleInstance.file.DataReader;
+        reader.Position = entry.Offset + (long)offset;
+        byte[] data = reader.ReadBytes(checked((int)size));
+        if ((ulong)data.Length != size) throw new EndOfStreamException("The AssetBundle resource ended unexpectedly.");
+        return data;
+    }
+
+    private static byte[] ReadExternalResource(AssetsFileInstance instance, string source, ulong offset, ulong size)
+    {
+        string root = Path.GetDirectoryName(instance.path) ?? "";
+        string normalized = NormalizeResourcePath(source);
+        string relative = normalized.Replace('/', Path.DirectorySeparatorChar);
+        var candidates = new List<string>();
+        if (Path.IsPathRooted(source)) candidates.Add(source);
+        candidates.Add(Path.Combine(root, relative));
+        candidates.Add(Path.Combine(root, Path.GetFileName(normalized)));
+        string? fullPath = candidates.FirstOrDefault(File.Exists);
+        if (fullPath == null && Directory.Exists(root))
+        {
+            var sameName = Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly)
+                .Where(x => string.Equals(Path.GetFileName(x), Path.GetFileName(normalized), StringComparison.OrdinalIgnoreCase)).ToList();
+            if (sameName.Count == 1) fullPath = sameName[0];
+        }
+        if (fullPath == null)
+            throw new FileNotFoundException("The external resource file was not found. If it is a separate .resource/.resources/.resS file, select it together with the .assets file.");
+        using var stream = File.OpenRead(fullPath);
+        if (offset > (ulong)stream.Length || size > (ulong)stream.Length - offset)
+            throw new InvalidDataException("The requested resource range is outside the external resource file.");
+        stream.Position = (long)offset;
+        byte[] data = new byte[checked((int)size)];
+        int read = 0;
+        while (read < data.Length)
+        {
+            int count = stream.Read(data, read, data.Length - read);
+            if (count == 0) throw new EndOfStreamException("The external resource file ended unexpectedly.");
+            read += count;
+        }
+        return data;
+    }
 
     private void AddDetail(string label, string value)
     {
