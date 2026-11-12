@@ -10,6 +10,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Button = Avalonia.Controls.Button;
 
 namespace UABEA.Mobile;
 
