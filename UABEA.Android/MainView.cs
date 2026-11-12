@@ -32,6 +32,7 @@ public sealed class MainView : UserControl
     private readonly Avalonia.Controls.ProgressBar _loadingBar;
 
     private AssetsManager? _assetsManager;
+    private string? _currentTempPath;
     private BundleFileInstance? _currentBundle;
     private AssetsFileInstance? _currentAssets;
     private string _currentFileName = "";
@@ -112,7 +113,7 @@ public sealed class MainView : UserControl
 
         _filterButton = new Button
         {
-            Content = "Sort / Type", MinHeight = 44,
+            Content = "Sort / Type", MinHeight = 44, IsVisible = false,
             Margin = new Thickness(8, 0, 0, 0),
             Background = Brush.Parse("#263946"), Foreground = Brushes.White
         };
@@ -221,7 +222,14 @@ public sealed class MainView : UserControl
             var path = localPath;
             var result = await Task.Run(() => LoadFileInBackground(path, file.Name));
 
+            _assetsManager?.UnloadAllAssetsFiles(true);
+            if (_currentTempPath is not null)
+            {
+                try { File.Delete(_currentTempPath); } catch { }
+            }
             _assetsManager = result.Manager;
+            _currentTempPath = localPath;
+            localPath = null;
             _currentBundle = result.Bundle;
             _currentAssets = result.Assets;
             _currentFileName = file.Name;
@@ -251,10 +259,16 @@ public sealed class MainView : UserControl
             _currentRows.Clear();
             _assetRows.Clear();
             _currentPage = BrowserPage.Home;
+            _filterButton.IsVisible = false;
+            _filterBox.IsVisible = false;
             UpdateNavigation();
         }
         finally
         {
+            if (localPath is not null)
+            {
+                try { File.Delete(localPath); } catch { }
+            }
             _isBusy = false;
             SetLoading(false);
             // Keep the copied file available while AssetsTools has it open.
@@ -505,6 +519,8 @@ public sealed class MainView : UserControl
         if (_currentAssets is null) return;
         _currentPage = BrowserPage.AssetDetails;
         _searchBox.IsVisible = false;
+        _filterButton.IsVisible = false;
+        _filterBox.IsVisible = false;
         var assetTypeName = Enum.GetName(typeof(AssetClassID), asset.GetTypeId(_currentAssets.file)) ?? "Asset";
         _status.Text = $"Asset • {TryReadAssetName(_assetsManager!, _currentAssets, asset, assetTypeName)}";
         _items.Children.Clear();
