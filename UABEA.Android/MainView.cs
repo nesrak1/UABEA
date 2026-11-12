@@ -13,6 +13,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Material.Icons;
 using Material.Icons.Avalonia;
 using Button = Avalonia.Controls.Button;
@@ -23,17 +24,17 @@ namespace UABEA.Mobile;
 
 public sealed class MainView : UserControl
 {
-    private const int PageSize = 150;
+    private const int PageSize = 48;
 
-    private static readonly IBrush BackgroundBrush = Brush.Parse("#101418");
-    private static readonly IBrush SurfaceBrush = Brush.Parse("#171D23");
-    private static readonly IBrush SurfaceContainerBrush = Brush.Parse("#202830");
-    private static readonly IBrush SurfaceHighBrush = Brush.Parse("#28343E");
-    private static readonly IBrush OutlineBrush = Brush.Parse("#3D4A55");
-    private static readonly IBrush PrimaryBrush = Brush.Parse("#56C3F2");
-    private static readonly IBrush OnPrimaryBrush = Brush.Parse("#06202B");
-    private static readonly IBrush TextBrush = Brush.Parse("#E2EAF0");
-    private static readonly IBrush MutedBrush = Brush.Parse("#A9B7C2");
+    private static readonly SolidColorBrush BackgroundBrush = new(Color.Parse("#101418"));
+    private static readonly SolidColorBrush SurfaceBrush = new(Color.Parse("#171D23"));
+    private static readonly SolidColorBrush SurfaceContainerBrush = new(Color.Parse("#202830"));
+    private static readonly SolidColorBrush SurfaceHighBrush = new(Color.Parse("#28343E"));
+    private static readonly SolidColorBrush OutlineBrush = new(Color.Parse("#3D4A55"));
+    private static readonly SolidColorBrush PrimaryBrush = new(Color.Parse("#56C3F2"));
+    private static readonly SolidColorBrush OnPrimaryBrush = new(Color.Parse("#06202B"));
+    private static readonly SolidColorBrush TextBrush = new(Color.Parse("#E2EAF0"));
+    private static readonly SolidColorBrush MutedBrush = new(Color.Parse("#A9B7C2"));
 
     private readonly TextBlock _status;
     private readonly StackPanel _items;
@@ -67,6 +68,7 @@ public sealed class MainView : UserControl
 
     public MainView()
     {
+        RefreshTheme();
         var root = new StackPanel
         {
             Spacing = 16,
@@ -226,12 +228,28 @@ public sealed class MainView : UserControl
         _scrollViewer = new ScrollViewer
         {
             Content = root,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            IsScrollChainingEnabled = false
         };
         _scrollViewer.ScrollChanged += (_, _) => TryAutoLoadMore();
         Content = _scrollViewer;
         Background = BackgroundBrush;
+    }
+
+    public void RefreshTheme()
+    {
+        var dark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
+        BackgroundBrush.Color = Color.Parse(dark ? "#101418" : "#F3F6F8");
+        SurfaceBrush.Color = Color.Parse(dark ? "#171D23" : "#FFFFFF");
+        SurfaceContainerBrush.Color = Color.Parse(dark ? "#202830" : "#E8EEF2");
+        SurfaceHighBrush.Color = Color.Parse(dark ? "#28343E" : "#DCE5EA");
+        OutlineBrush.Color = Color.Parse(dark ? "#3D4A55" : "#C2CDD4");
+        PrimaryBrush.Color = Color.Parse("#56C3F2");
+        OnPrimaryBrush.Color = Color.Parse("#06202B");
+        TextBrush.Color = Color.Parse(dark ? "#E2EAF0" : "#17232C");
+        MutedBrush.Color = Color.Parse(dark ? "#A9B7C2" : "#596B78");
+        InvalidateVisual();
     }
 
     public bool HandleSystemBack()
