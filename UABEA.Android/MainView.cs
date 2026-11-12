@@ -503,7 +503,7 @@ public sealed class MainView : UserControl
                 .Where(row => selectedType == "All types" || row.TypeName == selectedType)
                 .Where(row => Matches(row.Name, query) || Matches(row.TypeName, query))
                 .Select(row => new RowData(row.Name,
-                    $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
+                    $"{row.TypeName} • {FormatSize(row.Info.ByteSize)} • ID: {row.Info.PathId}",
                     GetAssetIcon(row.TypeName), () => ShowAssetDetails(row.Info), row.Info))
                 .ToList();
         }
@@ -554,7 +554,7 @@ public sealed class MainView : UserControl
         AssetsFileInstance? instance, AssetsManager? manager)
     {
         if (instance is null || manager is null) return;
-        List<(Control Control, string Name)> resolved;
+        List<(Control Control, long PathId, string Name)> resolved;
         try
         {
             await _assetNameLock.WaitAsync();
@@ -572,7 +572,7 @@ public sealed class MainView : UserControl
         foreach (var item in resolved)
         {
             _assetRows = _assetRows.Select(row => row.Info.PathId == item.PathId
-                ? row with { Name = item.Item3 } : row).ToList();
+                ? row with { Name = item.Name } : row).ToList();
             if (item.Control is not Button button || button.Content is not Grid grid ||
                 grid.Children.Count < 2 || grid.Children[1] is not StackPanel panel ||
                 panel.Children.Count == 0 || panel.Children[0] is not TextBlock title)
