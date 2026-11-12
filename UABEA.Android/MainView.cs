@@ -310,13 +310,13 @@ public sealed class MainView : UserControl
     private async void OpenFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is null) return;
-
-        var selected = await topLevel.StorageProvider.OpenFilePickerAsync(
-            new FilePickerOpenOptions { Title = "Open Unity asset or bundle", AllowMultiple = false });
-        var file = selected.FirstOrDefault();
-        if (file is null || _isBusy) return;
-
+        if (topLevel is null || _isBusy) return;
+        var selected = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        { Title = "Select an assets file and its resource files", AllowMultiple = true });
+        if (selected.Count == 0) return;
+        var file = selected.FirstOrDefault(x => x.Name.EndsWith(".assets", StringComparison.OrdinalIgnoreCase))
+            ?? selected.FirstOrDefault(x => !IsResourceFileName(x.Name));
+        if (file is null) return;
         _isBusy = true;
         SetLoading(true, $"Copying {file.Name}...");
         _items.Children.Clear();
@@ -326,30 +326,30 @@ public sealed class MainView : UserControl
         _loadMoreButton.IsVisible = false;
         _searchBox.Text = "";
         SetFilterOptions(new[] { "All types" });
-
-        string? localPath = null;
+        string? tempDirectory = null;
         try
         {
-            localPath = Path.Combine(Path.GetTempPath(),
-                $"{Guid.NewGuid():N}_{Path.GetFileName(file.Name)}");
-
-            await using (var source = await file.OpenReadAsync())
-            await using (var destination = File.Create(localPath))
-                await source.CopyToAsync(destination);
-
-            SetLoading(true, $"Analyzing {file.Name}...");
-            var path = localPath;
-            var result = await Task.Run(() => LoadFileInBackground(path, file.Name));
-
-            _assetsManager?.UnloadAllAssetsFiles(true);
-            if (_currentTempPath is not null)
+            tempDirectory = Path.Combine(Path.GetTempPath(), "uabea-mobile-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDirectory);
+            string? primaryPath = null;
+            foreach (var selectedFile in selected)
             {
-                try { File.Delete(_currentTempPath); } catch { }
+                string safeName = Path.GetFileName(selectedFile.Name);
+                string destinationPath = Path.Combine(tempDirectory, safeName);
+                if (File.Exists(destinationPath)) destinationPath = Path.Combine(tempDirectory, Guid.NewGuid().ToString("N") + "_" + safeName);
+                await using var source = await selectedFile.OpenReadAsync();
+                await using var destination = File.Create(destinationPath);
+                await source.CopyToAsync(destination);
+                if (ReferenceEquals(selectedFile, file)) primaryPath = destinationPath;
             }
-
+            if (primaryPath is null) throw new InvalidDataException("The selected assets file could not be copied.");
+            SetLoading(true, $"Analyzing {file.Name}...");
+            var result = await Task.Run(() => LoadFileInBackground(primaryPath, file.Name));
+            _assetsManager?.UnloadAllAssetsFiles(true);
+            if (_currentTempDirectory is not null) { try { Directory.Delete(_currentTempDirectory, true); } catch { } }
             _assetsManager = result.Manager;
-            _currentTempPath = localPath;
-            localPath = null;
+            _currentTempDirectory = tempDirectory;
+            tempDirectory = null;
             _currentBundle = result.Bundle;
             _currentAssets = result.Assets;
             _currentFileName = file.Name;
@@ -360,11 +360,8 @@ public sealed class MainView : UserControl
             _searchBox.IsVisible = result.Page is BrowserPage.Bundle or BrowserPage.Assets;
             _filterButton.IsVisible = _searchBox.IsVisible;
             _filterBox.IsVisible = false;
-            SetFilterOptions(result.Page == BrowserPage.Assets
-                ? result.AssetRows.Select(row => row.TypeName)
-                : result.Rows.Select(row => GetEntryKind(row.Title)));
-            _searchBox.Watermark = result.Page == BrowserPage.Bundle
-                ? "Search bundle entries..." : "Search by asset name or type...";
+            SetFilterOptions(result.Page == BrowserPage.Assets ? result.AssetRows.Select(row => row.TypeName) : result.Rows.Select(row => GetEntryKind(row.Title)));
+            _searchBox.Watermark = result.Page == BrowserPage.Bundle ? "Search bundle entries..." : "Search by asset name or type...";
             _searchBox.Text = "";
             _visibleRows = 0;
             RefreshCurrentList();
@@ -385,14 +382,16 @@ public sealed class MainView : UserControl
         }
         finally
         {
-            if (localPath is not null)
-            {
-                try { File.Delete(localPath); } catch { }
-            }
+            if (tempDirectory is not null) { try { Directory.Delete(tempDirectory, true); } catch { } }
             _isBusy = false;
             SetLoading(false);
         }
     }
+
+    private static bool IsResourceFileName(string name) =>
+        name.EndsWith(".resource", StringComparison.OrdinalIgnoreCase) ||
+        name.EndsWith(".resources", StringComparison.OrdinalIgnoreCase) ||
+        name.EndsWith(".resS", StringComparison.OrdinalIgnoreCase);
 
     private static OpenResult LoadFileInBackground(string path, string fileName)
     {
