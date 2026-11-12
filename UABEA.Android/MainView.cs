@@ -1526,6 +1526,102 @@ public sealed class MainView : UserControl
         };
         wireframeButton.Click += (_, _) => viewer.ToggleWireframe();
 
+        var fullscreenButton = new Button
+        {
+            Content = CreateIcon(MaterialIconKind.ArrowExpand, 18, TextBrush),
+            Background = SurfaceHighBrush,
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(10),
+            Width = 42,
+            Height = 40,
+            Padding = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            ToolTip = "Open full-screen preview"
+        };
+        fullscreenButton.Click += (_, _) =>
+        {
+            var largeViewer = new MeshPreviewControl(meshData.Vertices, meshData.Indices)
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+            var closeButton = new Button
+            {
+                Content = "Close",
+                Background = SurfaceHighBrush,
+                Foreground = TextBrush,
+                CornerRadius = new CornerRadius(10),
+                MinHeight = 40
+            };
+            var resetLarge = new Button
+            {
+                Content = "Reset camera",
+                Background = SurfaceHighBrush,
+                Foreground = TextBrush,
+                CornerRadius = new CornerRadius(10),
+                MinHeight = 40
+            };
+            resetLarge.Click += (_, _) => largeViewer.ResetView();
+            closeButton.Click += (_, _) => fullWindow.Close();
+            var fullWindow = new Window
+            {
+                Title = "3D Mesh preview",
+                Background = BackgroundBrush,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                SystemDecorations = SystemDecorations.None,
+                Content = new Grid
+                {
+                    RowDefinitions = new RowDefinitions("Auto,*,Auto"),
+                    Margin = new Thickness(12),
+                    Children =
+                    {
+                        new Grid
+                        {
+                            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+                            Children =
+                            {
+                                new TextBlock
+                                {
+                                    Text = $"{meshData.Vertices.Length:N0} vertices • {meshData.Indices.Length / 3:N0} triangles",
+                                    Foreground = MutedBrush,
+                                    VerticalAlignment = VerticalAlignment.Center
+                                },
+                                closeButton
+                            }
+                        },
+                        largeViewer,
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            Spacing = 8,
+                            Children = { resetLarge }
+                        }
+                    }
+                }
+            };
+            Grid.SetRow(largeViewer, 1);
+            Grid.SetRow((Control)((Grid)fullWindow.Content).Children[2], 2);
+            fullWindow.Show(this);
+        };
+
+        var topBar = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = $"{meshData.Vertices.Length:N0} vertices • {meshData.Indices.Length / 3:N0} triangles",
+                    FontSize = 12,
+                    Foreground = MutedBrush,
+                    VerticalAlignment = VerticalAlignment.Center
+                },
+                fullscreenButton
+            }
+        };
+
         var controls = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -1539,17 +1635,12 @@ public sealed class MainView : UserControl
             Spacing = 8,
             Children =
             {
-                new TextBlock
-                {
-                    Text = $"{meshData.Vertices.Length:N0} vertices • {meshData.Indices.Length / 3:N0} triangles",
-                    FontSize = 12,
-                    Foreground = MutedBrush
-                },
+                topBar,
                 viewer,
                 controls,
                 new TextBlock
                 {
-                    Text = "Drag to rotate • Pinch with two fingers to zoom",
+                    Text = "Swipe horizontally to rotate • Pinch to zoom • Swipe vertically to scroll",
                     FontSize = 11,
                     Foreground = MutedBrush,
                     HorizontalAlignment = HorizontalAlignment.Center
