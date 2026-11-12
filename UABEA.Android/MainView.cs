@@ -48,6 +48,7 @@ public sealed class MainView : UserControl
     private readonly TextBlock _spinnerGlyph;
     private readonly RotateTransform _spinnerRotation;
     private readonly DispatcherTimer _spinnerTimer;
+    private readonly System.Threading.SemaphoreSlim _assetNameLock = new(1, 1);
 
     private AssetsManager? _assetsManager;
     private string? _currentTempPath;
@@ -395,7 +396,7 @@ public sealed class MainView : UserControl
             var rows = BuildAssetRows(manager, assets);
             return new OpenResult(manager, null, assets,
                 rows.Select(row => new RowData(row.Name,
-                    $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
+                    $"{row.TypeName} • {FormatSize(row.Info.ByteSize)} • ID: {row.Info.PathId}",
                     GetAssetIcon(row.TypeName), () => { })).ToList(), rows,
                 $"Assets file: {assets.name}\nAssets: {rows.Count}", BrowserPage.Assets);
         }
@@ -556,14 +557,22 @@ public sealed class MainView : UserControl
         List<(Control Control, string Name)> resolved;
         try
         {
-            resolved = await Task.Run(() => pending.Select(item =>
-                (item.Control, TryReadAssetName(manager, instance, item.Info, "Unnamed asset"))).ToList());
+            await _assetNameLock.WaitAsync();
+            try
+            {
+                resolved = await Task.Run(() => pending.Select(item =>
+                    (item.Control, item.Info.PathId,
+                     TryReadAssetName(manager, instance, item.Info, "Unnamed asset"))).ToList());
+            }
+            finally { _assetNameLock.Release(); }
         }
         catch { return; }
 
         if (_currentAssets != instance || _currentPage != BrowserPage.Assets) return;
         foreach (var item in resolved)
         {
+            _assetRows = _assetRows.Select(row => row.Info.PathId == item.PathId
+                ? row with { Name = item.Item3 } : row).ToList();
             if (item.Control is not Button button || button.Content is not Grid grid ||
                 grid.Children.Count < 2 || grid.Children[1] is not StackPanel panel ||
                 panel.Children.Count == 0 || panel.Children[0] is not TextBlock title)
