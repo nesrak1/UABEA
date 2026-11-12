@@ -266,9 +266,9 @@ internal static class MeshPreviewDataReader
         {
             return field.Value.ValueType switch
             {
-                AssetValueType.Int8 => (ulong)Math.Max(0, field.AsSByte),
+                AssetValueType.Int8 => (ulong)Math.Max(0, (int)field.AsSByte),
                 AssetValueType.UInt8 => field.AsByte,
-                AssetValueType.Int16 => (ulong)Math.Max(0, field.AsShort),
+                AssetValueType.Int16 => (ulong)Math.Max(0, (int)field.AsShort),
                 AssetValueType.UInt16 => field.AsUShort,
                 AssetValueType.Int32 => (ulong)Math.Max(0, field.AsInt),
                 AssetValueType.UInt32 => field.AsUInt,
