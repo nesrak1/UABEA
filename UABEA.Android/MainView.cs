@@ -1085,7 +1085,7 @@ public sealed class MainView : UserControl
             CornerRadius = new CornerRadius(13),
             FontWeight = FontWeight.SemiBold
         };
-        var loopCheck = new CheckBox
+        var loopCheck = new Avalonia.Controls.CheckBox
         {
             Content = "Loop",
             Foreground = TextBrush,
@@ -1149,7 +1149,7 @@ public sealed class MainView : UserControl
             player.Prepare();
             isPrepared = true;
             _audioPlayer = player;
-            player.IsLooping = loopCheck.IsChecked == true;
+            player.Looping = loopCheck.IsChecked == true;
             player.SetVolume(1f, 1f);
             UpdateTime();
             playerStatus.Text = "Ready";
@@ -1193,7 +1193,7 @@ public sealed class MainView : UserControl
         loopCheck.IsCheckedChanged += (_, _) =>
         {
             if (player != null)
-                player.IsLooping = loopCheck.IsChecked == true;
+                player.Looping = loopCheck.IsChecked == true;
         };
 
         volumeSlider.PropertyChanged += (_, args) =>
