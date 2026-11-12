@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using AssetsTools.NET;
@@ -12,14 +13,24 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using Avalonia.Threading;
-using Button = Avalonia.Controls.Button;
+using Material.Icons;
+using Material.Icons.Avalonia;
 
 namespace UABEA.Mobile;
 
 public sealed class MainView : UserControl
 {
     private const int PageSize = 150;
+
+    private static readonly IBrush BackgroundBrush = Brush.Parse("#101418");
+    private static readonly IBrush SurfaceBrush = Brush.Parse("#171D23");
+    private static readonly IBrush SurfaceContainerBrush = Brush.Parse("#202830");
+    private static readonly IBrush SurfaceHighBrush = Brush.Parse("#28343E");
+    private static readonly IBrush OutlineBrush = Brush.Parse("#3D4A55");
+    private static readonly IBrush PrimaryBrush = Brush.Parse("#56C3F2");
+    private static readonly IBrush OnPrimaryBrush = Brush.Parse("#06202B");
+    private static readonly IBrush TextBrush = Brush.Parse("#E2EAF0");
+    private static readonly IBrush MutedBrush = Brush.Parse("#A9B7C2");
 
     private readonly TextBlock _status;
     private readonly StackPanel _items;
@@ -29,7 +40,7 @@ public sealed class MainView : UserControl
     private readonly ScrollViewer _scrollViewer;
     private readonly Button _backButton;
     private readonly Button _loadMoreButton;
-    private readonly Avalonia.Controls.ProgressBar _loadingBar;
+    private readonly ProgressBar _loadingBar;
 
     private AssetsManager? _assetsManager;
     private string? _currentTempPath;
@@ -45,7 +56,7 @@ public sealed class MainView : UserControl
 
     private enum BrowserPage { Home, Bundle, Assets, EntryDetails, AssetDetails }
 
-    private sealed record RowData(string Title, string Detail, Action Action);
+    private sealed record RowData(string Title, string Detail, MaterialIconKind Icon, Action Action);
     private sealed record OpenResult(AssetsManager Manager, BundleFileInstance? Bundle,
         AssetsFileInstance? Assets, List<RowData> Rows, List<AssetRow> AssetRows,
         string Summary, BrowserPage Page);
@@ -55,71 +66,90 @@ public sealed class MainView : UserControl
     {
         var root = new StackPanel
         {
-            Spacing = 12,
-            Margin = new Thickness(16),
+            Spacing = 16,
+            Margin = new Thickness(18, 18, 18, 24),
             VerticalAlignment = VerticalAlignment.Stretch
         };
 
-        root.Children.Add(new TextBlock
+        var header = new StackPanel { Spacing = 4 };
+        header.Children.Add(new TextBlock
         {
             Text = "UABEA Mobile",
-            FontSize = 27,
+            FontSize = 28,
             FontWeight = FontWeight.Bold,
-            Foreground = Brush.Parse("#56C3F2")
+            Foreground = TextBrush
         });
-        root.Children.Add(new TextBlock
+        header.Children.Add(new TextBlock
         {
             Text = "Unity Assets & AssetBundle Explorer",
             FontSize = 13,
-            Foreground = Brush.Parse("#AAB8C2")
+            Foreground = MutedBrush
         });
+        root.Children.Add(header);
 
         var toolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         var openButton = new Button
         {
-            Content = "Open Unity file",
-            MinHeight = 48,
+            Content = CreateIconLabel(MaterialIconKind.FolderOpen, "Open Unity file", OnPrimaryBrush, 16),
+            MinHeight = 54,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            Background = Brush.Parse("#56C3F2"),
-            Foreground = Brush.Parse("#101820"),
-            FontWeight = FontWeight.Bold
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            Background = PrimaryBrush,
+            Foreground = OnPrimaryBrush,
+            FontWeight = FontWeight.SemiBold,
+            CornerRadius = new CornerRadius(18),
+            Padding = new Thickness(18, 10)
         };
+        ToolTip.SetTip(openButton, "Open a Unity file");
         openButton.Click += OpenFile_Click;
 
         _backButton = new Button
         {
-            Content = "Back", MinHeight = 48, IsVisible = false,
-            Margin = new Thickness(8, 0, 0, 0),
-            Background = Brush.Parse("#263946"), Foreground = Brushes.White
+            Content = CreateIcon(MaterialIconKind.ArrowLeft, 22, TextBrush),
+            MinWidth = 54,
+            MinHeight = 54,
+            IsVisible = false,
+            Margin = new Thickness(10, 0, 0, 0),
+            Background = SurfaceHighBrush,
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(18)
         };
+        ToolTip.SetTip(_backButton, "Back");
         _backButton.Click += (_, _) => GoBack();
         Grid.SetColumn(_backButton, 1);
         toolbar.Children.Add(openButton);
         toolbar.Children.Add(_backButton);
         root.Children.Add(toolbar);
 
+        var searchToolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         _searchBox = new TextBox
         {
-            Watermark = "Search files or assets...",
-            MinHeight = 44,
-            Padding = new Thickness(12, 8),
-            Background = Brush.Parse("#17232D"),
-            Foreground = Brushes.White,
-            BorderBrush = Brush.Parse("#2C3E4B"),
-            CornerRadius = new CornerRadius(8),
+            Watermark = "Search files or assets",
+            MinHeight = 50,
+            Padding = new Thickness(16, 10),
+            Background = SurfaceContainerBrush,
+            Foreground = TextBrush,
+            BorderBrush = OutlineBrush,
+            CornerRadius = new CornerRadius(16),
+            VerticalContentAlignment = VerticalAlignment.Center,
             IsVisible = false
         };
         _searchBox.TextChanged += (_, _) => RefreshCurrentList();
 
         _filterButton = new Button
         {
-            Content = "Sort / Type", MinHeight = 44, IsVisible = false,
-            Margin = new Thickness(8, 0, 0, 0),
-            Background = Brush.Parse("#263946"), Foreground = Brushes.White
+            Content = CreateIcon(MaterialIconKind.FilterVariant, 22, TextBrush),
+            MinWidth = 50,
+            MinHeight = 50,
+            IsVisible = false,
+            Margin = new Thickness(10, 0, 0, 0),
+            Background = SurfaceHighBrush,
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(16)
         };
+        ToolTip.SetTip(_filterButton, "Filter by asset type");
         _filterButton.Click += (_, _) => _filterBox.IsVisible = !_filterBox.IsVisible;
 
-        var searchToolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         searchToolbar.Children.Add(_searchBox);
         Grid.SetColumn(_filterButton, 1);
         searchToolbar.Children.Add(_filterButton);
@@ -127,37 +157,51 @@ public sealed class MainView : UserControl
 
         _filterBox = new ComboBox
         {
-            MinHeight = 42, HorizontalAlignment = HorizontalAlignment.Stretch,
-            Background = Brush.Parse("#17232D"), Foreground = Brushes.White,
-            IsVisible = false, ItemsSource = new[] { "All types" }, SelectedIndex = 0
+            MinHeight = 48,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = SurfaceContainerBrush,
+            Foreground = TextBrush,
+            IsVisible = false,
+            ItemsSource = new[] { "All types" },
+            SelectedIndex = 0
         };
         _filterBox.SelectionChanged += (_, _) => RefreshCurrentList();
         root.Children.Add(_filterBox);
 
-        _loadingBar = new Avalonia.Controls.ProgressBar
+        _loadingBar = new ProgressBar
         {
             IsIndeterminate = true,
-            Height = 5,
+            Height = 4,
             IsVisible = false,
-            Foreground = Brush.Parse("#56C3F2")
+            Foreground = PrimaryBrush
         };
         root.Children.Add(_loadingBar);
 
+        var statusCard = new Border
+        {
+            Background = SurfaceBrush,
+            BorderBrush = OutlineBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(20),
+            Padding = new Thickness(16)
+        };
         _status = new TextBlock
         {
             Text = "Open a Unity AssetBundle or serialized assets file.",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = Brush.Parse("#E5EDF2")
+            Foreground = TextBrush,
+            FontSize = 14
         };
-        root.Children.Add(_status);
+        statusCard.Child = _status;
+        root.Children.Add(statusCard);
 
-        _items = new StackPanel { Spacing = 7 };
+        _items = new StackPanel { Spacing = 9 };
         var listFrame = new Border
         {
-            Background = Brush.Parse("#17232D"),
-            BorderBrush = Brush.Parse("#2C3E4B"),
+            Background = SurfaceBrush,
+            BorderBrush = OutlineBrush,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
+            CornerRadius = new CornerRadius(20),
             Padding = new Thickness(10),
             Child = _items
         };
@@ -165,17 +209,17 @@ public sealed class MainView : UserControl
 
         _loadMoreButton = new Button
         {
-            Content = "Load more",
-            MinHeight = 44,
+            Content = CreateIconLabel(MaterialIconKind.ChevronDown, "Load more", TextBrush, 15),
+            MinHeight = 48,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            Background = Brush.Parse("#263946"),
-            Foreground = Brushes.White,
+            Background = SurfaceHighBrush,
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(18),
             IsVisible = false
         };
         _loadMoreButton.Click += (_, _) => RenderNextPage();
         root.Children.Add(_loadMoreButton);
 
-        // One scroll viewer only. Nested scroll viewers were competing for touch gestures.
         _scrollViewer = new ScrollViewer
         {
             Content = root,
@@ -184,7 +228,16 @@ public sealed class MainView : UserControl
         };
         _scrollViewer.ScrollChanged += (_, _) => TryAutoLoadMore();
         Content = _scrollViewer;
-        Background = Brush.Parse("#101820");
+        Background = BackgroundBrush;
+    }
+
+    public bool HandleSystemBack()
+    {
+        if (_currentPage == BrowserPage.Home)
+            return false;
+
+        GoBack();
+        return true;
     }
 
     private async void OpenFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -195,9 +248,8 @@ public sealed class MainView : UserControl
         var selected = await topLevel.StorageProvider.OpenFilePickerAsync(
             new FilePickerOpenOptions { Title = "Open Unity asset or bundle", AllowMultiple = false });
         var file = selected.FirstOrDefault();
-        if (file is null) return;
+        if (file is null || _isBusy) return;
 
-        if (_isBusy) return;
         _isBusy = true;
         SetLoading(true, $"Copying {file.Name}...");
         _items.Children.Clear();
@@ -227,6 +279,7 @@ public sealed class MainView : UserControl
             {
                 try { File.Delete(_currentTempPath); } catch { }
             }
+
             _assetsManager = result.Manager;
             _currentTempPath = localPath;
             localPath = null;
@@ -271,13 +324,15 @@ public sealed class MainView : UserControl
             }
             _isBusy = false;
             SetLoading(false);
-            // Keep the copied file available while AssetsTools has it open.
         }
     }
 
     private static OpenResult LoadFileInBackground(string path, string fileName)
     {
         var manager = new AssetsManager();
+        var classDataPath = EnsureClassDataFile();
+        manager.LoadClassPackage(classDataPath);
+
         var signature = new byte[8];
         using (var stream = File.OpenRead(path))
             _ = stream.Read(signature, 0, signature.Length);
@@ -297,7 +352,8 @@ public sealed class MainView : UserControl
                 var kind = (entry.Flags & 0x04) != 0
                     ? "Serialized assets file" : GetEntryKind(entry.Name);
                 rows.Add(new RowData(capturedName,
-                    $"{kind} • {FormatSize(entry.DecompressedSize)}", () => { }));
+                    $"{kind} • {FormatSize(entry.DecompressedSize)}",
+                    GetEntryIcon(capturedName), () => { }));
             }
             return new OpenResult(manager, bundle, null, rows, new List<AssetRow>(),
                 $"Bundle: {fileName}\nEntries: {rows.Count}", BrowserPage.Bundle);
@@ -306,16 +362,48 @@ public sealed class MainView : UserControl
         if (AssetsFile.IsAssetsFile(path))
         {
             var assets = manager.LoadAssetsFile(path, false);
+            LoadClassDatabase(manager, assets.file.Metadata.UnityVersion);
             var rows = BuildAssetRows(manager, assets);
             return new OpenResult(manager, null, assets,
                 rows.Select(row => new RowData(row.Name,
                     $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
-                    () => { })).ToList(), rows,
+                    GetAssetIcon(row.TypeName), () => { })).ToList(), rows,
                 $"Assets file: {assets.name}\nAssets: {rows.Count}", BrowserPage.Assets);
         }
 
         manager.UnloadAllAssetsFiles(true);
         throw new InvalidDataException($"Unsupported or unrecognized Unity file: {fileName}");
+    }
+
+    private static string EnsureClassDataFile()
+    {
+        const string resourceName = "UABEA.Mobile.classdata.tpk";
+        var targetPath = Path.Combine(Path.GetTempPath(), "uabea-mobile-classdata.tpk");
+
+        if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 0)
+            return targetPath;
+
+        using var resource = typeof(MainView).GetTypeInfo().Assembly.GetManifestResourceStream(resourceName)
+            ?? throw new FileNotFoundException("The embedded Unity class database (classdata.tpk) is missing.");
+        using var output = File.Create(targetPath);
+        resource.CopyTo(output);
+        return targetPath;
+    }
+
+    private static void LoadClassDatabase(AssetsManager manager, string? unityVersion)
+    {
+        if (string.IsNullOrWhiteSpace(unityVersion) || unityVersion == "0.0.0")
+            return;
+
+        try
+        {
+            manager.LoadClassDatabaseFromPackage(unityVersion);
+        }
+        catch
+        {
+            // A bundle may carry its own type tree. Keep reading it even if this
+            // class database does not contain the exact Unity version.
+        }
     }
 
     private static List<AssetRow> BuildAssetRows(AssetsManager manager, AssetsFileInstance instance)
@@ -337,15 +425,15 @@ public sealed class MainView : UserControl
     {
         try
         {
-            // Use the actual TypeTree layout. m_Name is not necessarily the first field.
             var baseField = manager.GetBaseField(instance, info);
-            var name = baseField["m_Name"]?.AsString;
+            var nameField = baseField["m_Name"];
+            var name = nameField?.AsString;
             if (!string.IsNullOrWhiteSpace(name))
                 return name.Trim();
         }
         catch
         {
-            // Some asset classes have no m_Name or cannot be deserialized.
+            // Some asset classes do not contain m_Name or have unsupported layouts.
         }
 
         return $"{fallbackType} ({info.PathId})";
@@ -373,19 +461,18 @@ public sealed class MainView : UserControl
                 var isSerialized = (entry.Flags & 0x04) != 0;
                 var kind = isSerialized ? "Serialized assets file" : GetEntryKind(name);
                 return new RowData(name, $"{kind} • {FormatSize(entry.DecompressedSize)}",
-                    () => _ = OpenBundleEntryAsync(name));
+                    GetEntryIcon(name), () => _ = OpenBundleEntryAsync(name));
             }).ToList();
         }
         else if (_currentPage == BrowserPage.Assets && _currentAssets is not null)
         {
-            var assetRows = _assetRows;
             var selectedType = _filterBox.SelectedItem?.ToString() ?? "All types";
-            _currentRows = assetRows
+            _currentRows = _assetRows
                 .Where(row => selectedType == "All types" || row.TypeName == selectedType)
                 .Where(row => Matches(row.Name, query) || Matches(row.TypeName, query))
                 .Select(row => new RowData(row.Name,
                     $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
-                    () => ShowAssetDetails(row.Info)))
+                    GetAssetIcon(row.TypeName), () => ShowAssetDetails(row.Info)))
                 .ToList();
         }
 
@@ -411,11 +498,12 @@ public sealed class MainView : UserControl
             for (var i = _visibleRows; i < end; i++)
             {
                 var row = _currentRows[i];
-                _items.Children.Add(CreateActionRow(row.Title, row.Detail, row.Action));
+                _items.Children.Add(CreateActionRow(row.Title, row.Detail, row.Icon, row.Action));
             }
             _visibleRows = end;
             _loadMoreButton.IsVisible = _visibleRows < _currentRows.Count;
-            _loadMoreButton.Content = $"Load more ({_currentRows.Count - _visibleRows} remaining)";
+            _loadMoreButton.Content = CreateIconLabel(MaterialIconKind.ChevronDown,
+                $"Load more ({_currentRows.Count - _visibleRows} remaining)", TextBrush, 15);
         }
         finally { _isRendering = false; }
     }
@@ -424,6 +512,7 @@ public sealed class MainView : UserControl
     {
         if (_isRendering || !_loadMoreButton.IsVisible || _visibleRows >= _currentRows.Count)
             return;
+
         if (_scrollViewer.Offset.Y + _scrollViewer.Viewport.Height >= _scrollViewer.Extent.Height - 140)
             RenderNextPage();
     }
@@ -460,6 +549,11 @@ public sealed class MainView : UserControl
                 if ((entry.Flags & 0x04) != 0)
                 {
                     var assets = manager.LoadAssetsFileFromBundle(bundle, index, false);
+                    var version = assets.file.Metadata.UnityVersion;
+                    if (string.IsNullOrWhiteSpace(version) || version == "0.0.0")
+                        version = bundle.file.Header.EngineVersion;
+                    LoadClassDatabase(manager, version);
+
                     var rows = BuildAssetRows(manager, assets);
                     return (Assets: assets, Rows: rows, IsSerialized: true,
                         Name: entry.Name, Kind: GetEntryKind(entry.Name),
@@ -478,7 +572,7 @@ public sealed class MainView : UserControl
                 _currentPage = BrowserPage.Assets;
                 _currentRows = result.Rows.Select(row => new RowData(row.Name,
                     $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
-                    () => ShowAssetDetails(row.Info))).ToList();
+                    GetAssetIcon(row.TypeName), () => ShowAssetDetails(row.Info))).ToList();
                 _status.Text = $"Assets file: {result.Assets.name}\nAssets: {_currentRows.Count}";
                 _searchBox.IsVisible = true;
                 _filterButton.IsVisible = true;
@@ -516,26 +610,28 @@ public sealed class MainView : UserControl
 
     private void ShowAssetDetails(AssetFileInfo asset)
     {
-        if (_currentAssets is null) return;
+        if (_currentAssets is null || _assetsManager is null) return;
         _currentPage = BrowserPage.AssetDetails;
         _searchBox.IsVisible = false;
         _filterButton.IsVisible = false;
         _filterBox.IsVisible = false;
-        var assetTypeName = Enum.GetName(typeof(AssetClassID), asset.GetTypeId(_currentAssets.file)) ?? "Asset";
-        _status.Text = $"Asset • {TryReadAssetName(_assetsManager!, _currentAssets, asset, assetTypeName)}";
+
+        var typeId = asset.GetTypeId(_currentAssets.file);
+        var typeName = Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
+        var name = TryReadAssetName(_assetsManager, _currentAssets, asset, typeName);
+        _status.Text = $"Asset • {name}";
         _items.Children.Clear();
         _loadMoreButton.IsVisible = false;
         UpdateNavigation();
 
-        var typeId = asset.GetTypeId(_currentAssets.file);
-        AddDetail("Name", TryReadAssetName(_assetsManager!, _currentAssets, asset,
-            Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}"));
-        AddDetail("Type", Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}");
+        AddDetail("Name", name);
+        AddDetail("Type", typeName);
         AddDetail("Path ID", asset.PathId.ToString());
         AddDetail("Type ID", typeId.ToString());
         AddDetail("Data size", FormatSize(asset.ByteSize));
         AddDetail("Relative data offset", asset.ByteStart.ToString("N0") + " bytes");
-        AddDetail("Absolute file offset", asset.GetAbsoluteByteStart(_currentAssets.file).ToString("N0") + " bytes");
+        AddDetail("Absolute file offset",
+            asset.GetAbsoluteByteStart(_currentAssets.file).ToString("N0") + " bytes");
         AddDetail("Source file", _currentAssets.name);
     }
 
@@ -604,75 +700,195 @@ public sealed class MainView : UserControl
 
     private void UpdateNavigation() => _backButton.IsVisible = _currentPage != BrowserPage.Home;
 
-    private void AddDetail(string label, string value) =>
-        _items.Children.Add(CreateInfoRow(label, value));
+    private void AddDetail(string label, string value)
+    {
+        var icon = label switch
+        {
+            "Name" => MaterialIconKind.TagText,
+            "Type" => MaterialIconKind.ShapeOutline,
+            "Path ID" => MaterialIconKind.Identifier,
+            "Type ID" => MaterialIconKind.Numeric,
+            "Data size" => MaterialIconKind.Database,
+            "Source file" => MaterialIconKind.FileDocumentOutline,
+            _ => MaterialIconKind.InformationOutline
+        };
+        _items.Children.Add(CreateInfoRow(label, value, icon));
+    }
 
     private void AddEmptyMessage(string message)
     {
-        _items.Children.Add(new TextBlock
+        _items.Children.Add(new Border
         {
-            Text = message, Foreground = Brush.Parse("#AAB8C2"),
-            Margin = new Thickness(6, 12)
+            Background = SurfaceContainerBrush,
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(16),
+            Child = CreateIconLabel(MaterialIconKind.InformationOutline, message, MutedBrush, 14)
         });
     }
 
-    private static Control CreateActionRow(string title, string detail, Action action)
+    private static Control CreateActionRow(string title, string detail,
+        MaterialIconKind iconKind, Action action)
     {
         var button = new Button
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            Padding = new Thickness(11),
-            Background = Brush.Parse("#202F3A"),
-            Foreground = Brushes.White,
+            Padding = new Thickness(14, 13),
+            Background = SurfaceContainerBrush,
+            Foreground = TextBrush,
             BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(8),
-            Content = new StackPanel
+            CornerRadius = new CornerRadius(17),
+            Content = new Grid
             {
-                Spacing = 4,
+                ColumnDefinitions = new ColumnDefinitions("42,*,Auto"),
                 Children =
                 {
-                    new TextBlock
+                    new Border
                     {
-                        Text = title, FontWeight = FontWeight.SemiBold,
-                        TextWrapping = TextWrapping.Wrap, Foreground = Brushes.White
+                        Width = 38,
+                        Height = 38,
+                        CornerRadius = new CornerRadius(13),
+                        Background = SurfaceHighBrush,
+                        Child = CreateIcon(iconKind, 21, PrimaryBrush),
+                        VerticalAlignment = VerticalAlignment.Center
                     },
-                    new TextBlock
+                    new StackPanel
                     {
-                        Text = detail, FontSize = 12,
-                        TextWrapping = TextWrapping.Wrap, Foreground = Brush.Parse("#AAB8C2")
-                    }
+                        Spacing = 4,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(10, 0, 6, 0),
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = title,
+                                FontWeight = FontWeight.SemiBold,
+                                FontSize = 14,
+                                TextWrapping = TextWrapping.Wrap,
+                                Foreground = TextBrush
+                            },
+                            new TextBlock
+                            {
+                                Text = detail,
+                                FontSize = 12,
+                                TextWrapping = TextWrapping.Wrap,
+                                Foreground = MutedBrush
+                            }
+                        }
+                    },
+                    CreateIcon(MaterialIconKind.ChevronRight, 20, MutedBrush)
                 }
             }
         };
+        Grid.SetColumn((Control)((Grid)button.Content).Children[1], 1);
+        Grid.SetColumn((Control)((Grid)button.Content).Children[2], 2);
+        ToolTip.SetTip(button, $"Open {title}");
         button.Click += (_, _) => action();
         return button;
     }
 
-    private static Control CreateInfoRow(string title, string detail) =>
+    private static Control CreateInfoRow(string title, string detail, MaterialIconKind iconKind) =>
         new Border
         {
-            Background = Brush.Parse("#202F3A"),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(11),
-            Child = new StackPanel
+            Background = SurfaceContainerBrush,
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(14),
+            Child = new Grid
             {
-                Spacing = 4,
+                ColumnDefinitions = new ColumnDefinitions("34,*"),
                 Children =
                 {
-                    new TextBlock
+                    CreateIcon(iconKind, 20, PrimaryBrush),
+                    new StackPanel
                     {
-                        Text = title, FontWeight = FontWeight.SemiBold,
-                        TextWrapping = TextWrapping.Wrap, Foreground = Brushes.White
-                    },
-                    new TextBlock
-                    {
-                        Text = detail, FontSize = 12,
-                        TextWrapping = TextWrapping.Wrap, Foreground = Brush.Parse("#AAB8C2")
+                        Spacing = 4,
+                        Margin = new Thickness(10, 0, 0, 0),
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = title,
+                                FontWeight = FontWeight.SemiBold,
+                                FontSize = 13,
+                                Foreground = MutedBrush
+                            },
+                            new TextBlock
+                            {
+                                Text = detail,
+                                FontSize = 14,
+                                TextWrapping = TextWrapping.Wrap,
+                                Foreground = TextBrush
+                            }
+                        }
                     }
                 }
             }
         };
+
+    private static Control CreateIcon(MaterialIconKind kind, double size, IBrush? foreground = null) =>
+        new MaterialIcon
+        {
+            Kind = kind,
+            Width = size,
+            Height = size,
+            Foreground = foreground ?? TextBrush,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+    private static Control CreateIconLabel(MaterialIconKind kind, string text,
+        IBrush foreground, double fontSize)
+    {
+        var panel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        panel.Children.Add(CreateIcon(kind, fontSize + 5, foreground));
+        panel.Children.Add(new TextBlock
+        {
+            Text = text,
+            FontSize = fontSize,
+            Foreground = foreground,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextWrapping = TextWrapping.Wrap
+        });
+        return panel;
+    }
+
+    private static MaterialIconKind GetAssetIcon(string typeName)
+    {
+        if (typeName.Contains("Texture", StringComparison.OrdinalIgnoreCase) ||
+            typeName.Contains("Sprite", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.Image;
+        if (typeName.Contains("Audio", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.MusicNote;
+        if (typeName.Contains("GameObject", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.CubeOutline;
+        if (typeName.Contains("Text", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.FileDocumentOutline;
+        if (typeName.Contains("MonoBehaviour", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.CodeBraces;
+        if (typeName.Contains("Font", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.FormatFont;
+        if (typeName.Contains("Material", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.PaletteOutline;
+        if (typeName.Contains("Mesh", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.Shape;
+        return MaterialIconKind.Cube;
+    }
+
+    private static MaterialIconKind GetEntryIcon(string name)
+    {
+        if (name.EndsWith(".assets", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.Database;
+        if (name.EndsWith(".resS", StringComparison.OrdinalIgnoreCase) ||
+            name.EndsWith(".resource", StringComparison.OrdinalIgnoreCase) ||
+            name.EndsWith(".resources", StringComparison.OrdinalIgnoreCase))
+            return MaterialIconKind.FileDocumentOutline;
+        return MaterialIconKind.FileOutline;
+    }
 
     private static bool Matches(string value, string query) =>
         string.IsNullOrEmpty(query) ||
