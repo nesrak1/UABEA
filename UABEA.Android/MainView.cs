@@ -11,6 +11,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Material.Icons;
@@ -417,7 +418,9 @@ public sealed class MainView : UserControl
         {
             var typeId = info.GetTypeId(instance.file);
             var typeName = Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
-            var name = TryReadAssetName(manager, instance, info, typeName);
+            // Avoid parsing every asset's serialized fields during initial loading.
+            // Large files can contain thousands of complex assets; read names only on demand.
+            var name = $"{typeName} ({info.PathId})";
             result.Add(new AssetRow(info, name, typeName));
         }
         return result;
@@ -654,22 +657,42 @@ public sealed class MainView : UserControl
         finally { SetLoading(false); }
     }
 
-    private void ShowAssetDetails(AssetFileInfo asset)
+    private async void ShowAssetDetails(AssetFileInfo asset)
     {
         if (_currentAssets is null || _assetsManager is null) return;
+        var instance = _currentAssets;
+        var manager = _assetsManager;
         _currentPage = BrowserPage.AssetDetails;
         _searchBox.IsVisible = false;
         _filterButton.IsVisible = false;
         _filterBox.IsVisible = false;
-
-        var typeId = asset.GetTypeId(_currentAssets.file);
-        var typeName = Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
-        var name = TryReadAssetName(_assetsManager, _currentAssets, asset, typeName);
-        _status.Text = $"Asset • {name}";
         _items.Children.Clear();
         _loadMoreButton.IsVisible = false;
         UpdateNavigation();
 
+        var typeId = asset.GetTypeId(instance.file);
+        var typeName = Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
+        _status.Text = $"Reading asset details...\n{typeName}";
+        SetLoading(true);
+
+        string name;
+        try
+        {
+            name = await Task.Run(() => TryReadAssetName(manager, instance, asset, typeName));
+        }
+        catch
+        {
+            name = $"{typeName} ({asset.PathId})";
+        }
+        finally
+        {
+            SetLoading(false);
+        }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
+            return;
+
+        _status.Text = $"Asset • {name}";
         AddDetail("Name", name);
         AddDetail("Type", typeName);
         AddDetail("Path ID", asset.PathId.ToString());
@@ -677,8 +700,8 @@ public sealed class MainView : UserControl
         AddDetail("Data size", FormatSize(asset.ByteSize));
         AddDetail("Relative data offset", asset.ByteStart.ToString("N0") + " bytes");
         AddDetail("Absolute file offset",
-            asset.GetAbsoluteByteStart(_currentAssets.file).ToString("N0") + " bytes");
-        AddDetail("Source file", _currentAssets.name);
+            asset.GetAbsoluteByteStart(instance.file).ToString("N0") + " bytes");
+        AddDetail("Source file", instance.name);
     }
 
     private void GoBack()
@@ -829,7 +852,25 @@ public sealed class MainView : UserControl
         Grid.SetColumn((Control)((Grid)button.Content).Children[1], 1);
         Grid.SetColumn((Control)((Grid)button.Content).Children[2], 2);
         ToolTip.SetTip(button, $"Open {title}");
-        button.Click += (_, _) => action();
+        var suppressNextClick = false;
+        InputElement.SetIsHoldingEnabled(button, true);
+        button.PointerPressed += (_, _) => suppressNextClick = false;
+        button.Holding += (_, args) =>
+        {
+            if (args.HoldingState == HoldingState.Started)
+                suppressNextClick = true;
+            else if (args.HoldingState == HoldingState.Canceled)
+                suppressNextClick = false;
+        };
+        button.Click += (_, _) =>
+        {
+            if (suppressNextClick)
+            {
+                suppressNextClick = false;
+                return;
+            }
+            action();
+        };
 
         if (exportAction is not null || openAction is not null)
         {
