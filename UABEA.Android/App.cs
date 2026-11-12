@@ -12,7 +12,7 @@ public sealed class App : Avalonia.Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
-        RequestedThemeVariant = ThemeVariant.Default;
+        RequestedThemeVariant = ThemeVariant.Dark;
     }
 
     public override void OnFrameworkInitializationCompleted()
