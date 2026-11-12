@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <style name="UABEAStartingTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+  <style name="UABEAStartingTheme" parent="@style/UABEATheme">
     <item name="android:windowSplashScreenBackground">#000000</item>
     <item name="android:windowSplashScreenAnimatedIcon">@android:drawable/sym_def_app_icon</item>
-    <item name="android:postSplashScreenTheme">@style/UABEATheme</item>
     <item name="android:windowBackground">#000000</item>
   </style>
   <style name="UABEATheme" parent="@style/Theme.AppCompat.DayNight.NoActionBar">
