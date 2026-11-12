@@ -11,7 +11,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
-using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Material.Icons;
@@ -853,14 +852,11 @@ public sealed class MainView : UserControl
         Grid.SetColumn((Control)((Grid)button.Content).Children[2], 2);
         ToolTip.SetTip(button, $"Open {title}");
         var suppressNextClick = false;
-        InputElement.SetIsHoldingEnabled(button, true);
         button.PointerPressed += (_, _) => suppressNextClick = false;
         button.Holding += (_, args) =>
         {
             if (args.HoldingState == HoldingState.Started)
                 suppressNextClick = true;
-            else if (args.HoldingState == HoldingState.Canceled)
-                suppressNextClick = false;
         };
         button.Click += (_, _) =>
         {
