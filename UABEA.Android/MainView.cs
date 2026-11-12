@@ -1039,6 +1039,54 @@ public sealed class MainView : UserControl
         RemovePreviewLoadingCard(loadingCard);
         if (string.IsNullOrEmpty(tempAudioPath))
         {
+            // If the sidecar resource is missing, ask for it immediately on the
+            // first preview attempt instead of presenting an error first.
+            if (needsExternalResource && !string.IsNullOrWhiteSpace(audioResourceSource))
+            {
+                bool selected = await ChooseAudioResourceAsync(
+                    audioResourceSource, instance, asset);
+
+                if (!selected && _currentAssets == instance &&
+                    _currentPage == BrowserPage.AssetDetails)
+                {
+                    var promptContent = new StackPanel { Spacing = 10 };
+                    promptContent.Children.Add(new TextBlock
+                    {
+                        Text = "Select the matching .resource file to preview this AudioClip.",
+                        Foreground = TextBrush,
+                        TextWrapping = TextWrapping.Wrap
+                    });
+
+                    var chooseResourceButton = new Button
+                    {
+                        Content = "Select .resource file",
+                        MinHeight = 44,
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        Background = PrimaryBrush,
+                        Foreground = OnPrimaryBrush,
+                        CornerRadius = new CornerRadius(13),
+                        FontWeight = FontWeight.SemiBold
+                    };
+                    var promptCard = CreatePreviewCard("Audio preview", promptContent, MaterialIconKind.MusicNote);
+                    chooseResourceButton.Click += async (_, _) =>
+                    {
+                        chooseResourceButton.IsEnabled = false;
+                        _items.Children.Remove(promptCard);
+                        bool retried = await ChooseAudioResourceAsync(
+                            audioResourceSource, instance, asset);
+                        if (!retried && _currentAssets == instance &&
+                            _currentPage == BrowserPage.AssetDetails)
+                        {
+                            _items.Children.Add(promptCard);
+                            chooseResourceButton.IsEnabled = true;
+                        }
+                    };
+                    promptContent.Children.Add(chooseResourceButton);
+                    _items.Children.Add(promptCard);
+                }
+                return;
+            }
+
             var errorContent = new StackPanel { Spacing = 10 };
             errorContent.Children.Add(new TextBlock
             {
@@ -1046,47 +1094,7 @@ public sealed class MainView : UserControl
                 Foreground = TextBrush,
                 TextWrapping = TextWrapping.Wrap
             });
-
-            if (needsExternalResource && !string.IsNullOrWhiteSpace(audioResourceSource))
-            {
-                errorContent.Children.Add(new TextBlock
-                {
-                    Text = "Select the matching .resource, .resources or .resS file. It will be linked to this AudioClip automatically.",
-                    Foreground = MutedBrush,
-                    TextWrapping = TextWrapping.Wrap,
-                    FontSize = 12
-                });
-                var chooseResourceButton = new Button
-                {
-                    Content = "Choose audio resource file",
-                    MinHeight = 44,
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    Background = PrimaryBrush,
-                    Foreground = OnPrimaryBrush,
-                    CornerRadius = new CornerRadius(13),
-                    FontWeight = FontWeight.SemiBold
-                };
-                errorContent.Children.Add(chooseResourceButton);
-                var errorCard = CreatePreviewCard("Audio preview", errorContent, MaterialIconKind.MusicNote);
-                chooseResourceButton.Click += async (_, _) =>
-                {
-                    chooseResourceButton.IsEnabled = false;
-                    _items.Children.Remove(errorCard);
-                    bool selected = await ChooseAudioResourceAsync(
-                        audioResourceSource, instance, asset);
-                    if (!selected && _currentAssets == instance &&
-                        _currentPage == BrowserPage.AssetDetails)
-                    {
-                        _items.Children.Add(errorCard);
-                        chooseResourceButton.IsEnabled = true;
-                    }
-                };
-                _items.Children.Add(errorCard);
-            }
-            else
-            {
-                _items.Children.Add(CreatePreviewCard("Audio preview", errorContent, MaterialIconKind.MusicNote));
-            }
+            _items.Children.Add(CreatePreviewCard("Audio preview", errorContent, MaterialIconKind.MusicNote));
             return;
         }
 
@@ -1104,13 +1112,13 @@ public sealed class MainView : UserControl
         var selected = await topLevel.StorageProvider.OpenFilePickerAsync(
             new FilePickerOpenOptions
             {
-                Title = "Select the AudioClip resource file",
+                Title = "Select the matching .resource file",
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
                     new FilePickerFileType("Unity audio resource files")
                     {
-                        Patterns = new[] { "*.resource", "*.resources", "*.resS", "*.ress" }
+                        Patterns = new[] { "*.resource" }
                     }
                 }
             });
