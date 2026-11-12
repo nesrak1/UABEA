@@ -964,43 +964,53 @@ public sealed class MainView : UserControl
         return button;
     }
 
-    private static Control CreateInfoRow(string title, string detail, MaterialIconKind iconKind) =>
-        new Border
+    private static Control CreateInfoRow(string title, string detail, MaterialIconKind iconKind)
+    {
+        var icon = CreateIcon(iconKind, 20, PrimaryBrush);
+        var text = new StackPanel
+        {
+            Spacing = 5,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = title,
+                    FontWeight = FontWeight.SemiBold,
+                    FontSize = 13,
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = MutedBrush
+                },
+                new TextBlock
+                {
+                    Text = detail,
+                    FontSize = 14,
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = TextBrush
+                }
+            }
+        };
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("34,*"),
+            ColumnSpacing = 8,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(icon, 0);
+        Grid.SetColumn(text, 1);
+        grid.Children.Add(icon);
+        grid.Children.Add(text);
+
+        return new Border
         {
             Background = SurfaceContainerBrush,
             CornerRadius = new CornerRadius(16),
             Padding = new Thickness(14),
-            Child = new Grid
-            {
-                ColumnDefinitions = new ColumnDefinitions("34,*"),
-                Children =
-                {
-                    CreateIcon(iconKind, 20, PrimaryBrush),
-                    new StackPanel
-                    {
-                        Spacing = 4,
-                        Margin = new Thickness(10, 0, 0, 0),
-                        Children =
-                        {
-                            new TextBlock
-                            {
-                                Text = title,
-                                FontWeight = FontWeight.SemiBold,
-                                FontSize = 13,
-                                Foreground = MutedBrush
-                            },
-                            new TextBlock
-                            {
-                                Text = detail,
-                                FontSize = 14,
-                                TextWrapping = TextWrapping.Wrap,
-                                Foreground = TextBrush
-                            }
-                        }
-                    }
-                }
-            }
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = grid
         };
+    }
 
     private static Control CreateIcon(MaterialIconKind kind, double size, IBrush? foreground = null) =>
         new MaterialIcon
