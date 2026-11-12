@@ -433,7 +433,7 @@ internal sealed class MeshPreviewControl : Control
             var fill = new SolidColorBrush(Color.FromRgb(shade, (byte)Math.Min(255, shade + 8), (byte)Math.Min(255, shade + 18)));
             var pen = new Pen(new SolidColorBrush(Color.FromRgb(20, 25, 32)), _wireframe ? 1.15 : 0.45);
 
-            using var geometry = new StreamGeometry();
+            var geometry = new StreamGeometry();
             using (var g = geometry.Open())
             {
                 g.BeginFigure(a, true);
