@@ -1766,7 +1766,7 @@ public sealed class MainView : UserControl
         return root;
     }
 
-    private static byte[] ReadExternalResource(AssetsFileInstance instance, string source, ulong offset, ulong size)
+    private byte[] ReadExternalResource(AssetsFileInstance instance, string source, ulong offset, ulong size)
     {
         string root = GetExternalResourceDirectory(instance);
         string normalized = NormalizeResourcePath(source);
