@@ -28,6 +28,15 @@
       <Setter Property="Foreground" Value="#FFFFFF" />
       <Setter Property="BorderBrush" Value="#414141" />
     </Style>
+    <Style Selector="ComboBox /template/ Border">
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Background" Value="#171717" />
+      <Setter Property="BorderBrush" Value="#414141" />
+    </Style>
+    <Style Selector="ComboBoxItem /template/ Border">
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Background" Value="#171717" />
+    </Style>
     <Style Selector="ComboBoxItem">
       <Setter Property="Background" Value="#171717" />
       <Setter Property="Foreground" Value="#FFFFFF" />

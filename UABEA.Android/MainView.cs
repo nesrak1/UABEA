@@ -12,6 +12,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.Platform.Storage;
 using Material.Icons;
 using Material.Icons.Avalonia;
@@ -43,7 +44,10 @@ public sealed class MainView : UserControl
     private readonly ScrollViewer _scrollViewer;
     private readonly Button _backButton;
     private readonly Button _loadMoreButton;
-    private readonly ProgressBar _loadingBar;
+    private readonly StackPanel _loadingIndicator;
+    private readonly TextBlock _spinnerGlyph;
+    private readonly RotateTransform _spinnerRotation;
+    private readonly DispatcherTimer _spinnerTimer;
 
     private AssetsManager? _assetsManager;
     private string? _currentTempPath;
@@ -59,7 +63,7 @@ public sealed class MainView : UserControl
 
     private enum BrowserPage { Home, Bundle, Assets, EntryDetails, AssetDetails }
 
-    private sealed record RowData(string Title, string Detail, MaterialIconKind Icon, Action Action);
+    private sealed record RowData(string Title, string Detail, MaterialIconKind Icon, Action Action, AssetFileInfo? AssetInfo = null);
     private sealed record OpenResult(AssetsManager Manager, BundleFileInstance? Bundle,
         AssetsFileInstance? Assets, List<RowData> Rows, List<AssetRow> AssetRows,
         string Summary, BrowserPage Page);
@@ -171,14 +175,36 @@ public sealed class MainView : UserControl
         _filterBox.SelectionChanged += (_, _) => RefreshCurrentList();
         root.Children.Add(_filterBox);
 
-        _loadingBar = new ProgressBar
+        _spinnerRotation = new RotateTransform();
+        _spinnerGlyph = new TextBlock
         {
-            IsIndeterminate = true,
-            Height = 4,
-            IsVisible = false,
-            Foreground = PrimaryBrush
+            Text = "◌",
+            FontSize = 32,
+            Foreground = PrimaryBrush,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            RenderTransform = _spinnerRotation
         };
-        root.Children.Add(_loadingBar);
+        _loadingIndicator = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Spacing = 2,
+            IsVisible = false,
+            Children =
+            {
+                _spinnerGlyph,
+                new TextBlock
+                {
+                    Text = "Loading...",
+                    FontSize = 12,
+                    Foreground = MutedBrush,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                }
+            }
+        };
+        _spinnerTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(45) };
+        _spinnerTimer.Tick += (_, _) => _spinnerRotation.Angle = (_spinnerRotation.Angle + 18) % 360;
+        root.Children.Add(_loadingIndicator);
 
         var statusCard = new Border
         {
@@ -419,7 +445,7 @@ public sealed class MainView : UserControl
             var typeName = Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
             // Avoid parsing every asset's serialized fields during initial loading.
             // Large files can contain thousands of complex assets; read names only on demand.
-            var name = $"{typeName} ({info.PathId})";
+            var name = "Unnamed asset";
             result.Add(new AssetRow(info, name, typeName));
         }
         return result;
@@ -441,7 +467,7 @@ public sealed class MainView : UserControl
             // Some asset classes do not contain m_Name or have unsupported layouts.
         }
 
-        return $"{fallbackType} ({info.PathId})";
+        return "Unnamed asset";
     }
 
     private void RefreshCurrentList()
@@ -477,7 +503,7 @@ public sealed class MainView : UserControl
                 .Where(row => Matches(row.Name, query) || Matches(row.TypeName, query))
                 .Select(row => new RowData(row.Name,
                     $"{row.TypeName} • {FormatSize(row.Info.ByteSize)}",
-                    GetAssetIcon(row.TypeName), () => ShowAssetDetails(row.Info)))
+                    GetAssetIcon(row.TypeName), () => ShowAssetDetails(row.Info), row.Info))
                 .ToList();
         }
 
@@ -497,6 +523,7 @@ public sealed class MainView : UserControl
     {
         if (_isRendering || _visibleRows >= _currentRows.Count) return;
         _isRendering = true;
+        var pendingAssetNames = new List<(AssetFileInfo Info, Control Control)>();
         try
         {
             var end = Math.Min(_visibleRows + PageSize, _currentRows.Count);
@@ -504,9 +531,12 @@ public sealed class MainView : UserControl
             {
                 var row = _currentRows[i];
                 var isBundleEntry = _currentPage == BrowserPage.Bundle && _currentBundle is not null;
-                _items.Children.Add(CreateActionRow(row.Title, row.Detail, row.Icon, row.Action,
+                var control = CreateActionRow(row.Title, row.Detail, row.Icon, row.Action,
                     isBundleEntry ? () => _ = ExportBundleEntryAsync(row.Title) : null,
-                    isBundleEntry ? () => _ = OpenBundleEntryAsync(row.Title) : null));
+                    isBundleEntry ? () => _ = OpenBundleEntryAsync(row.Title) : null);
+                _items.Children.Add(control);
+                if (row.AssetInfo is not null)
+                    pendingAssetNames.Add((row.AssetInfo, control));
             }
             _visibleRows = end;
             _loadMoreButton.IsVisible = _visibleRows < _currentRows.Count;
@@ -514,6 +544,32 @@ public sealed class MainView : UserControl
                 $"Load more ({_currentRows.Count - _visibleRows} remaining)", TextBrush, 15);
         }
         finally { _isRendering = false; }
+        if (pendingAssetNames.Count > 0)
+            _ = ResolveAssetNamesAsync(pendingAssetNames, _currentAssets, _assetsManager);
+    }
+
+    private async Task ResolveAssetNamesAsync(
+        List<(AssetFileInfo Info, Control Control)> pending,
+        AssetsFileInstance? instance, AssetsManager? manager)
+    {
+        if (instance is null || manager is null) return;
+        List<(Control Control, string Name)> resolved;
+        try
+        {
+            resolved = await Task.Run(() => pending.Select(item =>
+                (item.Control, TryReadAssetName(manager, instance, item.Info, "Unnamed asset"))).ToList());
+        }
+        catch { return; }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.Assets) return;
+        foreach (var item in resolved)
+        {
+            if (item.Control is not Button button || button.Content is not Grid grid ||
+                grid.Children.Count < 2 || grid.Children[1] is not StackPanel panel ||
+                panel.Children.Count == 0 || panel.Children[0] is not TextBlock title)
+                continue;
+            title.Text = item.Name;
+        }
     }
 
     private void TryAutoLoadMore()
@@ -681,7 +737,7 @@ public sealed class MainView : UserControl
         }
         catch
         {
-            name = $"{typeName} ({asset.PathId})";
+            name = "Unnamed asset";
         }
         finally
         {
@@ -762,7 +818,16 @@ public sealed class MainView : UserControl
 
     private void SetLoading(bool loading, string? message = null)
     {
-        _loadingBar.IsVisible = loading;
+        _loadingIndicator.IsVisible = loading;
+        if (loading)
+        {
+            if (!_spinnerTimer.IsEnabled) _spinnerTimer.Start();
+        }
+        else
+        {
+            _spinnerTimer.Stop();
+            _spinnerRotation.Angle = 0;
+        }
         if (message is not null) _status.Text = message;
     }
 
@@ -808,7 +873,7 @@ public sealed class MainView : UserControl
             CornerRadius = new CornerRadius(17),
             Content = new Grid
             {
-                ColumnDefinitions = new ColumnDefinitions("42,*,Auto"),
+                ColumnDefinitions = new ColumnDefinitions("44,*,24"),
                 Children =
                 {
                     new Border
@@ -822,9 +887,10 @@ public sealed class MainView : UserControl
                     },
                     new StackPanel
                     {
-                        Spacing = 4,
+                        Spacing = 5,
                         VerticalAlignment = VerticalAlignment.Center,
-                        Margin = new Thickness(10, 0, 6, 0),
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        Margin = new Thickness(8, 0, 8, 0),
                         Children =
                         {
                             new TextBlock
@@ -848,6 +914,7 @@ public sealed class MainView : UserControl
                 }
             }
         };
+        Grid.SetColumn((Control)((Grid)button.Content).Children[0], 0);
         Grid.SetColumn((Control)((Grid)button.Content).Children[1], 1);
         Grid.SetColumn((Control)((Grid)button.Content).Children[2], 2);
         ToolTip.SetTip(button, $"Open {title}");
