@@ -1187,41 +1187,27 @@ public sealed class MainView : UserControl
             _audioProgressTimer.Start();
         }
 
-        _items.Children.Add(new Border
+        var playerContent = new StackPanel
         {
-            Background = SurfaceContainerBrush,
-            BorderBrush = OutlineBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(16),
-            Padding = new Thickness(12),
-            Child = new StackPanel
+            Spacing = 10,
+            Children =
             {
-                Spacing = 10,
-                Children =
+                playerStatus,
+                playButton,
+                positionSlider,
+                timeLabel,
+                new StackPanel
                 {
-                    new TextBlock
-                    {
-                        Text = "Audio preview • " + audioName,
-                        FontWeight = FontWeight.SemiBold,
-                        Foreground = TextBrush,
-                        TextWrapping = TextWrapping.Wrap
-                    },
-                    playerStatus,
-                    playButton,
-                    positionSlider,
-                    timeLabel,
-                    new StackPanel
-                    {
-                        Orientation = Orientation.Horizontal,
-                        Spacing = 8,
-                        Children = { loopCheck }
-                    },
-                    new TextBlock { Text = "Volume", FontSize = 12, Foreground = MutedBrush },
-                    volumeSlider,
-                    volumeLabel
-                }
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 8,
+                    Children = { loopCheck }
+                },
+                new TextBlock { Text = "Volume", FontSize = 12, Foreground = MutedBrush },
+                volumeSlider,
+                volumeLabel
             }
-        });
+        };
+        _items.Children.Add(CreatePreviewCard("Audio preview • " + audioName, playerContent, MaterialIconKind.MusicNote));
     }
 
     private void StopAudioPlayback()
