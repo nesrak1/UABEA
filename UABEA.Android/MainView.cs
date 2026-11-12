@@ -1462,7 +1462,7 @@ public sealed class MainView : UserControl
         }
         catch (Exception ex)
         {
-            error = ex.Message;
+            error = $"{ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}";
         }
 
         if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
