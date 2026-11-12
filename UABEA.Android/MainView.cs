@@ -934,13 +934,13 @@ public sealed class MainView : UserControl
                 (fontBytes.Length > 4 && fontBytes[0] == 0x4F && fontBytes[1] == 0x54 ? ".otf" : ".ttf"));
             await File.WriteAllBytesAsync(tempFontPath, fontBytes);
 
-            using var typeface = Android.Graphics.Typeface.CreateFromFile(tempFontPath);
-            using var bitmap = Android.Graphics.Bitmap.CreateBitmap(900, 360, Android.Graphics.Bitmap.Config.Argb8888!);
-            using (var canvas = new Android.Graphics.Canvas(bitmap))
-            using (var paint = new Android.Graphics.Paint(Android.Graphics.PaintFlags.AntiAlias))
+            using var typeface = global::Android.Graphics.Typeface.CreateFromFile(tempFontPath);
+            using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(900, 360, global::Android.Graphics.Bitmap.Config.Argb8888!);
+            using (var canvas = new global::Android.Graphics.Canvas(bitmap))
+            using (var paint = new global::Android.Graphics.Paint(global::Android.Graphics.PaintFlags.AntiAlias))
             {
-                canvas.DrawColor(Android.Graphics.Color.Rgb(23, 23, 23));
-                paint.Color = Android.Graphics.Color.White;
+                canvas.DrawColor(global::Android.Graphics.Color.Rgb(23, 23, 23));
+                paint.Color = global::Android.Graphics.Color.White;
                 paint.Typeface = typeface;
                 paint.TextSize = 62;
                 canvas.DrawText("Aa Bb Cc 123", 28, 105, paint);
@@ -952,7 +952,7 @@ public sealed class MainView : UserControl
             }
 
             using var pngStream = new MemoryStream();
-            bitmap.Compress(Android.Graphics.Bitmap.CompressFormat.Png!, 100, pngStream);
+            bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, pngStream);
             pngStream.Position = 0;
             previewBitmap = new Avalonia.Media.Imaging.Bitmap(pngStream);
         }
