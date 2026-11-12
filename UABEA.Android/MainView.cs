@@ -928,7 +928,7 @@ public sealed class MainView : UserControl
                 Spacing = 5,
                 Children =
                 {
-                    new TextBlock { Text = $"{previewWidth}×{previewHeight} px", FontSize = 12, Foreground = MutedBrush },
+                    new TextBlock { Text = $"{previewWidth}×{previewHeight} px", FontSize = 12, Foreground = TextBrush },
                     image
                 }
             }, MaterialIconKind.Image));
@@ -961,11 +961,12 @@ public sealed class MainView : UserControl
                     throw new InvalidDataException("AudioClip data could not be read.");
 
                 audioName = field["m_Name"]?.AsString;
-                var resource = field["m_Resource"];
-                var sourceField = resource["m_Source"];
+                // Match UABEA's AudioClip plugin field access. The Unity type tree
+                // exposes these streamed-resource members as flattened field names.
+                var sourceField = field["m_Resource.m_Source"];
                 string source = sourceField.IsDummy ? "" : sourceField.AsString;
-                ulong offset = ReadUnsignedField(resource["m_Offset"]);
-                ulong size = ReadUnsignedField(resource["m_Size"]);
+                ulong offset = ReadUnsignedField(field["m_Resource.m_Offset"]);
+                ulong size = ReadUnsignedField(field["m_Resource.m_Size"]);
                 if (string.IsNullOrWhiteSpace(source) || size == 0 || size > int.MaxValue)
                     throw new InvalidDataException("This AudioClip has no external FMOD resource. Embedded audio data is not supported by this preview yet.");
 
@@ -1271,6 +1272,10 @@ public sealed class MainView : UserControl
                 // Unity stores Font.m_FontData as a generic array in some class
                 // databases. Reinterpret its element as ByteArray before deserializing,
                 // matching UABEA's FontPlugin implementation.
+                // Follow UABEA FontPlugin: change the m_FontData array element
+                // type on the template, then deserialize with that SAME template.
+                // Calling manager.GetBaseField afterwards would create a fresh
+                // template and lose the ByteArray override on uncached managers.
                 var template = manager.GetTemplateBaseField(instance, asset);
                 if (template == null)
                     throw new InvalidDataException("Font type information could not be read.");
@@ -1280,9 +1285,13 @@ public sealed class MainView : UserControl
                     throw new InvalidDataException("This Unity Font has no m_FontData field.");
 
                 fontDataTemplate.Children[0].ValueType = AssetValueType.ByteArray;
-                var field = manager.GetBaseField(instance, asset);
-                if (field == null)
-                    throw new InvalidDataException("Font data could not be read.");
+
+                AssetTypeValueField field;
+                lock (instance.LockReader)
+                {
+                    long absolutePosition = asset.GetAbsoluteByteStart(instance.file);
+                    field = template.MakeValue(instance.file.Reader, absolutePosition, null);
+                }
 
                 fontName = field["m_Name"]?.AsString;
                 return field["m_FontData.Array"]?.AsByteArray ?? Array.Empty<byte>();
@@ -1543,6 +1552,8 @@ public sealed class MainView : UserControl
     private static byte[] ReadExternalResource(AssetsFileInstance instance, string source, ulong offset, ulong size)
     {
         string root = Path.GetDirectoryName(instance.path) ?? "";
+        if (instance.parentBundle != null)
+            root = Path.GetDirectoryName(root) ?? root;
         string normalized = NormalizeResourcePath(source);
         string relative = normalized.Replace('/', Path.DirectorySeparatorChar);
         var candidates = new List<string>();
@@ -1576,13 +1587,32 @@ public sealed class MainView : UserControl
     private Border CreatePreviewCard(string title, Control content, MaterialIconKind iconKind = MaterialIconKind.Image)
     {
         var panel = new StackPanel { Spacing = 9, VerticalAlignment = VerticalAlignment.Center };
-        panel.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.SemiBold, FontSize = 13, Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap });
+        var titleRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        titleRow.Children.Add(CreateIcon(iconKind, 18, PrimaryBrush));
+        titleRow.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontWeight = FontWeight.SemiBold,
+            FontSize = 13,
+            Foreground = MutedBrush,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        panel.Children.Add(titleRow);
         panel.Children.Add(content);
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("34,*") };
-        var icon = CreateIcon(iconKind, 20, PrimaryBrush);
-        Grid.SetColumn(icon, 0); Grid.SetColumn(panel, 1);
-        grid.Children.Add(icon); grid.Children.Add(panel);
-        return new Border { Background = SurfaceContainerBrush, CornerRadius = new CornerRadius(16), Padding = new Thickness(14), HorizontalAlignment = HorizontalAlignment.Stretch, Child = grid };
+        return new Border
+        {
+            Background = SurfaceContainerBrush,
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(14),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = panel
+        };
     }
 
     private Border AddPreviewLoadingCard(string title, MaterialIconKind iconKind)
@@ -1659,8 +1689,9 @@ public sealed class MainView : UserControl
         }
         else if (_zoomScale.ScaleX > 1)
         {
-            _zoomTranslate.X += current.X - _lastPanPoint.X;
-            _zoomTranslate.Y += current.Y - _lastPanPoint.Y;
+            const double panSpeed = 1.85;
+            _zoomTranslate.X += (current.X - _lastPanPoint.X) * panSpeed;
+            _zoomTranslate.Y += (current.Y - _lastPanPoint.Y) * panSpeed;
         }
         _lastPanPoint = current;
     }
