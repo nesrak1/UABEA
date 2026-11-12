@@ -948,8 +948,8 @@ public sealed class MainView : UserControl
     private async Task ShowAudioClipPreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
     {
-        _status.Text = "Preparing audio preview...";
-        SetLoading(true);
+        _status.Text = "Audio preview";
+        var loadingCard = AddPreviewLoadingCard("Audio preview", MaterialIconKind.MusicNote);
         string? tempAudioPath = null;
         string? error = null;
         string? audioName = null;
@@ -1000,13 +1000,11 @@ public sealed class MainView : UserControl
         {
             error = ex.Message;
         }
-        finally
-        {
-            SetLoading(false);
-        }
+        finally { }
 
         if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
         {
+            RemovePreviewLoadingCard(loadingCard);
             if (!string.IsNullOrEmpty(tempAudioPath))
             {
                 try { File.Delete(tempAudioPath); } catch { }
@@ -1014,22 +1012,15 @@ public sealed class MainView : UserControl
             return;
         }
 
+        RemovePreviewLoadingCard(loadingCard);
         if (string.IsNullOrEmpty(tempAudioPath))
         {
-            _items.Children.Add(new Border
+            _items.Children.Add(CreatePreviewCard("Audio preview", new TextBlock
             {
-                Background = SurfaceContainerBrush,
-                BorderBrush = OutlineBrush,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(16),
-                Padding = new Thickness(12),
-                Child = new TextBlock
-                {
-                    Text = "Audio preview unavailable: " + error,
-                    Foreground = MutedBrush,
-                    TextWrapping = TextWrapping.Wrap
-                }
-            });
+                Text = "Preview unavailable: " + error,
+                Foreground = TextBrush,
+                TextWrapping = TextWrapping.Wrap
+            }, MaterialIconKind.MusicNote));
             return;
         }
 
@@ -1280,8 +1271,8 @@ public sealed class MainView : UserControl
     private async Task ShowFontPreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
     {
-        _status.Text = "Loading font preview...";
-        SetLoading(true);
+        _status.Text = "Font preview";
+        var loadingCard = AddPreviewLoadingCard("Font preview", MaterialIconKind.FormatFont);
         Avalonia.Media.Imaging.Bitmap? previewBitmap = null;
         string? fontName = null;
         string? error = null;
@@ -1350,46 +1341,27 @@ public sealed class MainView : UserControl
             {
                 try { File.Delete(tempFontPath); } catch { }
             }
-            SetLoading(false);
         }
 
         if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
         {
+            RemovePreviewLoadingCard(loadingCard);
             previewBitmap?.Dispose();
             return;
         }
 
-        _items.Children.Add(new Border
-        {
-            Background = SurfaceContainerBrush,
-            BorderBrush = OutlineBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(16),
-            Padding = new Thickness(12),
-            Child = previewBitmap != null
-                ? new StackPanel
-                {
-                    Spacing = 8,
-                    Children =
-                    {
-                        new TextBlock { Text = "Font preview • " + (fontName ?? "Unnamed font"), FontWeight = FontWeight.SemiBold, Foreground = TextBrush },
-                        new Image { Source = previewBitmap, Stretch = Stretch.Uniform, MaxHeight = 220 }
-                    }
-                }
-                : new TextBlock
-                {
-                    Text = "Font preview unavailable: " + error,
-                    Foreground = MutedBrush,
-                    TextWrapping = TextWrapping.Wrap
-                }
-        });
+        RemovePreviewLoadingCard(loadingCard);
+        Control content = previewBitmap != null
+            ? new Image { Source = previewBitmap, Stretch = Stretch.Uniform, MaxHeight = 220 }
+            : new TextBlock { Text = "Preview unavailable: " + error, Foreground = TextBrush, TextWrapping = TextWrapping.Wrap };
+        _items.Children.Add(CreatePreviewCard("Font preview • " + (fontName ?? "Unnamed font"), content, MaterialIconKind.FormatFont));
     }
 
     private async Task ShowTextAssetPreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
     {
-        _status.Text = "Loading text preview...";
-        SetLoading(true);
+        _status.Text = "Text preview";
+        var loadingCard = AddPreviewLoadingCard("Text preview", MaterialIconKind.FileDocumentOutline);
 
         string preview;
         try
@@ -1423,35 +1395,30 @@ public sealed class MainView : UserControl
         }
         finally
         {
-            SetLoading(false);
         }
 
         if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
-            return;
-
-        _status.Text = "TextAsset preview";
-        _items.Children.Add(new Border
         {
-            Background = SurfaceContainerBrush,
-            BorderBrush = OutlineBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(16),
-            Padding = new Thickness(12),
-            Child = new ScrollViewer
+            RemovePreviewLoadingCard(loadingCard);
+            return;
+        }
+
+        RemovePreviewLoadingCard(loadingCard);
+        var textContent = new ScrollViewer
+        {
+            MaxHeight = 520,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = new TextBlock
             {
-                MaxHeight = 520,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Content = new TextBlock
-                {
-                    Text = string.IsNullOrEmpty(preview) ? "(This TextAsset is empty.)" : preview,
-                    FontFamily = new FontFamily("monospace"),
-                    FontSize = 13,
-                    Foreground = TextBrush,
-                    TextWrapping = TextWrapping.NoWrap
-                }
+                Text = string.IsNullOrEmpty(preview) ? "(This TextAsset is empty.)" : preview,
+                FontFamily = new FontFamily("monospace"),
+                FontSize = 13,
+                Foreground = TextBrush,
+                TextWrapping = TextWrapping.NoWrap
             }
-        });
+        };
+        _items.Children.Add(CreatePreviewCard("TextAsset preview", textContent, MaterialIconKind.FileDocumentOutline));
     }
 
     private void GoBack()
