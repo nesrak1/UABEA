@@ -7,6 +7,7 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -62,8 +63,7 @@ public sealed class MainView : UserControl
 
         var toolbar = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            ColumnSpacing = 8
+            ColumnDefinitions = new ColumnDefinitions("*,Auto")
         };
 
         var openButton = new Button
@@ -82,6 +82,7 @@ public sealed class MainView : UserControl
             Content = "Back",
             MinHeight = 48,
             IsVisible = false,
+            Margin = new Thickness(8, 0, 0, 0),
             Background = Brush.Parse("#263946"),
             Foreground = Brushes.White
         };
@@ -231,7 +232,7 @@ public sealed class MainView : UserControl
         _searchBox.IsVisible = true;
         _searchBox.Watermark = "Search bundle entries...";
         var entries = _currentBundle.file.BlockAndDirInfo.DirectoryInfos;
-        _status.Text = $"Bundle: {_currentFileName}\nEntries: {entries.Count}";
+        _status.Text = $"Bundle: {_currentFileName}\nEntries: {entries.Length}";
         UpdateNavigation();
         RefreshCurrentList();
     }
@@ -312,7 +313,7 @@ public sealed class MainView : UserControl
         try
         {
             var entries = _currentBundle.file.BlockAndDirInfo.DirectoryInfos;
-            var index = entries.FindIndex(x => string.Equals(x.Name, entryName, StringComparison.Ordinal));
+            var index = Array.FindIndex(entries, x => string.Equals(x.Name, entryName, StringComparison.Ordinal));
             if (index < 0)
                 return;
 
