@@ -1455,6 +1455,13 @@ public sealed class MainView : UserControl
                         needsExternalResource = instance.parentBundle == null;
                         throw;
                     }
+                    catch (InvalidDataException)
+                    {
+                        // A Mesh can still contain usable inline or compressed geometry
+                        // even when its optional streamed vertex range is stale or missing.
+                        // Do not let a bad external range prevent that fallback.
+                        streamedData = null;
+                    }
                 }
 
                 return MeshPreviewDataReader.Read(field, streamedData);
