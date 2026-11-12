@@ -21,10 +21,4 @@ public sealed class MainActivity : AvaloniaMainActivity<App>
 
         base.OnBackPressed();
     }
-
-    public override void OnConfigurationChanged(global::Android.Content.Res.Configuration newConfig)
-    {
-        base.OnConfigurationChanged(newConfig);
-        App.CurrentMainView?.RefreshTheme();
-    }
 }
