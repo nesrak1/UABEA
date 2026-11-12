@@ -11,18 +11,31 @@ using Avalonia.Media;
 namespace UABEA.Mobile;
 
 internal sealed record MeshPreviewData(Vector3[] Vertices, int[] Indices);
+internal sealed record MeshStreamInfo(string Path, ulong Offset, ulong Size);
 
 internal static class MeshPreviewDataReader
 {
     private sealed record Channel(int Stream, int Offset, int Format, int Dimension);
     private sealed record StreamLayout(int Offset, int Stride);
 
-    public static MeshPreviewData Read(AssetTypeValueField mesh)
+    public static MeshStreamInfo ReadStreamInfo(AssetTypeValueField mesh)
+    {
+        var stream = Child(mesh, "m_StreamData");
+        if (stream == null || stream.IsDummy)
+            return new MeshStreamInfo("", 0, 0);
+
+        return new MeshStreamInfo(
+            ReadString(Child(stream, "path")),
+            ReadUnsigned(Child(stream, "offset")),
+            ReadUnsigned(Child(stream, "size")));
+    }
+
+    public static MeshPreviewData Read(AssetTypeValueField mesh, byte[]? streamedVertexData = null)
     {
         var vertexData = Child(mesh, "m_VertexData");
-        Vector3[] vertices = vertexData.IsDummy
+        Vector3[] vertices = vertexData == null || vertexData.IsDummy
             ? ReadLegacyVertices(mesh)
-            : ReadVertexData(vertexData);
+            : ReadVertexData(vertexData, streamedVertexData);
 
         if (vertices.Length < 3)
             throw new InvalidOperationException("This Mesh does not contain readable vertex positions.");
@@ -60,18 +73,19 @@ internal static class MeshPreviewDataReader
         return result;
     }
 
-    private static Vector3[] ReadVertexData(AssetTypeValueField vertexData)
+    private static Vector3[] ReadVertexData(AssetTypeValueField vertexData, byte[]? streamedVertexData)
     {
         int vertexCount = ReadInt(Child(vertexData, "m_VertexCount"), 0);
         if (vertexCount <= 0 || vertexCount > 500_000)
             throw new InvalidOperationException("The Mesh vertex count is invalid or exceeds the mobile preview limit.");
 
-        byte[] data = Child(vertexData, "m_DataSize").AsByteArray ?? Array.Empty<byte>();
+        byte[] data = streamedVertexData ?? ReadBytes(Child(vertexData, "m_DataSize"));
         if (data.Length == 0)
             throw new InvalidOperationException("The Mesh vertex buffer is empty.");
 
         var channelsArray = Child(Child(vertexData, "m_Channels"), "Array");
         var channels = new List<Channel>();
+        if (channelsArray != null && !channelsArray.IsDummy)
         foreach (var item in channelsArray.Children)
         {
             channels.Add(new Channel(
@@ -91,6 +105,7 @@ internal static class MeshPreviewDataReader
 
         var streamLayouts = new Dictionary<int, StreamLayout>();
         var streamsArray = Child(Child(vertexData, "m_Streams"), "Array");
+        if (streamsArray != null && !streamsArray.IsDummy)
         foreach (var stream in streamsArray.Children)
         {
             int streamIndex = ReadInt(Child(stream, "stream"), streamLayouts.Count);
@@ -126,7 +141,7 @@ internal static class MeshPreviewDataReader
 
     private static int[] ReadIndices(AssetTypeValueField mesh, int vertexCount)
     {
-        byte[] indexBytes = Child(mesh, "m_IndexBuffer").AsByteArray ?? Array.Empty<byte>();
+        byte[] indexBytes = ReadBytes(Child(mesh, "m_IndexBuffer"));
         var subMeshes = Child(Child(mesh, "m_SubMeshes"), "Array");
         var indices = new List<int>();
 
@@ -134,6 +149,7 @@ internal static class MeshPreviewDataReader
         {
             int indexFormat = ReadInt(Child(mesh, "m_IndexFormat"), vertexCount > ushort.MaxValue ? 1 : 0);
             int indexSize = indexFormat == 1 ? 4 : 2;
+            if (subMeshes != null && !subMeshes.IsDummy)
             foreach (var subMesh in subMeshes.Children)
             {
                 int topology = ReadInt(Child(subMesh, "topology"), 0);
@@ -146,12 +162,13 @@ internal static class MeshPreviewDataReader
                 AppendIndexRange(indexBytes, firstByte, indexCount, indexSize, baseVertex, vertexCount, indices);
             }
 
-            if (indices.Count == 0 && subMeshes.Children.Count == 0)
+            if (indices.Count == 0 && (subMeshes == null || subMeshes.IsDummy || subMeshes.Children.Count == 0))
                 AppendIndexRange(indexBytes, 0, indexBytes.Length / indexSize, indexSize, 0, vertexCount, indices);
         }
         else
         {
             var legacy = Child(Child(mesh, "m_Indices"), "Array");
+            if (legacy != null && !legacy.IsDummy)
             foreach (var item in legacy.Children)
             {
                 int value = ReadInt(item, -1);
@@ -220,9 +237,47 @@ internal static class MeshPreviewDataReader
 
     private static AssetTypeValueField Child(AssetTypeValueField parent, string name)
     {
-        if (parent == null)
-            return null!;
+        if (parent == null || parent.IsDummy)
+            return parent!;
         return parent[name];
+    }
+
+    private static byte[] ReadBytes(AssetTypeValueField field)
+    {
+        if (field == null || field.IsDummy || field.Value == null)
+            return Array.Empty<byte>();
+        try { return field.AsByteArray ?? Array.Empty<byte>(); }
+        catch { return Array.Empty<byte>(); }
+    }
+
+    private static string ReadString(AssetTypeValueField field)
+    {
+        if (field == null || field.IsDummy || field.Value == null)
+            return "";
+        try { return field.AsString ?? ""; }
+        catch { return ""; }
+    }
+
+    private static ulong ReadUnsigned(AssetTypeValueField field)
+    {
+        if (field == null || field.IsDummy || field.Value == null)
+            return 0;
+        try
+        {
+            return field.Value.ValueType switch
+            {
+                AssetValueType.Int8 => (ulong)Math.Max(0, field.AsSByte),
+                AssetValueType.UInt8 => field.AsByte,
+                AssetValueType.Int16 => (ulong)Math.Max(0, field.AsShort),
+                AssetValueType.UInt16 => field.AsUShort,
+                AssetValueType.Int32 => (ulong)Math.Max(0, field.AsInt),
+                AssetValueType.UInt32 => field.AsUInt,
+                AssetValueType.Int64 => (ulong)Math.Max(0, field.AsLong),
+                AssetValueType.UInt64 => field.AsULong,
+                _ => 0
+            };
+        }
+        catch { return 0; }
     }
 
     private static int ReadInt(AssetTypeValueField field, int fallback)
