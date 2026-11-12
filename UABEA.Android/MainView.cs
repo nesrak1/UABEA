@@ -880,21 +880,25 @@ public sealed class MainView : UserControl
             Background = SurfaceContainerBrush,
             CornerRadius = new CornerRadius(16),
             Padding = new Thickness(14),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = new Grid
             {
-                ColumnDefinitions = new ColumnDefinitions("34,*"),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                ColumnDefinitions = new ColumnDefinitions("36,*"),
                 Children =
                 {
                     CreateIcon(iconKind, 20, PrimaryBrush),
                     new StackPanel
                     {
-                        Spacing = 4,
+                        Spacing = 5,
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
                         Margin = new Thickness(10, 0, 0, 0),
                         Children =
                         {
                             new TextBlock
                             {
                                 Text = title,
+                                TextWrapping = TextWrapping.Wrap,
                                 FontWeight = FontWeight.SemiBold,
                                 FontSize = 13,
                                 Foreground = MutedBrush
@@ -903,6 +907,7 @@ public sealed class MainView : UserControl
                             {
                                 Text = detail,
                                 FontSize = 14,
+                                HorizontalAlignment = HorizontalAlignment.Stretch,
                                 TextWrapping = TextWrapping.Wrap,
                                 Foreground = TextBrush
                             }
