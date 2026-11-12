@@ -519,7 +519,10 @@ public sealed class MainView : UserControl
             for (var i = _visibleRows; i < end; i++)
             {
                 var row = _currentRows[i];
-                _items.Children.Add(CreateActionRow(row.Title, row.Detail, row.Icon, row.Action));
+                var isBundleEntry = _currentPage == BrowserPage.Bundle && _currentBundle is not null;
+                _items.Children.Add(CreateActionRow(row.Title, row.Detail, row.Icon, row.Action,
+                    isBundleEntry ? () => _ = ExportBundleEntryAsync(row.Title) : null,
+                    isBundleEntry ? () => _ = OpenBundleEntryAsync(row.Title) : null));
             }
             _visibleRows = end;
             _loadMoreButton.IsVisible = _visibleRows < _currentRows.Count;
@@ -551,6 +554,46 @@ public sealed class MainView : UserControl
             string.Equals(value, previous, StringComparison.OrdinalIgnoreCase)) ?? "All types";
     }
 
+    private async Task ExportBundleEntryAsync(string entryName)
+    {
+        if (_currentBundle is null) return;
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is null) return;
+
+        var bundle = _currentBundle;
+        var entries = bundle.file.BlockAndDirInfo.DirectoryInfos;
+        var index = Array.FindIndex(entries,
+            entry => string.Equals(entry.Name, entryName, StringComparison.Ordinal));
+        if (index < 0) return;
+
+        var entry = entries[index];
+        var destination = await topLevel.StorageProvider.SaveFilePickerAsync(
+            new FilePickerSaveOptions
+            {
+                Title = "Export bundle entry",
+                SuggestedFileName = Path.GetFileName(entry.Name)
+            });
+        if (destination is null) return;
+
+        SetLoading(true, $"Exporting {entry.Name}...");
+        try
+        {
+            using var source = new SegmentStream(
+                bundle.file.DataReader.BaseStream, entry.Offset, entry.DecompressedSize);
+            await using var output = await destination.OpenWriteAsync();
+            await source.CopyToAsync(output);
+            _status.Text = $"Exported: {entry.Name}\nSize: {FormatSize(entry.DecompressedSize)}";
+        }
+        catch (Exception ex)
+        {
+            _status.Text = $"Could not export bundle entry:\n{ex.Message}";
+        }
+        finally
+        {
+            SetLoading(false);
+        }
+    }
+
     private async Task OpenBundleEntryAsync(string entryName)
     {
         if (_currentBundle is null || _assetsManager is null) return;
@@ -567,7 +610,7 @@ public sealed class MainView : UserControl
                 if (index < 0) throw new InvalidDataException("Bundle entry not found.");
                 var entry = entries[index];
 
-                if ((entry.Flags & 0x04) != 0)
+                if (bundle.file.IsAssetsFile(index))
                 {
                     var assets = manager.LoadAssetsFileFromBundle(bundle, index, false);
                     var version = assets.file.Metadata.UnityVersion;
@@ -631,15 +674,19 @@ public sealed class MainView : UserControl
 
     private void ShowAssetDetails(AssetFileInfo asset)
     {
-        if (_currentAssets is null || _assetsManager is null) return;
+        if (_currentAssets is null) return;
         _currentPage = BrowserPage.AssetDetails;
         _searchBox.IsVisible = false;
         _filterButton.IsVisible = false;
         _filterBox.IsVisible = false;
 
+        // Reuse values resolved during background parsing; avoid deserializing
+        // the asset again on the UI thread when opening its details.
+        var cached = _assetRows.FirstOrDefault(row => row.Info.PathId == asset.PathId);
         var typeId = asset.GetTypeId(_currentAssets.file);
-        var typeName = Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
-        var name = TryReadAssetName(_assetsManager, _currentAssets, asset, typeName);
+        var typeName = cached?.TypeName ??
+            Enum.GetName(typeof(AssetClassID), typeId) ?? $"Type {typeId}";
+        var name = cached?.Name ?? $"{typeName} ({asset.PathId})";
         _status.Text = $"Asset • {name}";
         _items.Children.Clear();
         _loadMoreButton.IsVisible = false;
@@ -748,7 +795,7 @@ public sealed class MainView : UserControl
     }
 
     private static Control CreateActionRow(string title, string detail,
-        MaterialIconKind iconKind, Action action)
+        MaterialIconKind iconKind, Action action, Action? exportAction = null, Action? openAction = null)
     {
         var button = new Button
         {
@@ -805,6 +852,25 @@ public sealed class MainView : UserControl
         Grid.SetColumn((Control)((Grid)button.Content).Children[2], 2);
         ToolTip.SetTip(button, $"Open {title}");
         button.Click += (_, _) => action();
+
+        // ContextRequested is raised by Avalonia for touch long-press.
+        if (exportAction is not null || openAction is not null)
+        {
+            var menu = new ContextMenu();
+            if (openAction is not null)
+            {
+                var openItem = new MenuItem { Header = "Open" };
+                openItem.Click += (_, _) => openAction();
+                menu.Items.Add(openItem);
+            }
+            if (exportAction is not null)
+            {
+                var exportItem = new MenuItem { Header = "Export" };
+                exportItem.Click += (_, _) => exportAction();
+                menu.Items.Add(exportItem);
+            }
+            button.ContextMenu = menu;
+        }
         return button;
     }
 
