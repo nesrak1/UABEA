@@ -1545,6 +1545,7 @@ public sealed class MainView : UserControl
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch
             };
+            Window? fullWindow = null;
             var closeButton = new Button
             {
                 Content = "Close",
@@ -1563,7 +1564,7 @@ public sealed class MainView : UserControl
             };
             resetLarge.Click += (_, _) => largeViewer.ResetView();
             closeButton.Click += (_, _) => fullWindow.Close();
-            var fullWindow = new Window
+            fullWindow = new Window
             {
                 Title = "3D Mesh preview",
                 Background = BackgroundBrush,
