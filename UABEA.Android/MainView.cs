@@ -335,6 +335,7 @@ public sealed class MainView : UserControl
             tempDirectory = Path.Combine(Path.GetTempPath(), "uabea-mobile-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDirectory);
             string? primaryPath = null;
+            string? selectedResourcePath = null;
             foreach (var selectedFile in selected)
             {
                 string safeName = Path.GetFileName(selectedFile.Name);
@@ -344,6 +345,8 @@ public sealed class MainView : UserControl
                 await using var destination = File.Create(destinationPath);
                 await source.CopyToAsync(destination);
                 if (ReferenceEquals(selectedFile, file)) primaryPath = destinationPath;
+                if (selectedResourcePath == null && IsResourceFileName(selectedFile.Name))
+                    selectedResourcePath = destinationPath;
             }
             if (primaryPath is null) throw new InvalidDataException("The selected assets file could not be copied.");
             SetLoading(true, $"Analyzing {file.Name}...");
@@ -351,6 +354,7 @@ public sealed class MainView : UserControl
             _assetsManager?.UnloadAllAssetsFiles(true);
             if (_currentTempDirectory is not null) { try { Directory.Delete(_currentTempDirectory, true); } catch { } }
             _assetsManager = result.Manager;
+            _sessionResourcePath = selectedResourcePath;
             _currentTempDirectory = tempDirectory;
             tempDirectory = null;
             _currentBundle = result.Bundle;
@@ -1457,10 +1461,18 @@ public sealed class MainView : UserControl
                     }
                     catch (InvalidDataException)
                     {
-                        // A Mesh can still contain usable inline or compressed geometry
-                        // even when its optional streamed vertex range is stale or missing.
-                        // Do not let a bad external range prevent that fallback.
-                        streamedData = null;
+                        // Do not silently fall back to incomplete inline data when Unity
+                        // declares an external vertex stream. Ask for the matching resource.
+                        needsExternalResource = instance.parentBundle == null;
+                        throw;
+                    }
+                    catch (ArgumentOutOfRangeException)
+                    {
+                        // Corrupt/truncated stream data must never be interpreted as a
+                        // valid Mesh. Let the resource-selection flow retry with the
+                        // session resource or ask the user to import the matching file.
+                        needsExternalResource = instance.parentBundle == null;
+                        throw new InvalidDataException("The Mesh stream data is incomplete. Select its matching .resource or .resS file.");
                     }
                 }
 
@@ -2035,11 +2047,11 @@ public sealed class MainView : UserControl
         candidates.Add(Path.Combine(root, relative));
         candidates.Add(Path.Combine(root, Path.GetFileName(normalized)));
         string? fullPath = candidates.FirstOrDefault(File.Exists);
-        // A resource file selected for one preview belongs to the whole open
-        // assets session. Reuse it for other AudioClip/Texture2D stream paths
-        // when the requested byte range fits, even if Unity stored a different
-        // logical source name in the asset metadata.
-        if (fullPath == null && !string.IsNullOrWhiteSpace(_sessionResourcePath) &&
+        // Prefer a resource explicitly imported into this open session whenever
+        // the requested range fits. The metadata path can point to a stale or
+        // differently named sibling file, so it must not override the user's
+        // selected session resource.
+        if (!string.IsNullOrWhiteSpace(_sessionResourcePath) &&
             File.Exists(_sessionResourcePath))
         {
             var sessionInfo = new FileInfo(_sessionResourcePath);
