@@ -7,6 +7,8 @@ namespace UABEA.Mobile;
 
 public sealed class App : Avalonia.Application
 {
+    public static MainView? CurrentMainView { get; private set; }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -17,7 +19,8 @@ public sealed class App : Avalonia.Application
     {
         if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewLifetime)
         {
-            singleViewLifetime.MainView = new MainView();
+            CurrentMainView = new MainView();
+            singleViewLifetime.MainView = CurrentMainView;
         }
 
         base.OnFrameworkInitializationCompleted();
