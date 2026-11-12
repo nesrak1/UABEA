@@ -11,10 +11,6 @@
       <Setter Property="FontSize" Value="14" />
       <Setter Property="Padding" Value="14,10" />
     </Style>
-    <Style Selector="Button.asset-row.dragging">
-      <Setter Property="Background" Value="#171717" />
-      <Setter Property="BorderBrush" Value="#171717" />
-    </Style>
     <Style Selector="TextBox">
       <Setter Property="CornerRadius" Value="16" />
       <Setter Property="MinHeight" Value="48" />
