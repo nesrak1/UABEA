@@ -1482,6 +1482,15 @@ public sealed class MainView : UserControl
         catch (Exception ex)
         {
             error = $"{ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}";
+            if (ex is ArgumentOutOfRangeException &&
+                instance.parentBundle == null &&
+                !string.IsNullOrWhiteSpace(streamSource))
+            {
+                // A truncated/mismatched index payload is not a preview. Retry
+                // through the session resource picker instead of displaying a
+                // misleading error or drawing incomplete geometry.
+                needsExternalResource = true;
+            }
         }
 
         if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
