@@ -970,9 +970,26 @@ public sealed class MainView : UserControl
                 if (string.IsNullOrWhiteSpace(source) || size == 0 || size > int.MaxValue)
                     throw new InvalidDataException("This AudioClip has no external FMOD resource. Embedded audio data is not supported by this preview yet.");
 
-                byte[] fsbData = instance.parentBundle != null
-                    ? ReadBundleResource(instance.parentBundle, source, offset, size)
-                    : ReadExternalResource(instance, source, offset, size);
+                // Follow UABEA's AudioClip plugin lookup order: try the parent
+                // bundle first, then fall back to the external resource beside the
+                // extracted assets file. Some bundles store AudioClip payloads as
+                // sibling .resource/.resS files rather than directory entries.
+                byte[] fsbData;
+                if (instance.parentBundle != null)
+                {
+                    try
+                    {
+                        fsbData = ReadBundleResource(instance.parentBundle, source, offset, size);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        fsbData = ReadExternalResource(instance, source, offset, size);
+                    }
+                }
+                else
+                {
+                    fsbData = ReadExternalResource(instance, source, offset, size);
+                }
 
                 if (fsbData.Length == 0)
                     throw new InvalidDataException("The AudioClip resource is empty.");
@@ -1659,10 +1676,11 @@ public sealed class MainView : UserControl
 
     private void OnZoomPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        _zoomPointers[e.Pointer] = e.GetPosition(_zoomImage);
+        Point pointerPosition = e.GetPosition(_imageViewerOverlay);
+        _zoomPointers[e.Pointer] = pointerPosition;
         e.Pointer.Capture(_zoomImage);
         _zoomGestureUsed = false;
-        if (_zoomPointers.Count == 1) _lastPanPoint = e.GetPosition(_zoomImage);
+        if (_zoomPointers.Count == 1) _lastPanPoint = pointerPosition;
         else if (_zoomPointers.Count == 2)
         {
             var points = _zoomPointers.Values.ToArray();
@@ -1675,7 +1693,9 @@ public sealed class MainView : UserControl
     private void OnZoomPointerMoved(object? sender, PointerEventArgs e)
     {
         if (!_zoomPointers.ContainsKey(e.Pointer)) return;
-        Point current = e.GetPosition(_zoomImage);
+        // Measure gestures in the fixed viewer coordinate space. Measuring
+        // against the transformed image makes pan speed drift as zoom changes.
+        Point current = e.GetPosition(_imageViewerOverlay);
         _zoomPointers[e.Pointer] = current;
         if (_zoomPointers.Count >= 2)
         {
@@ -1690,9 +1710,8 @@ public sealed class MainView : UserControl
         }
         else if (_zoomScale.ScaleX > 1)
         {
-            const double panSpeed = 1.85;
-            _zoomTranslate.X += (current.X - _lastPanPoint.X) * panSpeed;
-            _zoomTranslate.Y += (current.Y - _lastPanPoint.Y) * panSpeed;
+            _zoomTranslate.X += current.X - _lastPanPoint.X;
+            _zoomTranslate.Y += current.Y - _lastPanPoint.Y;
         }
         _lastPanPoint = current;
     }
@@ -1809,8 +1828,32 @@ public sealed class MainView : UserControl
         Grid.SetColumn((Control)((Grid)button.Content).Children[1], 1);
         Grid.SetColumn((Control)((Grid)button.Content).Children[2], 2);
         ToolTip.SetTip(button, $"Open {title}");
+        button.Classes.Add("asset-row");
         var suppressNextClick = false;
-        button.PointerPressed += (_, _) => suppressNextClick = false;
+        Point pressPoint = default;
+        bool pointerMoved = false;
+        button.PointerPressed += (_, args) =>
+        {
+            suppressNextClick = false;
+            pointerMoved = false;
+            pressPoint = args.GetPosition(button);
+        };
+        button.PointerMoved += (_, args) =>
+        {
+            if (pointerMoved || !args.GetCurrentPoint(button).Properties.IsLeftButtonPressed)
+                return;
+
+            Point current = args.GetPosition(button);
+            double dx = current.X - pressPoint.X;
+            double dy = current.Y - pressPoint.Y;
+            if (Math.Sqrt(dx * dx + dy * dy) >= 10)
+            {
+                pointerMoved = true;
+                suppressNextClick = true;
+                button.Classes.Add("dragging");
+            }
+        };
+        button.PointerReleased += (_, _) => button.Classes.Remove("dragging");
         button.Holding += (_, args) =>
         {
             if (args.HoldingState.ToString() == "Started")
