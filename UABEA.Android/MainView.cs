@@ -80,6 +80,7 @@ public sealed class MainView : UserControl
     private global::Android.Media.MediaPlayer? _audioPlayer;
     private DispatcherTimer? _audioProgressTimer;
     private string? _audioTempPath;
+    private string? _sessionResourcePath;
 
     private enum BrowserPage { Home, Bundle, Assets, EntryDetails, AssetDetails }
 
@@ -318,6 +319,7 @@ public sealed class MainView : UserControl
             ?? selected.FirstOrDefault(x => !IsResourceFileName(x.Name));
         if (file is null) return;
         _isBusy = true;
+        _sessionResourcePath = null;
         SetLoading(true, $"Copying {file.Name}...");
         _items.Children.Clear();
         _searchBox.IsVisible = false;
@@ -830,6 +832,8 @@ public sealed class MainView : UserControl
         string? error = null;
         int previewWidth = 0;
         int previewHeight = 0;
+        string? textureResourceSource = null;
+        bool needsExternalResource = false;
 
         try
         {
@@ -847,11 +851,20 @@ public sealed class MainView : UserControl
                 ulong streamOffset = ReadUnsignedField(field["m_StreamData"]["offset"]);
                 ulong streamSize = ReadUnsignedField(field["m_StreamData"]["size"]);
                 string streamPath = field["m_StreamData"]["path"]?.AsString ?? texture.m_StreamData.path ?? "";
+                textureResourceSource = streamPath;
                 if (streamSize > 0 && !string.IsNullOrWhiteSpace(streamPath))
                 {
-                    data = instance.parentBundle != null
-                        ? ReadBundleResource(instance.parentBundle, streamPath, streamOffset, streamSize)
-                        : ReadExternalResource(instance, streamPath, streamOffset, streamSize);
+                    try
+                    {
+                        data = instance.parentBundle != null
+                            ? ReadBundleResource(instance.parentBundle, streamPath, streamOffset, streamSize)
+                            : ReadExternalResource(instance, streamPath, streamOffset, streamSize);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        needsExternalResource = instance.parentBundle == null;
+                        throw;
+                    }
                 }
 
                 if (data.Length == 0)
@@ -931,6 +944,21 @@ public sealed class MainView : UserControl
                     new TextBlock { Text = $"{previewWidth}×{previewHeight} px", FontSize = 12, Foreground = TextBrush },
                     image
                 }
+            }, MaterialIconKind.Image));
+        }
+        else if (needsExternalResource && !string.IsNullOrWhiteSpace(textureResourceSource))
+        {
+            bool selected = await ChooseSessionResourceAsync(textureResourceSource, instance);
+            if (selected && _currentAssets == instance && _currentPage == BrowserPage.AssetDetails)
+            {
+                await ShowTexturePreviewAsync(manager, instance, asset);
+                return;
+            }
+            _items.Children.Add(CreatePreviewCard("Image preview", new TextBlock
+            {
+                Text = "Select the matching .resource file to preview this image.",
+                Foreground = TextBrush,
+                TextWrapping = TextWrapping.Wrap
             }, MaterialIconKind.Image));
         }
         else
@@ -1102,8 +1130,7 @@ public sealed class MainView : UserControl
         BuildAudioPlayerCard(tempAudioPath, audioName ?? "AudioClip");
     }
 
-    private async Task<bool> ChooseAudioResourceAsync(
-        string source, AssetsFileInstance instance, AssetFileInfo asset)
+    private async Task<bool> ChooseSessionResourceAsync(string source, AssetsFileInstance instance)
     {
         var topLevel = TopLevel.GetTopLevel(this);
         if (topLevel is null)
@@ -1116,7 +1143,7 @@ public sealed class MainView : UserControl
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
-                    new FilePickerFileType("Unity audio resource files")
+                    new FilePickerFileType("Unity resource files")
                     {
                         Patterns = new[] { "*.resource" }
                     }
@@ -1138,10 +1165,12 @@ public sealed class MainView : UserControl
             await using var input = await selected[0].OpenReadAsync();
             await using var output = File.Create(destination);
             await input.CopyToAsync(output);
+            _sessionResourcePath = destination;
+            return true;
         }
         catch (Exception ex)
         {
-            _items.Children.Add(CreatePreviewCard("Audio resource", new TextBlock
+            _items.Children.Add(CreatePreviewCard("Resource file", new TextBlock
             {
                 Text = "Could not copy the selected resource: " + ex.Message,
                 Foreground = TextBrush,
@@ -1149,6 +1178,13 @@ public sealed class MainView : UserControl
             }, MaterialIconKind.MusicNote));
             return false;
         }
+    }
+
+    private async Task<bool> ChooseAudioResourceAsync(
+        string source, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        if (!await ChooseSessionResourceAsync(source, instance))
+            return false;
 
         await ShowAudioClipPreviewAsync(_assetsManager!, instance, asset);
         return true;
@@ -1740,6 +1776,17 @@ public sealed class MainView : UserControl
         candidates.Add(Path.Combine(root, relative));
         candidates.Add(Path.Combine(root, Path.GetFileName(normalized)));
         string? fullPath = candidates.FirstOrDefault(File.Exists);
+        // A resource file selected for one preview belongs to the whole open
+        // assets session. Reuse it for other AudioClip/Texture2D stream paths
+        // when the requested byte range fits, even if Unity stored a different
+        // logical source name in the asset metadata.
+        if (fullPath == null && !string.IsNullOrWhiteSpace(_sessionResourcePath) &&
+            File.Exists(_sessionResourcePath))
+        {
+            var sessionInfo = new FileInfo(_sessionResourcePath);
+            if (offset <= (ulong)sessionInfo.Length && size <= (ulong)sessionInfo.Length - offset)
+                fullPath = _sessionResourcePath;
+        }
         if (fullPath == null && Directory.Exists(root))
         {
             var sameName = Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly)
