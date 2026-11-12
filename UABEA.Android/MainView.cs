@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using AssetsTools.NET.Texture;
+using UABEAvalonia;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -808,7 +810,7 @@ public sealed class MainView : UserControl
                     platformBlob.Children[0].ValueType = AssetValueType.ByteArray;
 
                 var field = template.MakeValue(container.FileReader, container.FilePosition);
-                var texture = AssetsTools.NET.Texture.TextureFile.ReadTextureFile(field);
+                var texture = TextureFile.ReadTextureFile(field);
                 if (texture.m_Width <= 0 || texture.m_Height <= 0 ||
                     texture.m_Width > 8192 || texture.m_Height > 8192)
                     throw new InvalidDataException("Unsupported or invalid image dimensions.");
@@ -852,16 +854,24 @@ public sealed class MainView : UserControl
                 if (data.Length == 0)
                     throw new InvalidDataException("This texture contains no image data.");
 
-                byte[] rgba = AssetsTools.NET.Texture.TextureFile.DecodeManaged(
-                    data, (AssetsTools.NET.Texture.TextureFormat)texture.m_TextureFormat,
+                byte[] rgba = TextureFile.DecodeManaged(
+                    data, (TextureFormat)texture.m_TextureFormat,
                     texture.m_Width, texture.m_Height);
                 if (rgba == null || rgba.Length < texture.m_Width * texture.m_Height * 4)
                     throw new NotSupportedException("This texture format is not supported by the mobile preview decoder.");
 
-                using var image = SixLabors.ImageSharp.Image.LoadPixelData<SixLabors.ImageSharp.PixelFormats.Rgba32>(
-                    rgba, texture.m_Width, texture.m_Height);
+                using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(
+                    texture.m_Width, texture.m_Height, global::Android.Graphics.Bitmap.Config.Argb8888!);
+                var pixels = new int[texture.m_Width * texture.m_Height];
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    int offset = i * 4;
+                    pixels[i] = unchecked((int)0xFF000000) |
+                        (rgba[offset] << 16) | (rgba[offset + 1] << 8) | rgba[offset + 2];
+                }
+                bitmap.SetPixels(pixels, 0, texture.m_Width, 0, 0, texture.m_Width, texture.m_Height);
                 using var output = new MemoryStream();
-                image.SaveAsPng(output);
+                bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, output);
                 return output.ToArray();
             });
 
