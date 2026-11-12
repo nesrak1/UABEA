@@ -26,7 +26,7 @@ jobs:
       - name: Restore
         run: dotnet restore UABEA.Android/UABEA.Android.csproj
 
-      - name: Publish signed ARM64 debug APK
+      - name: Publish ARM64 debug APK
         run: |
           set -euo pipefail
           dotnet publish UABEA.Android/UABEA.Android.csproj \
@@ -43,10 +43,33 @@ jobs:
             find UABEA.Android/bin/Debug/net8.0-android31.0/android-arm64/publish -maxdepth 1 -type f -print || true
             exit 1
           fi
+          cp "$APK" UABEA-Mobile-unsigned.apk
 
-          cp "$APK" UABEA-Mobile-debug.apk
+      - name: Sign and verify debug APK
+        run: |
+          set -euo pipefail
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-          "$APKSIGNER" verify --verbose UABEA-Mobile-debug.apk
+          KEYSTORE="$RUNNER_TEMP/uabea-debug.keystore"
+
+          keytool -genkeypair -noprompt \
+            -keystore "$KEYSTORE" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA -keysize 2048 -validity 10000
+
+          "$APKSIGNER" sign \
+            --ks "$KEYSTORE" \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --out UABEA-Mobile-debug.apk \
+            UABEA-Mobile-unsigned.apk
+
+          "$APKSIGNER" verify --verbose --print-certs UABEA-Mobile-debug.apk
+          test -s UABEA-Mobile-debug.apk
 
       - name: Upload installable debug APK
         uses: actions/upload-artifact@v4
