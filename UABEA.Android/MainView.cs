@@ -855,9 +855,11 @@ public sealed class MainView : UserControl
                 var field = manager.GetBaseField(instance, asset);
                 if (field == null)
                     throw new InvalidDataException("Texture data could not be read.");
+
                 var texture = TextureFile.ReadTextureFile(field);
-                if (texture.m_Width <= 0 || texture.m_Height <= 0 ||
-                    texture.m_Width > 8192 || texture.m_Height > 8192)
+                int width = texture.m_Width;
+                int height = texture.m_Height;
+                if (width <= 0 || height <= 0 || width > 8192 || height > 8192)
                     throw new InvalidDataException("Unsupported or invalid image dimensions.");
 
                 byte[] data = texture.pictureData ?? Array.Empty<byte>();
@@ -865,6 +867,9 @@ public sealed class MainView : UserControl
                 ulong streamSize = ReadUnsignedField(field["m_StreamData"]["size"]);
                 string streamPath = field["m_StreamData"]["path"]?.AsString ?? texture.m_StreamData.path ?? "";
                 textureResourceSource = streamPath;
+
+                // Streamed textures must use the exact external byte range. The
+                // serialized pictureData is often empty or only a tiny placeholder.
                 if (streamSize > 0 && !string.IsNullOrWhiteSpace(streamPath))
                 {
                     try
@@ -883,39 +888,40 @@ public sealed class MainView : UserControl
                 if (data.Length == 0)
                     throw new InvalidDataException("This texture contains no image data.");
 
-                // TextureFile.DecodeManaged returns pixels in BGRA byte order.
-                // Android Bitmap.SetPixels expects packed ARGB integers, so swap
-                // the red/blue channels while preserving the source alpha.
-                byte[] bgra = TextureFile.DecodeManaged(
-                    data, (TextureFormat)texture.m_TextureFormat,
-                    texture.m_Width, texture.m_Height);
-                if (bgra == null || bgra.Length < texture.m_Width * texture.m_Height * 4)
-                    throw new NotSupportedException("This texture format is not supported by the mobile preview decoder.");
+                // Use the AssetsTools.NET TextureFile pipeline, not DecodeManaged
+                // directly. GetTextureData applies the texture's format-specific
+                // decoding and platform handling and returns BGRA32 pixels.
+                texture.pictureData = data;
+                texture.m_StreamData.offset = 0;
+                texture.m_StreamData.size = 0;
+                texture.m_StreamData.path = "";
 
-                int width = texture.m_Width;
-                int height = texture.m_Height;
+                byte[] bgra = texture.GetTextureData(instance);
+                int requiredBytes = checked(width * height * 4);
+                if (bgra == null || bgra.Length < requiredBytes)
+                    throw new NotSupportedException(
+                        $"Texture decoding returned insufficient pixel data for {width}×{height} ({texture.m_TextureFormat}).");
+
                 using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(
                     width, height, global::Android.Graphics.Bitmap.Config.Argb8888!);
-                var pixels = new int[width * height];
+                var pixels = new int[checked(width * height)];
 
-                // Unity texture pixel data is bottom-left oriented. The current
-                // decoder output is also horizontally reversed for this preview
-                // path, so map both axes to restore the expected top-left image.
+                // Decoder output is BGRA32. Unity texture rows are bottom-up,
+                // so only flip vertically when converting to Android's bitmap.
                 for (int y = 0; y < height; y++)
                 {
                     int sourceY = height - 1 - y;
+                    int sourceRow = sourceY * width * 4;
+                    int targetRow = y * width;
                     for (int x = 0; x < width; x++)
                     {
-                        // Apply the additional horizontal flip requested for the preview.
-                        // The previous horizontal reversal is cancelled; vertical correction remains.
-                        int sourceX = x;
-                        int sourceOffset = (sourceY * width + sourceX) * 4;
-                        byte blue = bgra[sourceOffset];
-                        byte green = bgra[sourceOffset + 1];
-                        byte red = bgra[sourceOffset + 2];
-                        byte alpha = bgra[sourceOffset + 3];
+                        int sourceOffset = sourceRow + x * 4;
+                        int blue = bgra[sourceOffset];
+                        int green = bgra[sourceOffset + 1];
+                        int red = bgra[sourceOffset + 2];
+                        int alpha = bgra[sourceOffset + 3];
 
-                        pixels[y * width + x] =
+                        pixels[targetRow + x] =
                             (alpha << 24) | (red << 16) | (green << 8) | blue;
                     }
                 }
@@ -935,7 +941,6 @@ public sealed class MainView : UserControl
         {
             error = ex.Message;
         }
-        finally { }
 
         if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
         {
