@@ -1191,7 +1191,7 @@ public sealed class MainView : UserControl
                         float g = ReadFieldFloat(GetChildField(valueField, "g"));
                         float b = ReadFieldFloat(GetChildField(valueField, "b"));
                         float a = ReadFieldFloat(GetChildField(valueField, "a"), 1);
-                        properties.Add($"{key}: ({r:0.###}, {g:0.###}, {b:0.###}, {a:0.###})");
+                        properties.Add($"{FormatShaderPropertyLabel(key)}: ({r:0.###}, {g:0.###}, {b:0.###}, {a:0.###})");
                         if (key is "_Color" or "_BaseColor" || selectedColorName.Length == 0)
                         {
                             selectedColorName = key;
@@ -1207,7 +1207,7 @@ public sealed class MainView : UserControl
                     string key = ReadFieldString(GetChildField(item, "first"));
                     var value = GetChildField(item, "second");
                     if (!string.IsNullOrWhiteSpace(key))
-                        properties.Add($"{key}: {ReadFieldFloat(value):0.###}");
+                        properties.Add($"{FormatShaderPropertyLabel(key)}: {ReadFieldFloat(value):0.###}");
                 }
 
                 var ints = GetChildField(GetChildField(saved, "m_Ints"), "Array");
@@ -1217,7 +1217,7 @@ public sealed class MainView : UserControl
                     string key = ReadFieldString(GetChildField(item, "first"));
                     var value = GetChildField(item, "second");
                     if (!string.IsNullOrWhiteSpace(key))
-                        properties.Add($"{key}: {ReadFieldInt64(value)}");
+                        properties.Add($"{FormatShaderPropertyLabel(key)}: {ReadFieldInt64(value)}");
                 }
 
                 var textures = GetChildField(GetChildField(saved, "m_TexEnvs"), "Array");
@@ -1228,7 +1228,7 @@ public sealed class MainView : UserControl
                     var env = GetChildField(item, "second");
                     long textureId = ReadFieldInt64(GetChildField(GetChildField(env, "m_Texture"), "m_PathID"));
                     if (!string.IsNullOrWhiteSpace(key))
-                        properties.Add($"{key}: {(textureId == 0 ? "No texture" : $"Texture Path ID {textureId}")}");
+                        properties.Add($"{FormatShaderPropertyLabel(key)}: {(textureId == 0 ? "No texture" : $"Texture Path ID {textureId}")}");
                 }
 
                 return (Name: string.IsNullOrWhiteSpace(name) ? "Material" : name,
@@ -1264,15 +1264,24 @@ public sealed class MainView : UserControl
             return;
         }
 
-        var sphere = new Border
+        var sphereMesh = CreateMaterialSphereMesh(40, 28);
+        var sphere = new MeshPreviewControl(sphereMesh.Vertices, sphereMesh.Indices,
+            interactive: true, surfaceColor: materialColor)
         {
-            Width = 104, Height = 104, CornerRadius = new CornerRadius(52),
+            Width = 240,
+            Height = 240,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Background = new SolidColorBrush(materialColor),
-            BorderBrush = OutlineBrush, BorderThickness = new Thickness(1)
+            MinHeight = 220
         };
         var content = new StackPanel { Spacing = 8 };
         content.Children.Add(sphere);
+        content.Children.Add(new TextBlock
+        {
+            Text = "Drag to rotate • Pinch to zoom",
+            FontSize = 11,
+            Foreground = MutedBrush,
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
         content.Children.Add(new TextBlock { Text = $"Shader: {shaderName}", Foreground = TextBrush, TextWrapping = TextWrapping.Wrap });
         if (!string.IsNullOrEmpty(colorName))
             content.Children.Add(new TextBlock { Text = $"Preview color: {colorName}", Foreground = MutedBrush, FontSize = 12 });
@@ -1287,6 +1296,85 @@ public sealed class MainView : UserControl
         else
             content.Children.Add(new TextBlock { Text = "No saved shader properties were found.", Foreground = MutedBrush, FontSize = 12 });
         _items.Children.Add(CreatePreviewCard(materialName, content, MaterialIconKind.PaletteOutline));
+    }
+
+    private static string FormatShaderPropertyLabel(string shaderPropertyName)
+    {
+        if (string.IsNullOrWhiteSpace(shaderPropertyName))
+            return shaderPropertyName;
+
+        // This is presentation-only. The original serialized key remains untouched
+        // and is still used for all Unity property lookups and future writes.
+        string name = shaderPropertyName.Trim().TrimStart('_');
+        if (name.Length == 0)
+            return shaderPropertyName;
+
+        var result = new System.Text.StringBuilder(name.Length + 8);
+        for (int i = 0; i < name.Length; i++)
+        {
+            char current = name[i];
+            if (current == '_' || current == '-' || current == ' ')
+            {
+                if (result.Length > 0 && result[result.Length - 1] != ' ')
+                    result.Append(' ');
+                continue;
+            }
+
+            if (i > 0 && char.IsUpper(current))
+            {
+                char previous = name[i - 1];
+                bool previousIsLowerOrDigit = char.IsLower(previous) || char.IsDigit(previous);
+                bool acronymEnds = char.IsUpper(previous) &&
+                    i + 1 < name.Length && char.IsLower(name[i + 1]);
+                if ((previousIsLowerOrDigit || acronymEnds) &&
+                    result.Length > 0 && result[result.Length - 1] != ' ')
+                    result.Append(' ');
+            }
+
+            result.Append(current);
+        }
+
+        string cleaned = result.ToString().Trim();
+        return cleaned.Length == 0 ? shaderPropertyName : cleaned;
+    }
+
+    private static MeshPreviewData CreateMaterialSphereMesh(int segments, int rings)
+    {
+        segments = Math.Clamp(segments, 12, 96);
+        rings = Math.Clamp(rings, 8, 64);
+        var vertices = new System.Numerics.Vector3[(rings + 1) * (segments + 1)];
+        for (int y = 0; y <= rings; y++)
+        {
+            float v = y / (float)rings;
+            float latitude = (v - 0.5f) * MathF.PI;
+            float ringRadius = MathF.Cos(latitude);
+            float py = MathF.Sin(latitude);
+            for (int x = 0; x <= segments; x++)
+            {
+                float u = x / (float)segments;
+                float longitude = u * MathF.PI * 2f;
+                vertices[y * (segments + 1) + x] = new System.Numerics.Vector3(
+                    ringRadius * MathF.Sin(longitude), py,
+                    ringRadius * MathF.Cos(longitude));
+            }
+        }
+
+        var indices = new int[rings * segments * 6];
+        int cursor = 0;
+        for (int y = 0; y < rings; y++)
+        for (int x = 0; x < segments; x++)
+        {
+            int a = y * (segments + 1) + x;
+            int b = a + segments + 1;
+            indices[cursor++] = a;
+            indices[cursor++] = b;
+            indices[cursor++] = a + 1;
+            indices[cursor++] = a + 1;
+            indices[cursor++] = b;
+            indices[cursor++] = b + 1;
+        }
+
+        return new MeshPreviewData(vertices, indices);
     }
 
     private static AssetTypeValueField? GetChildField(AssetTypeValueField? parent, string name)
