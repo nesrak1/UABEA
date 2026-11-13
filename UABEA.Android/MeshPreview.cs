@@ -886,24 +886,13 @@ internal sealed class MeshPreviewControl : Control, IDisposable
             return;
         normal /= MathF.Sqrt(normalLengthSquared);
 
-        // Absolute dot product keeps both front- and back-facing triangles visible.
-        float lighting = Math.Clamp(MathF.Abs(Vector3.Dot(normal, LightDirection)), 0.18f, 1f);
-        int shade = 48 + (int)(lighting * 165f);
-        int red, green, blue;
-        if (_surfaceColor is Color surface)
-        {
-            float diffuse = 0.22f + lighting * 0.88f;
-            red = Math.Clamp((int)(surface.R * diffuse), 0, 255);
-            green = Math.Clamp((int)(surface.G * diffuse), 0, 255);
-            blue = Math.Clamp((int)(surface.B * diffuse), 0, 255);
-        }
-        else
-        {
-            red = Math.Min(255, shade + 18);
-            green = Math.Min(255, shade + 8);
-            blue = shade;
-        }
-        int color = unchecked((int)(0xFF000000u | ((uint)red << 16) | ((uint)green << 8) | (uint)blue));
+        // Keep the existing mesh preview's face lighting, but shade material spheres
+        // per pixel using interpolated normals for a smooth, rounded surface.
+        float faceLighting = Math.Clamp(MathF.Abs(Vector3.Dot(normal, LightDirection)), 0.18f, 1f);
+        int faceShade = 48 + (int)(faceLighting * 165f);
+        int faceRed = Math.Min(255, faceShade + 18);
+        int faceGreen = Math.Min(255, faceShade + 8);
+        int faceBlue = faceShade;
 
         float inverseArea = 1f / area;
         float inverseZa = 1f / za, inverseZb = 1f / zb, inverseZc = 1f / zc;
@@ -930,7 +919,27 @@ internal sealed class MeshPreviewControl : Control, IDisposable
                 if (depth < _depthBuffer[pixel])
                 {
                     _depthBuffer[pixel] = depth;
-                    _colorBuffer[pixel] = color;
+                    if (_surfaceColor is Color surface)
+                    {
+                        Vector3 smoothNormal = va * wa + vb * wb + vc * wc;
+                        if (smoothNormal.LengthSquared() > 0.000001f)
+                            smoothNormal = Vector3.Normalize(smoothNormal);
+                        float diffuse = 0.20f + Math.Clamp(MathF.Abs(Vector3.Dot(smoothNormal, LightDirection)), 0.0f, 1f) * 0.82f;
+                        Vector3 viewDirection = Vector3.Normalize(new Vector3(
+                            (float)(width * 0.5 - x), (float)(height * 0.5 - y), 180f));
+                        Vector3 halfVector = Vector3.Normalize(LightDirection + viewDirection);
+                        float specular = MathF.Pow(Math.Clamp(MathF.Abs(Vector3.Dot(smoothNormal, halfVector)), 0f, 1f), 28f) * 0.24f;
+                        int red = Math.Clamp((int)(surface.R * diffuse + 255f * specular), 0, 255);
+                        int green = Math.Clamp((int)(surface.G * diffuse + 255f * specular), 0, 255);
+                        int blue = Math.Clamp((int)(surface.B * diffuse + 255f * specular), 0, 255);
+                        _colorBuffer[pixel] = unchecked((int)(0xFF000000u |
+                            ((uint)red << 16) | ((uint)green << 8) | (uint)blue));
+                    }
+                    else
+                    {
+                        _colorBuffer[pixel] = unchecked((int)(0xFF000000u |
+                            ((uint)faceRed << 16) | ((uint)faceGreen << 8) | (uint)faceBlue));
+                    }
                 }
             }
         }
