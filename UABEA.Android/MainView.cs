@@ -856,7 +856,7 @@ public sealed class MainView : UserControl
         {
             var imageResult = await Task.Run(() =>
             {
-                var field = manager.GetBaseField(instance, asset);
+                var field = ReadTextureFieldForPreview(manager, instance, asset);
                 if (field == null)
                     throw new InvalidDataException("Texture data could not be read.");
                 var texture = TextureFile.ReadTextureFile(field);
@@ -869,7 +869,7 @@ public sealed class MainView : UserControl
                 ulong streamSize = ReadUnsignedField(field["m_StreamData"]["size"]);
                 string streamPath = field["m_StreamData"]["path"]?.AsString ?? texture.m_StreamData.path ?? "";
                 textureResourceSource = streamPath;
-                if (streamSize > 0 && !string.IsNullOrWhiteSpace(streamPath))
+                if (streamSize > 0)
                 {
                     try
                     {
@@ -887,43 +887,12 @@ public sealed class MainView : UserControl
                 if (data.Length == 0)
                     throw new InvalidDataException("This texture contains no image data.");
 
-                // TextureFile.DecodeManaged returns pixels in BGRA byte order.
-                // Android Bitmap.SetPixels expects packed ARGB integers, so swap
-                // the red/blue channels while preserving the source alpha.
-                byte[] bgra = TextureFile.DecodeManaged(
-                    data, (TextureFormat)texture.m_TextureFormat,
-                    texture.m_Width, texture.m_Height);
-                if (bgra == null || bgra.Length < texture.m_Width * texture.m_Height * 4)
-                    throw new NotSupportedException("This texture format is not supported by the mobile preview decoder.");
-
                 int width = texture.m_Width;
                 int height = texture.m_Height;
+                int[] pixels = DecodeTexturePixelsToArgb(
+                    data, (TextureFormat)texture.m_TextureFormat, width, height);
                 using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(
                     width, height, global::Android.Graphics.Bitmap.Config.Argb8888!);
-                var pixels = new int[width * height];
-
-                // Unity texture pixel data is bottom-left oriented. The current
-                // decoder output is also horizontally reversed for this preview
-                // path, so map both axes to restore the expected top-left image.
-                for (int y = 0; y < height; y++)
-                {
-                    int sourceY = height - 1 - y;
-                    for (int x = 0; x < width; x++)
-                    {
-                        // Apply the additional horizontal flip requested for the preview.
-                        // The previous horizontal reversal is cancelled; vertical correction remains.
-                        int sourceX = x;
-                        int sourceOffset = (sourceY * width + sourceX) * 4;
-                        byte blue = bgra[sourceOffset];
-                        byte green = bgra[sourceOffset + 1];
-                        byte red = bgra[sourceOffset + 2];
-                        byte alpha = bgra[sourceOffset + 3];
-
-                        pixels[y * width + x] =
-                            (alpha << 24) | (red << 16) | (green << 8) | blue;
-                    }
-                }
-
                 bitmap.SetPixels(pixels, 0, width, 0, 0, width, height);
                 using var output = new MemoryStream();
                 bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, output);
@@ -1021,7 +990,7 @@ public sealed class MainView : UserControl
                 if (textureAsset == null || textureAsset.GetTypeId(instance.file) != (int)AssetClassID.Texture2D)
                     throw new NotSupportedException("The Sprite texture is not in the currently opened assets file. Open the matching texture assets file first.");
 
-                var textureField = manager.GetBaseField(instance, textureAsset);
+                var textureField = ReadTextureFieldForPreview(manager, instance, textureAsset);
                 if (textureField == null)
                     throw new InvalidDataException("The Sprite Texture2D could not be read.");
 
@@ -1036,7 +1005,7 @@ public sealed class MainView : UserControl
                 var streamField = GetChildField(GetChildField(textureField, "m_StreamData"), "path");
                 string streamPath = streamField == null || streamField.IsDummy ? texture.m_StreamData.path ?? "" : streamField.AsString;
                 resourceSource = streamPath;
-                if (streamSize > 0 && !string.IsNullOrWhiteSpace(streamPath))
+                if (streamSize > 0)
                 {
                     try
                     {
@@ -1054,27 +1023,16 @@ public sealed class MainView : UserControl
                 if (data.Length == 0)
                     throw new InvalidDataException("The Sprite texture contains no image data.");
 
-                byte[] bgra = TextureFile.DecodeManaged(data, (TextureFormat)texture.m_TextureFormat,
-                    texture.m_Width, texture.m_Height);
-                if (bgra == null || bgra.Length < texture.m_Width * texture.m_Height * 4)
-                    throw new NotSupportedException("The Sprite texture format is not supported by the mobile decoder.");
-
                 int width = texture.m_Width, height = texture.m_Height;
-                var pixels = new int[width * height];
-                for (int y = 0; y < height; y++)
-                {
-                    int sourceY = height - 1 - y;
-                    for (int x = 0; x < width; x++)
-                    {
-                        int offset = (sourceY * width + x) * 4;
-                        pixels[y * width + x] = (bgra[offset + 3] << 24) |
-                            (bgra[offset + 2] << 16) | (bgra[offset + 1] << 8) | bgra[offset];
-                    }
-                }
+                int[] pixels = DecodeTexturePixelsToArgb(
+                    data, (TextureFormat)texture.m_TextureFormat, width, height);
 
-                var rect = GetChildField(sprite, "m_Rect");
+                // For packed sprites, SpriteRenderData.textureRect points at the
+                // actual rectangle inside the atlas. m_Rect is the logical sprite
+                // rectangle and can be stale or relative to the source texture.
+                var rect = GetChildField(renderData, "textureRect");
                 if (rect == null || rect.IsDummy)
-                    rect = GetChildField(renderData, "textureRect");
+                    rect = GetChildField(sprite, "m_Rect");
                 float rx = ReadFieldFloat(GetChildField(rect, "x"));
                 float ry = ReadFieldFloat(GetChildField(rect, "y"));
                 float rw = ReadFieldFloat(GetChildField(rect, "width"));
@@ -1149,6 +1107,68 @@ public sealed class MainView : UserControl
                 Foreground = TextBrush, TextWrapping = TextWrapping.Wrap
             }, MaterialIconKind.Image));
         }
+    }
+
+    private static AssetTypeValueField ReadTextureFieldForPreview(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        // The generic class database can describe "image data" as an ordinary
+        // array of scalar values. TextureFile expects a ByteArray; reading it
+        // through the unmodified template can corrupt block-compressed payloads.
+        var template = manager.GetTemplateBaseField(instance, asset);
+        if (template == null)
+            throw new InvalidDataException("Texture type information could not be read.");
+
+        var imageData = template.Children.FirstOrDefault(x => x.Name == "image data");
+        if (imageData != null)
+            imageData.ValueType = AssetValueType.ByteArray;
+
+        var platformBlob = template.Children.FirstOrDefault(x => x.Name == "m_PlatformBlob");
+        if (platformBlob != null && platformBlob.Children.Count > 0)
+            platformBlob.Children[0].ValueType = AssetValueType.ByteArray;
+
+        var reader = instance.file.Reader;
+        lock (reader)
+        {
+            long absolutePosition = asset.GetAbsoluteByteStart(instance.file);
+            return template.MakeValue(reader, absolutePosition, null);
+        }
+    }
+
+    private static int[] DecodeTexturePixelsToArgb(
+        byte[] encodedData, TextureFormat format, int width, int height)
+    {
+        if (width <= 0 || height <= 0 || width > 8192 || height > 8192)
+            throw new InvalidDataException("Texture dimensions are invalid or unsupported.");
+
+        int pixelCount = checked(width * height);
+        byte[] decoded = TextureFile.DecodeManaged(encodedData, format, width, height);
+        int requiredBytes = checked(pixelCount * 4);
+        if (decoded == null || decoded.Length < requiredBytes)
+            throw new NotSupportedException(
+                $"Texture format '{format}' is not supported or its pixel data is incomplete.");
+
+        // AssetsTools/AssetRipper's managed decoder returns BGRA byte pixels.
+        // Android Bitmap.SetPixels consumes packed ARGB integers. Convert once
+        // here so Texture2D and Sprite previews cannot diverge in channel order.
+        var pixels = new int[pixelCount];
+        for (int y = 0; y < height; y++)
+        {
+            int sourceY = height - 1 - y; // Unity texture rows are bottom-up.
+            int sourceRow = sourceY * width;
+            int targetRow = y * width;
+            for (int x = 0; x < width; x++)
+            {
+                int offset = (sourceRow + x) * 4;
+                int blue = decoded[offset];
+                int green = decoded[offset + 1];
+                int red = decoded[offset + 2];
+                int alpha = decoded[offset + 3];
+                pixels[targetRow + x] =
+                    (alpha << 24) | (red << 16) | (green << 8) | blue;
+            }
+        }
+        return pixels;
     }
 
     private async Task ShowMaterialPreviewAsync(
