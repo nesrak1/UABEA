@@ -819,6 +819,10 @@ public sealed class MainView : UserControl
         {
             await ShowTexturePreviewAsync(manager, instance, asset);
         }
+        else if (typeId == (int)AssetClassID.Sprite)
+        {
+            await ShowSpritePreviewAsync(manager, instance, asset);
+        }
         else if (typeId == (int)AssetClassID.Material)
         {
             await ShowMaterialPreviewAsync(manager, instance, asset);
@@ -852,14 +856,12 @@ public sealed class MainView : UserControl
         {
             var imageResult = await Task.Run(() =>
             {
-                var field = manager.GetBaseField(instance, asset);
+                var field = ReadTextureFieldForPreview(manager, instance, asset);
                 if (field == null)
                     throw new InvalidDataException("Texture data could not be read.");
-
                 var texture = TextureFile.ReadTextureFile(field);
-                int width = texture.m_Width;
-                int height = texture.m_Height;
-                if (width <= 0 || height <= 0 || width > 8192 || height > 8192)
+                if (texture.m_Width <= 0 || texture.m_Height <= 0 ||
+                    texture.m_Width > 8192 || texture.m_Height > 8192)
                     throw new InvalidDataException("Unsupported or invalid image dimensions.");
 
                 byte[] data = texture.pictureData ?? Array.Empty<byte>();
@@ -867,10 +869,7 @@ public sealed class MainView : UserControl
                 ulong streamSize = ReadUnsignedField(field["m_StreamData"]["size"]);
                 string streamPath = field["m_StreamData"]["path"]?.AsString ?? texture.m_StreamData.path ?? "";
                 textureResourceSource = streamPath;
-
-                // Streamed textures must use the exact external byte range. The
-                // serialized pictureData is often empty or only a tiny placeholder.
-                if (streamSize > 0 && !string.IsNullOrWhiteSpace(streamPath))
+                if (streamSize > 0)
                 {
                     try
                     {
@@ -888,44 +887,12 @@ public sealed class MainView : UserControl
                 if (data.Length == 0)
                     throw new InvalidDataException("This texture contains no image data.");
 
-                // Use the AssetsTools.NET TextureFile pipeline, not DecodeManaged
-                // directly. GetTextureData applies the texture's format-specific
-                // decoding and platform handling and returns BGRA32 pixels.
-                texture.pictureData = data;
-                texture.m_StreamData.offset = 0;
-                texture.m_StreamData.size = 0;
-                texture.m_StreamData.path = "";
-
-                byte[] bgra = texture.GetTextureData(instance);
-                int requiredBytes = checked(width * height * 4);
-                if (bgra == null || bgra.Length < requiredBytes)
-                    throw new NotSupportedException(
-                        $"Texture decoding returned insufficient pixel data for {width}×{height} ({texture.m_TextureFormat}).");
-
+                int width = texture.m_Width;
+                int height = texture.m_Height;
+                int[] pixels = DecodeTexturePixelsToArgb(
+                    data, (TextureFormat)texture.m_TextureFormat, width, height);
                 using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(
                     width, height, global::Android.Graphics.Bitmap.Config.Argb8888!);
-                var pixels = new int[checked(width * height)];
-
-                // Decoder output is BGRA32. Unity texture rows are bottom-up,
-                // so only flip vertically when converting to Android's bitmap.
-                for (int y = 0; y < height; y++)
-                {
-                    int sourceY = height - 1 - y;
-                    int sourceRow = sourceY * width * 4;
-                    int targetRow = y * width;
-                    for (int x = 0; x < width; x++)
-                    {
-                        int sourceOffset = sourceRow + x * 4;
-                        int blue = bgra[sourceOffset];
-                        int green = bgra[sourceOffset + 1];
-                        int red = bgra[sourceOffset + 2];
-                        int alpha = bgra[sourceOffset + 3];
-
-                        pixels[targetRow + x] =
-                            (alpha << 24) | (red << 16) | (green << 8) | blue;
-                    }
-                }
-
                 bitmap.SetPixels(pixels, 0, width, 0, 0, width, height);
                 using var output = new MemoryStream();
                 bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, output);
@@ -941,6 +908,7 @@ public sealed class MainView : UserControl
         {
             error = ex.Message;
         }
+        finally { }
 
         if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
         {
@@ -990,6 +958,272 @@ public sealed class MainView : UserControl
         }
     }
 
+
+    private async Task ShowSpritePreviewAsync(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo spriteAsset)
+    {
+        var loadingCard = AddPreviewLoadingCard("Sprite preview", MaterialIconKind.Image);
+        Avalonia.Media.Imaging.Bitmap? previewBitmap = null;
+        string? error = null;
+        string? resourceSource = null;
+        bool needsExternalResource = false;
+        int sourceWidth = 0, sourceHeight = 0;
+        int spriteWidth = 0, spriteHeight = 0;
+
+        try
+        {
+            var result = await Task.Run(() =>
+            {
+                var sprite = manager.GetBaseField(instance, spriteAsset);
+                if (sprite == null)
+                    throw new InvalidDataException("Sprite data could not be read.");
+
+                var renderData = GetChildField(sprite, "m_RD");
+                var texturePointer = GetChildField(renderData, "texture");
+                if (texturePointer == null || texturePointer.IsDummy)
+                    texturePointer = GetChildField(sprite, "m_Texture");
+                long texturePathId = ReadFieldInt64(GetChildField(texturePointer, "m_PathID"));
+                if (texturePathId == 0)
+                    throw new InvalidDataException("This Sprite does not reference a readable Texture2D.");
+
+                var textureAsset = instance.file.AssetInfos.FirstOrDefault(x => x.PathId == texturePathId);
+                if (textureAsset == null || textureAsset.GetTypeId(instance.file) != (int)AssetClassID.Texture2D)
+                    throw new NotSupportedException("The Sprite texture is not in the currently opened assets file. Open the matching texture assets file first.");
+
+                var textureField = ReadTextureFieldForPreview(manager, instance, textureAsset);
+                if (textureField == null)
+                    throw new InvalidDataException("The Sprite Texture2D could not be read.");
+
+                var texture = TextureFile.ReadTextureFile(textureField);
+                if (texture.m_Width <= 0 || texture.m_Height <= 0 ||
+                    texture.m_Width > 8192 || texture.m_Height > 8192)
+                    throw new InvalidDataException("The Sprite texture dimensions are invalid or unsupported.");
+
+                byte[] data = texture.pictureData ?? Array.Empty<byte>();
+                ulong streamOffset = ReadUnsignedField(GetChildField(GetChildField(textureField, "m_StreamData"), "offset")!);
+                ulong streamSize = ReadUnsignedField(GetChildField(GetChildField(textureField, "m_StreamData"), "size")!);
+                var streamField = GetChildField(GetChildField(textureField, "m_StreamData"), "path");
+                string streamPath = streamField == null || streamField.IsDummy ? texture.m_StreamData.path ?? "" : streamField.AsString;
+                resourceSource = streamPath;
+                if (streamSize > 0)
+                {
+                    try
+                    {
+                        data = instance.parentBundle != null
+                            ? ReadBundleResource(instance.parentBundle, streamPath, streamOffset, streamSize)
+                            : ReadExternalResource(instance, streamPath, streamOffset, streamSize);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        needsExternalResource = instance.parentBundle == null;
+                        throw;
+                    }
+                }
+
+                if (data.Length == 0)
+                    throw new InvalidDataException("The Sprite texture contains no image data.");
+
+                int width = texture.m_Width, height = texture.m_Height;
+                int[] pixels = DecodeTexturePixelsToArgb(
+                    data, (TextureFormat)texture.m_TextureFormat, width, height);
+
+                // For packed sprites, SpriteRenderData.textureRect is the atlas
+                // rectangle. If it is absent, derive the bounds from serialized UVs
+                // before falling back to the logical m_Rect.
+                var rect = GetChildField(renderData, "textureRect");
+                float rx = ReadFieldFloat(GetChildField(rect, "x"), float.NaN);
+                float ry = ReadFieldFloat(GetChildField(rect, "y"), float.NaN);
+                float rw = ReadFieldFloat(GetChildField(rect, "width"), float.NaN);
+                float rh = ReadFieldFloat(GetChildField(rect, "height"), float.NaN);
+                if (!(rw > 0 && rh > 0) &&
+                    TryReadSpriteUvRect(renderData, width, height,
+                        out float uvX, out float uvY, out float uvWidth, out float uvHeight))
+                {
+                    rx = uvX; ry = uvY; rw = uvWidth; rh = uvHeight;
+                }
+                else if (!(rw > 0 && rh > 0))
+                {
+                    rect = GetChildField(sprite, "m_Rect");
+                    rx = ReadFieldFloat(GetChildField(rect, "x"));
+                    ry = ReadFieldFloat(GetChildField(rect, "y"));
+                    rw = ReadFieldFloat(GetChildField(rect, "width"));
+                    rh = ReadFieldFloat(GetChildField(rect, "height"));
+                }
+
+                int cropX = 0, cropY = 0, cropW = width, cropH = height;
+                if (rw > 0 && rh > 0)
+                {
+                    cropX = Math.Clamp((int)Math.Floor(rx), 0, width - 1);
+                    cropY = Math.Clamp(height - (int)Math.Ceiling(ry + rh), 0, height - 1);
+                    cropW = Math.Clamp((int)Math.Ceiling(rw), 1, width - cropX);
+                    cropH = Math.Clamp((int)Math.Ceiling(rh), 1, height - cropY);
+                }
+
+                using var full = global::Android.Graphics.Bitmap.CreateBitmap(
+                    width, height, global::Android.Graphics.Bitmap.Config.Argb8888!);
+                full.SetPixels(pixels, 0, width, 0, 0, width, height);
+                using var cropped = global::Android.Graphics.Bitmap.CreateBitmap(full, cropX, cropY, cropW, cropH);
+                using var output = new MemoryStream();
+                cropped.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, output);
+                return (Png: output.ToArray(), TextureWidth: width, TextureHeight: height,
+                    SpriteWidth: cropW, SpriteHeight: cropH);
+            });
+
+            sourceWidth = result.TextureWidth;
+            sourceHeight = result.TextureHeight;
+            spriteWidth = result.SpriteWidth;
+            spriteHeight = result.SpriteHeight;
+            using var stream = new MemoryStream(result.Png);
+            previewBitmap = new Avalonia.Media.Imaging.Bitmap(stream);
+        }
+        catch (Exception ex) { error = ex.Message; }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
+        {
+            RemovePreviewLoadingCard(loadingCard);
+            previewBitmap?.Dispose();
+            return;
+        }
+
+        RemovePreviewLoadingCard(loadingCard);
+        if (previewBitmap != null)
+        {
+            var image = new Image { Source = previewBitmap, Stretch = Stretch.Uniform, MaxHeight = 360 };
+            image.Tapped += (_, _) => OpenImageViewer(previewBitmap);
+            _items.Children.Add(CreatePreviewCard("Sprite preview", new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock { Text = $"{spriteWidth}×{spriteHeight} px • Texture {sourceWidth}×{sourceHeight} px", FontSize = 12, Foreground = TextBrush },
+                    image
+                }
+            }, MaterialIconKind.Image));
+        }
+        else if (needsExternalResource && !string.IsNullOrWhiteSpace(resourceSource))
+        {
+            bool selected = await ChooseSessionResourceAsync(resourceSource, instance);
+            if (selected && _currentAssets == instance && _currentPage == BrowserPage.AssetDetails)
+                await ShowSpritePreviewAsync(manager, instance, spriteAsset);
+            else
+                _items.Children.Add(CreatePreviewCard("Sprite preview", new TextBlock
+                {
+                    Text = "Select the matching .resource or .resS file to preview this Sprite.",
+                    Foreground = TextBrush, TextWrapping = TextWrapping.Wrap
+                }, MaterialIconKind.Image));
+        }
+        else
+        {
+            _items.Children.Add(CreatePreviewCard("Sprite preview", new TextBlock
+            {
+                Text = "Preview unavailable: " + error,
+                Foreground = TextBrush, TextWrapping = TextWrapping.Wrap
+            }, MaterialIconKind.Image));
+        }
+    }
+
+    private static bool TryReadSpriteUvRect(
+        AssetTypeValueField? renderData, int textureWidth, int textureHeight,
+        out float x, out float y, out float width, out float height)
+    {
+        x = y = width = height = 0;
+        var uvs = GetChildField(renderData, "uvs");
+        var array = GetChildField(uvs, "Array");
+        var values = array?.Children ?? uvs?.Children;
+        if (values == null || values.Count < 3)
+            return false;
+
+        float minU = float.PositiveInfinity;
+        float minV = float.PositiveInfinity;
+        float maxU = float.NegativeInfinity;
+        float maxV = float.NegativeInfinity;
+        foreach (var vertex in values)
+        {
+            float u = ReadFieldFloat(GetChildField(vertex, "x"), float.NaN);
+            float v = ReadFieldFloat(GetChildField(vertex, "y"), float.NaN);
+            if (!float.IsFinite(u) || !float.IsFinite(v))
+                continue;
+            minU = Math.Min(minU, u);
+            minV = Math.Min(minV, v);
+            maxU = Math.Max(maxU, u);
+            maxV = Math.Max(maxV, v);
+        }
+
+        if (!float.IsFinite(minU) || !float.IsFinite(minV) ||
+            !float.IsFinite(maxU) || !float.IsFinite(maxV) ||
+            maxU <= minU || maxV <= minV)
+            return false;
+
+        // Sprite UVs are normalized and use Unity's bottom-left origin.
+        x = minU * textureWidth;
+        y = minV * textureHeight;
+        width = (maxU - minU) * textureWidth;
+        height = (maxV - minV) * textureHeight;
+        return x >= 0 && y >= 0 && x + width <= textureWidth + 1 &&
+            y + height <= textureHeight + 1;
+    }
+
+    private static AssetTypeValueField ReadTextureFieldForPreview(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        // The generic class database can describe "image data" as an ordinary
+        // array of scalar values. TextureFile expects a ByteArray; reading it
+        // through the unmodified template can corrupt block-compressed payloads.
+        var template = manager.GetTemplateBaseField(instance, asset);
+        if (template == null)
+            throw new InvalidDataException("Texture type information could not be read.");
+
+        var imageData = template.Children.FirstOrDefault(x => x.Name == "image data");
+        if (imageData != null)
+            imageData.ValueType = AssetValueType.ByteArray;
+
+        var platformBlob = template.Children.FirstOrDefault(x => x.Name == "m_PlatformBlob");
+        if (platformBlob != null && platformBlob.Children.Count > 0)
+            platformBlob.Children[0].ValueType = AssetValueType.ByteArray;
+
+        var reader = instance.file.Reader;
+        lock (reader)
+        {
+            long absolutePosition = asset.GetAbsoluteByteStart(instance.file);
+            return template.MakeValue(reader, absolutePosition, null);
+        }
+    }
+
+    private static int[] DecodeTexturePixelsToArgb(
+        byte[] encodedData, TextureFormat format, int width, int height)
+    {
+        if (width <= 0 || height <= 0 || width > 8192 || height > 8192)
+            throw new InvalidDataException("Texture dimensions are invalid or unsupported.");
+
+        int pixelCount = checked(width * height);
+        byte[] decoded = TextureFile.DecodeManaged(encodedData, format, width, height);
+        int requiredBytes = checked(pixelCount * 4);
+        if (decoded == null || decoded.Length < requiredBytes)
+            throw new NotSupportedException(
+                $"Texture format '{format}' is not supported or its pixel data is incomplete.");
+
+        // AssetsTools/AssetRipper's managed decoder returns BGRA byte pixels.
+        // Android Bitmap.SetPixels consumes packed ARGB integers. Convert once
+        // here so Texture2D and Sprite previews cannot diverge in channel order.
+        var pixels = new int[pixelCount];
+        for (int y = 0; y < height; y++)
+        {
+            int sourceY = height - 1 - y; // Unity texture rows are bottom-up.
+            int sourceRow = sourceY * width;
+            int targetRow = y * width;
+            for (int x = 0; x < width; x++)
+            {
+                int offset = (sourceRow + x) * 4;
+                int blue = decoded[offset];
+                int green = decoded[offset + 1];
+                int red = decoded[offset + 2];
+                int alpha = decoded[offset + 3];
+                pixels[targetRow + x] =
+                    (alpha << 24) | (red << 16) | (green << 8) | blue;
+            }
+        }
+        return pixels;
+    }
 
     private async Task ShowMaterialPreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
