@@ -815,9 +815,17 @@ public sealed class MainView : UserControl
         {
             await ShowTextAssetPreviewAsync(manager, instance, asset);
         }
-        if (typeId == (int)AssetClassID.Texture2D)
+        else if (typeId == (int)AssetClassID.Texture2D)
         {
             await ShowTexturePreviewAsync(manager, instance, asset);
+        }
+        else if (typeId == (int)AssetClassID.Sprite)
+        {
+            await ShowSpritePreviewAsync(manager, instance, asset);
+        }
+        else if (typeId == (int)AssetClassID.Material)
+        {
+            await ShowMaterialPreviewAsync(manager, instance, asset);
         }
         else if (typeId == (int)AssetClassID.AudioClip)
         {
@@ -981,6 +989,349 @@ public sealed class MainView : UserControl
         }
     }
 
+
+    private async Task ShowSpritePreviewAsync(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo spriteAsset)
+    {
+        var loadingCard = AddPreviewLoadingCard("Sprite preview", MaterialIconKind.Image);
+        Avalonia.Media.Imaging.Bitmap? previewBitmap = null;
+        string? error = null;
+        string? resourceSource = null;
+        bool needsExternalResource = false;
+        int sourceWidth = 0, sourceHeight = 0;
+        int spriteWidth = 0, spriteHeight = 0;
+
+        try
+        {
+            var result = await Task.Run(() =>
+            {
+                var sprite = manager.GetBaseField(instance, spriteAsset);
+                if (sprite == null)
+                    throw new InvalidDataException("Sprite data could not be read.");
+
+                var renderData = GetChildField(sprite, "m_RD");
+                var texturePointer = GetChildField(renderData, "texture");
+                if (texturePointer == null || texturePointer.IsDummy)
+                    texturePointer = GetChildField(sprite, "m_Texture");
+                long texturePathId = ReadFieldInt64(GetChildField(texturePointer, "m_PathID"));
+                if (texturePathId == 0)
+                    throw new InvalidDataException("This Sprite does not reference a readable Texture2D.");
+
+                var textureAsset = instance.file.AssetInfos.FirstOrDefault(x => x.PathId == texturePathId);
+                if (textureAsset == null || textureAsset.GetTypeId(instance.file) != (int)AssetClassID.Texture2D)
+                    throw new NotSupportedException("The Sprite texture is not in the currently opened assets file. Open the matching texture assets file first.");
+
+                var textureField = manager.GetBaseField(instance, textureAsset);
+                if (textureField == null)
+                    throw new InvalidDataException("The Sprite Texture2D could not be read.");
+
+                var texture = TextureFile.ReadTextureFile(textureField);
+                if (texture.m_Width <= 0 || texture.m_Height <= 0 ||
+                    texture.m_Width > 8192 || texture.m_Height > 8192)
+                    throw new InvalidDataException("The Sprite texture dimensions are invalid or unsupported.");
+
+                byte[] data = texture.pictureData ?? Array.Empty<byte>();
+                ulong streamOffset = ReadUnsignedField(GetChildField(GetChildField(textureField, "m_StreamData"), "offset")!);
+                ulong streamSize = ReadUnsignedField(GetChildField(GetChildField(textureField, "m_StreamData"), "size")!);
+                var streamField = GetChildField(GetChildField(textureField, "m_StreamData"), "path");
+                string streamPath = streamField == null || streamField.IsDummy ? texture.m_StreamData.path ?? "" : streamField.AsString;
+                resourceSource = streamPath;
+                if (streamSize > 0 && !string.IsNullOrWhiteSpace(streamPath))
+                {
+                    try
+                    {
+                        data = instance.parentBundle != null
+                            ? ReadBundleResource(instance.parentBundle, streamPath, streamOffset, streamSize)
+                            : ReadExternalResource(instance, streamPath, streamOffset, streamSize);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        needsExternalResource = instance.parentBundle == null;
+                        throw;
+                    }
+                }
+
+                if (data.Length == 0)
+                    throw new InvalidDataException("The Sprite texture contains no image data.");
+
+                byte[] bgra = TextureFile.DecodeManaged(data, (TextureFormat)texture.m_TextureFormat,
+                    texture.m_Width, texture.m_Height);
+                if (bgra == null || bgra.Length < texture.m_Width * texture.m_Height * 4)
+                    throw new NotSupportedException("The Sprite texture format is not supported by the mobile decoder.");
+
+                int width = texture.m_Width, height = texture.m_Height;
+                var pixels = new int[width * height];
+                for (int y = 0; y < height; y++)
+                {
+                    int sourceY = height - 1 - y;
+                    for (int x = 0; x < width; x++)
+                    {
+                        int offset = (sourceY * width + x) * 4;
+                        pixels[y * width + x] = (bgra[offset + 3] << 24) |
+                            (bgra[offset + 2] << 16) | (bgra[offset + 1] << 8) | bgra[offset];
+                    }
+                }
+
+                var rect = GetChildField(sprite, "m_Rect");
+                if (rect == null || rect.IsDummy)
+                    rect = GetChildField(renderData, "textureRect");
+                float rx = ReadFieldFloat(GetChildField(rect, "x"));
+                float ry = ReadFieldFloat(GetChildField(rect, "y"));
+                float rw = ReadFieldFloat(GetChildField(rect, "width"));
+                float rh = ReadFieldFloat(GetChildField(rect, "height"));
+                int cropX = Math.Clamp((int)Math.Floor(rx), 0, width - 1);
+                int cropY = Math.Clamp(height - (int)Math.Ceiling(ry + rh), 0, height - 1);
+                int cropW = Math.Clamp((int)Math.Ceiling(rw), 1, width - cropX);
+                int cropH = Math.Clamp((int)Math.Ceiling(rh), 1, height - cropY);
+                if (rw <= 0 || rh <= 0)
+                {
+                    cropX = 0; cropY = 0; cropW = width; cropH = height;
+                }
+
+                using var full = global::Android.Graphics.Bitmap.CreateBitmap(
+                    width, height, global::Android.Graphics.Bitmap.Config.Argb8888!);
+                full.SetPixels(pixels, 0, width, 0, 0, width, height);
+                using var cropped = global::Android.Graphics.Bitmap.CreateBitmap(full, cropX, cropY, cropW, cropH);
+                using var output = new MemoryStream();
+                cropped.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, output);
+                return (Png: output.ToArray(), TextureWidth: width, TextureHeight: height,
+                    SpriteWidth: cropW, SpriteHeight: cropH);
+            });
+
+            sourceWidth = result.TextureWidth;
+            sourceHeight = result.TextureHeight;
+            spriteWidth = result.SpriteWidth;
+            spriteHeight = result.SpriteHeight;
+            using var stream = new MemoryStream(result.Png);
+            previewBitmap = new Avalonia.Media.Imaging.Bitmap(stream);
+        }
+        catch (Exception ex) { error = ex.Message; }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
+        {
+            RemovePreviewLoadingCard(loadingCard);
+            previewBitmap?.Dispose();
+            return;
+        }
+
+        RemovePreviewLoadingCard(loadingCard);
+        if (previewBitmap != null)
+        {
+            var image = new Image { Source = previewBitmap, Stretch = Stretch.Uniform, MaxHeight = 360 };
+            image.Tapped += (_, _) => OpenImageViewer(previewBitmap);
+            _items.Children.Add(CreatePreviewCard("Sprite preview", new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock { Text = $"{spriteWidth}×{spriteHeight} px • Texture {sourceWidth}×{sourceHeight} px", FontSize = 12, Foreground = TextBrush },
+                    image
+                }
+            }, MaterialIconKind.Image));
+        }
+        else if (needsExternalResource && !string.IsNullOrWhiteSpace(resourceSource))
+        {
+            bool selected = await ChooseSessionResourceAsync(resourceSource, instance);
+            if (selected && _currentAssets == instance && _currentPage == BrowserPage.AssetDetails)
+                await ShowSpritePreviewAsync(manager, instance, spriteAsset);
+            else
+                _items.Children.Add(CreatePreviewCard("Sprite preview", new TextBlock
+                {
+                    Text = "Select the matching .resource or .resS file to preview this Sprite.",
+                    Foreground = TextBrush, TextWrapping = TextWrapping.Wrap
+                }, MaterialIconKind.Image));
+        }
+        else
+        {
+            _items.Children.Add(CreatePreviewCard("Sprite preview", new TextBlock
+            {
+                Text = "Preview unavailable: " + error,
+                Foreground = TextBrush, TextWrapping = TextWrapping.Wrap
+            }, MaterialIconKind.Image));
+        }
+    }
+
+    private async Task ShowMaterialPreviewAsync(
+        AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
+    {
+        var loadingCard = AddPreviewLoadingCard("Material preview", MaterialIconKind.PaletteOutline);
+        string? error = null;
+        string materialName = "Material";
+        string shaderName = "Unknown shader";
+        string colorName = "";
+        Color materialColor = Colors.White;
+        var properties = new List<string>();
+
+        try
+        {
+            var data = await Task.Run(() =>
+            {
+                var field = manager.GetBaseField(instance, asset);
+                if (field == null)
+                    throw new InvalidDataException("Material data could not be read.");
+
+                string name = ReadFieldString(GetChildField(field, "m_Name"));
+                var shader = GetChildField(field, "m_Shader");
+                long shaderPathId = ReadFieldInt64(GetChildField(shader, "m_PathID"));
+                string shaderLabel = shaderPathId == 0 ? "Built-in / missing shader reference" : $"Shader asset Path ID: {shaderPathId}";
+
+                var saved = GetChildField(field, "m_SavedProperties");
+                var colors = GetChildField(GetChildField(saved, "m_Colors"), "Array");
+                string selectedColorName = "";
+                float red = 1, green = 1, blue = 1, alpha = 1;
+                if (colors != null && !colors.IsDummy)
+                {
+                    foreach (var item in colors.Children)
+                    {
+                        var keyField = GetChildField(item, "first");
+                        var valueField = GetChildField(item, "second");
+                        string key = ReadFieldString(keyField);
+                        if (string.IsNullOrWhiteSpace(key)) continue;
+                        float r = ReadFieldFloat(GetChildField(valueField, "r"));
+                        float g = ReadFieldFloat(GetChildField(valueField, "g"));
+                        float b = ReadFieldFloat(GetChildField(valueField, "b"));
+                        float a = ReadFieldFloat(GetChildField(valueField, "a"), 1);
+                        properties.Add($"{key}: ({r:0.###}, {g:0.###}, {b:0.###}, {a:0.###})");
+                        if (key is "_Color" or "_BaseColor" || selectedColorName.Length == 0)
+                        {
+                            selectedColorName = key;
+                            red = r; green = g; blue = b; alpha = a;
+                        }
+                    }
+                }
+
+                var floats = GetChildField(GetChildField(saved, "m_Floats"), "Array");
+                if (floats != null && !floats.IsDummy)
+                foreach (var item in floats.Children)
+                {
+                    string key = ReadFieldString(GetChildField(item, "first"));
+                    var value = GetChildField(item, "second");
+                    if (!string.IsNullOrWhiteSpace(key))
+                        properties.Add($"{key}: {ReadFieldFloat(value):0.###}");
+                }
+
+                var ints = GetChildField(GetChildField(saved, "m_Ints"), "Array");
+                if (ints != null && !ints.IsDummy)
+                foreach (var item in ints.Children)
+                {
+                    string key = ReadFieldString(GetChildField(item, "first"));
+                    var value = GetChildField(item, "second");
+                    if (!string.IsNullOrWhiteSpace(key))
+                        properties.Add($"{key}: {ReadFieldInt64(value)}");
+                }
+
+                var textures = GetChildField(GetChildField(saved, "m_TexEnvs"), "Array");
+                if (textures != null && !textures.IsDummy)
+                foreach (var item in textures.Children)
+                {
+                    string key = ReadFieldString(GetChildField(item, "first"));
+                    var env = GetChildField(item, "second");
+                    long textureId = ReadFieldInt64(GetChildField(GetChildField(env, "m_Texture"), "m_PathID"));
+                    if (!string.IsNullOrWhiteSpace(key))
+                        properties.Add($"{key}: {(textureId == 0 ? "No texture" : $"Texture Path ID {textureId}")}");
+                }
+
+                return (Name: string.IsNullOrWhiteSpace(name) ? "Material" : name,
+                    Shader: shaderLabel, ColorName: selectedColorName,
+                    R: red, G: green, B: blue, A: alpha);
+            });
+
+            materialName = data.Name;
+            shaderName = data.Shader;
+            colorName = data.ColorName;
+            materialColor = Color.FromArgb(
+                (byte)Math.Clamp((int)Math.Round(data.A * 255), 0, 255),
+                (byte)Math.Clamp((int)Math.Round(data.R * 255), 0, 255),
+                (byte)Math.Clamp((int)Math.Round(data.G * 255), 0, 255),
+                (byte)Math.Clamp((int)Math.Round(data.B * 255), 0, 255));
+        }
+        catch (Exception ex) { error = ex.Message; }
+
+        if (_currentAssets != instance || _currentPage != BrowserPage.AssetDetails)
+        {
+            RemovePreviewLoadingCard(loadingCard);
+            return;
+        }
+
+        RemovePreviewLoadingCard(loadingCard);
+        if (error != null)
+        {
+            _items.Children.Add(CreatePreviewCard("Material preview", new TextBlock
+            {
+                Text = "Preview unavailable: " + error,
+                Foreground = TextBrush, TextWrapping = TextWrapping.Wrap
+            }, MaterialIconKind.PaletteOutline));
+            return;
+        }
+
+        var sphere = new Border
+        {
+            Width = 104, Height = 104, CornerRadius = new CornerRadius(52),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Background = new SolidColorBrush(materialColor),
+            BorderBrush = OutlineBrush, BorderThickness = new Thickness(1)
+        };
+        var content = new StackPanel { Spacing = 8 };
+        content.Children.Add(sphere);
+        content.Children.Add(new TextBlock { Text = $"Shader: {shaderName}", Foreground = TextBrush, TextWrapping = TextWrapping.Wrap });
+        if (!string.IsNullOrEmpty(colorName))
+            content.Children.Add(new TextBlock { Text = $"Preview color: {colorName}", Foreground = MutedBrush, FontSize = 12 });
+        if (properties.Count > 0)
+        {
+            content.Children.Add(new TextBlock { Text = $"Saved properties ({properties.Count})", Foreground = TextBrush, FontWeight = FontWeight.SemiBold });
+            foreach (string property in properties.Take(80))
+                content.Children.Add(new TextBlock { Text = property, Foreground = MutedBrush, FontSize = 12, TextWrapping = TextWrapping.Wrap });
+            if (properties.Count > 80)
+                content.Children.Add(new TextBlock { Text = $"{properties.Count - 80} more properties not shown.", Foreground = MutedBrush, FontSize = 11 });
+        }
+        else
+            content.Children.Add(new TextBlock { Text = "No saved shader properties were found.", Foreground = MutedBrush, FontSize = 12 });
+        _items.Children.Add(CreatePreviewCard(materialName, content, MaterialIconKind.PaletteOutline));
+    }
+
+    private static AssetTypeValueField? GetChildField(AssetTypeValueField? parent, string name)
+    {
+        if (parent == null || parent.IsDummy) return null;
+        var child = parent[name];
+        return child == null || child.IsDummy ? null : child;
+    }
+
+    private static long ReadFieldInt64(AssetTypeValueField? field)
+    {
+        if (field == null || field.IsDummy || field.Value == null) return 0;
+        return field.Value.ValueType switch
+        {
+            AssetValueType.UInt8 => field.AsByte,
+            AssetValueType.UInt16 => field.AsUShort,
+            AssetValueType.UInt32 => field.AsUInt,
+            AssetValueType.UInt64 => unchecked((long)field.AsULong),
+            AssetValueType.Int8 => field.AsSByte,
+            AssetValueType.Int16 => field.AsShort,
+            AssetValueType.Int32 => field.AsInt,
+            AssetValueType.Int64 => field.AsLong,
+            _ => 0
+        };
+    }
+
+    private static float ReadFieldFloat(AssetTypeValueField? field, float fallback = 0)
+    {
+        if (field == null || field.IsDummy || field.Value == null) return fallback;
+        return field.Value.ValueType switch
+        {
+            AssetValueType.Float => field.AsFloat,
+            AssetValueType.Double => (float)field.AsDouble,
+            AssetValueType.Int8 => field.AsSByte,
+            AssetValueType.UInt8 => field.AsByte,
+            AssetValueType.Int16 => field.AsShort,
+            AssetValueType.UInt16 => field.AsUShort,
+            AssetValueType.Int32 => field.AsInt,
+            AssetValueType.UInt32 => field.AsUInt,
+            _ => fallback
+        };
+    }
+
+    private static string ReadFieldString(AssetTypeValueField? field) =>
+        field == null || field.IsDummy || field.Value == null ? "" : field.AsString;
 
     private async Task ShowAudioClipPreviewAsync(
         AssetsManager manager, AssetsFileInstance instance, AssetFileInfo asset)
