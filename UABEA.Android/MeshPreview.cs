@@ -603,6 +603,7 @@ internal static class MeshPreviewDataReader
 internal sealed class MeshPreviewControl : Control, IDisposable
 {
     private readonly bool _interactive;
+    private readonly Color? _surfaceColor;
     private readonly Vector3[] _normalizedVertices;
     private readonly int[] _indices;
     private readonly Vector3[] _cameraVertices;
@@ -630,9 +631,10 @@ internal sealed class MeshPreviewControl : Control, IDisposable
     private static readonly Vector3 LightDirection =
         Vector3.Normalize(new Vector3(-0.35f, 0.65f, 0.7f));
 
-    public MeshPreviewControl(Vector3[] vertices, int[] indices, bool interactive = false)
+    public MeshPreviewControl(Vector3[] vertices, int[] indices, bool interactive = false, Color? surfaceColor = null)
     {
         _interactive = interactive;
+        _surfaceColor = surfaceColor;
         _indices = indices ?? Array.Empty<int>();
         _normalizedVertices = NormalizeVertices(vertices ?? Array.Empty<Vector3>());
         _cameraVertices = new Vector3[_normalizedVertices.Length];
@@ -887,9 +889,20 @@ internal sealed class MeshPreviewControl : Control, IDisposable
         // Absolute dot product keeps both front- and back-facing triangles visible.
         float lighting = Math.Clamp(MathF.Abs(Vector3.Dot(normal, LightDirection)), 0.18f, 1f);
         int shade = 48 + (int)(lighting * 165f);
-        int red = Math.Min(255, shade + 18);
-        int green = Math.Min(255, shade + 8);
-        int blue = shade;
+        int red, green, blue;
+        if (_surfaceColor is Color surface)
+        {
+            float diffuse = 0.22f + lighting * 0.88f;
+            red = Math.Clamp((int)(surface.R * diffuse), 0, 255);
+            green = Math.Clamp((int)(surface.G * diffuse), 0, 255);
+            blue = Math.Clamp((int)(surface.B * diffuse), 0, 255);
+        }
+        else
+        {
+            red = Math.Min(255, shade + 18);
+            green = Math.Min(255, shade + 8);
+            blue = shade;
+        }
         int color = unchecked((int)(0xFF000000u | ((uint)red << 16) | ((uint)green << 8) | (uint)blue));
 
         float inverseArea = 1f / area;
