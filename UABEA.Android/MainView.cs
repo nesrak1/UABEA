@@ -1027,23 +1027,36 @@ public sealed class MainView : UserControl
                 int[] pixels = DecodeTexturePixelsToArgb(
                     data, (TextureFormat)texture.m_TextureFormat, width, height);
 
-                // For packed sprites, SpriteRenderData.textureRect points at the
-                // actual rectangle inside the atlas. m_Rect is the logical sprite
-                // rectangle and can be stale or relative to the source texture.
+                // For packed sprites, SpriteRenderData.textureRect is the atlas
+                // rectangle. If it is absent, derive the bounds from serialized UVs
+                // before falling back to the logical m_Rect.
                 var rect = GetChildField(renderData, "textureRect");
-                if (rect == null || rect.IsDummy)
-                    rect = GetChildField(sprite, "m_Rect");
-                float rx = ReadFieldFloat(GetChildField(rect, "x"));
-                float ry = ReadFieldFloat(GetChildField(rect, "y"));
-                float rw = ReadFieldFloat(GetChildField(rect, "width"));
-                float rh = ReadFieldFloat(GetChildField(rect, "height"));
-                int cropX = Math.Clamp((int)Math.Floor(rx), 0, width - 1);
-                int cropY = Math.Clamp(height - (int)Math.Ceiling(ry + rh), 0, height - 1);
-                int cropW = Math.Clamp((int)Math.Ceiling(rw), 1, width - cropX);
-                int cropH = Math.Clamp((int)Math.Ceiling(rh), 1, height - cropY);
-                if (rw <= 0 || rh <= 0)
+                float rx = ReadFieldFloat(GetChildField(rect, "x"), float.NaN);
+                float ry = ReadFieldFloat(GetChildField(rect, "y"), float.NaN);
+                float rw = ReadFieldFloat(GetChildField(rect, "width"), float.NaN);
+                float rh = ReadFieldFloat(GetChildField(rect, "height"), float.NaN);
+                if (!(rw > 0 && rh > 0) &&
+                    TryReadSpriteUvRect(renderData, width, height,
+                        out float uvX, out float uvY, out float uvWidth, out float uvHeight))
                 {
-                    cropX = 0; cropY = 0; cropW = width; cropH = height;
+                    rx = uvX; ry = uvY; rw = uvWidth; rh = uvHeight;
+                }
+                else if (!(rw > 0 && rh > 0))
+                {
+                    rect = GetChildField(sprite, "m_Rect");
+                    rx = ReadFieldFloat(GetChildField(rect, "x"));
+                    ry = ReadFieldFloat(GetChildField(rect, "y"));
+                    rw = ReadFieldFloat(GetChildField(rect, "width"));
+                    rh = ReadFieldFloat(GetChildField(rect, "height"));
+                }
+
+                int cropX = 0, cropY = 0, cropW = width, cropH = height;
+                if (rw > 0 && rh > 0)
+                {
+                    cropX = Math.Clamp((int)Math.Floor(rx), 0, width - 1);
+                    cropY = Math.Clamp(height - (int)Math.Ceiling(ry + rh), 0, height - 1);
+                    cropW = Math.Clamp((int)Math.Ceiling(rw), 1, width - cropX);
+                    cropH = Math.Clamp((int)Math.Ceiling(rh), 1, height - cropY);
                 }
 
                 using var full = global::Android.Graphics.Bitmap.CreateBitmap(
@@ -1107,6 +1120,47 @@ public sealed class MainView : UserControl
                 Foreground = TextBrush, TextWrapping = TextWrapping.Wrap
             }, MaterialIconKind.Image));
         }
+    }
+
+    private static bool TryReadSpriteUvRect(
+        AssetTypeValueField? renderData, int textureWidth, int textureHeight,
+        out float x, out float y, out float width, out float height)
+    {
+        x = y = width = height = 0;
+        var uvs = GetChildField(renderData, "uvs");
+        var array = GetChildField(uvs, "Array");
+        var values = array?.Children ?? uvs?.Children;
+        if (values == null || values.Count < 3)
+            return false;
+
+        float minU = float.PositiveInfinity;
+        float minV = float.PositiveInfinity;
+        float maxU = float.NegativeInfinity;
+        float maxV = float.NegativeInfinity;
+        foreach (var vertex in values)
+        {
+            float u = ReadFieldFloat(GetChildField(vertex, "x"), float.NaN);
+            float v = ReadFieldFloat(GetChildField(vertex, "y"), float.NaN);
+            if (!float.IsFinite(u) || !float.IsFinite(v))
+                continue;
+            minU = Math.Min(minU, u);
+            minV = Math.Min(minV, v);
+            maxU = Math.Max(maxU, u);
+            maxV = Math.Max(maxV, v);
+        }
+
+        if (!float.IsFinite(minU) || !float.IsFinite(minV) ||
+            !float.IsFinite(maxU) || !float.IsFinite(maxV) ||
+            maxU <= minU || maxV <= minV)
+            return false;
+
+        // Sprite UVs are normalized and use Unity's bottom-left origin.
+        x = minU * textureWidth;
+        y = minV * textureHeight;
+        width = (maxU - minU) * textureWidth;
+        height = (maxV - minV) * textureHeight;
+        return x >= 0 && y >= 0 && x + width <= textureWidth + 1 &&
+            y + height <= textureHeight + 1;
     }
 
     private static AssetTypeValueField ReadTextureFieldForPreview(
